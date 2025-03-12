@@ -1,18 +1,24 @@
 ################################################################################
 ##  03d_combine_data.R: Combine data from CoRRE, GEx, and NutNet and clean.
 ##
-##  Author: 
+##  Author: Ashley LaRoque (modified K. Komatsu)
 ##  Date created: 
 ################################################################################
 
 source("code/01_library.R")
 source("code/02_functions.R")
 
-# categorical groups of codoms: details on line 206
-  # df_grouped<- readRDS("data_formatted/df_grouped.rds")
+# categorical groups of codoms: details on line 220
+# numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# mode of codoms: details on line 233
-  # df_mode_q1 <- readRDS("data_formatted/df_mode_q1.rds")
+# list of all spp and ranks: details on line 237
+# allSppList <- readRDS("data/allSppList.rds")
+
+# list of all spp and ranks: details on line 247
+# codomSppList <- readRDS("data/codomSppList.rds")
+
+# list of all spp and ranks: details on line 257
+# envData <- readRDS("data/envData.rds")
 
 
 #kim's laptop
@@ -255,30 +261,3 @@ envData <- filterComplete %>%
   unique()
 
 saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
-
-
-
-# Calculate mode ----------------------------------------------------------
-
-# calculate mode inc control for each year, site, proj, community, treatment, plot
-df_mode <- df_grouped %>%  
-  mutate(treat_type = ifelse(!is.na(trt_type), trt_type, treatment)) %>% 
-  group_by(site_proj_comm, site_code, project_name, community_type, plot_id, treat_type) %>% 
-  reframe(plot_codom = Mode(num_group)) %>% # mode function must be capital here 
-  ungroup()  
-
-# subset controls 
-df_control <- df_mode %>%
-  filter(treat_type %in% c("control", "Control", "G"))
-# above: is the treatment "reference" also a control group?
-# above: there are some other items in 'treatment' that are labeled as control in 'trt_type'/'treat_type', is this correct?
-
-# calculate mode across all years of a treatment just for control groups 
-df_mode_q1 <- df_control %>%  
-  group_by(site_code, project_name, community_type) %>% # mode generated from these
-  reframe(mode_yr = Mode(plot_codom)) %>%  
-  ungroup()
-
-saveRDS(df_mode_q1, file = "data_formatted/df_mode_q1.rds")
-
-
