@@ -9,16 +9,19 @@ source("code/01_library.R")
 source("code/02_functions.R")
 
 
-# list of all spp and ranks: details on line 158
+# experiment information, including treatments and environmental characteristics: details on line 158
 # expInfo <- readRDS("data/expInfo.rds")
 
-# categorical groups of codoms: details on line 232
+# environmental data for each project: details on line 165
+# envData <- readRDS("data/envData.rds")
+
+# categorical groups of codoms: details on line 237
 # numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# list of all spp and ranks: details on line 249
+# list of all spp and ranks: details on line 254
 # allSppList <- readRDS("data/allSppList.rds")
 
-# list of all spp and ranks: details on line 259
+# list of codominant spp and ranks: details on line 264
 # codomSppList <- readRDS("data/codomSppList.rds")
 
 
@@ -158,6 +161,11 @@ expInfo <- individualExperiments %>%
   rename(trt_type=trt_type2)
 
 saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
+
+
+GISlayers <- read.csv('data/Environmental Data/Codominance_AllSiteData.csv')
+
+saveRDS(GISlayers, file = "data/envData.rds") # saving derived data for analyses
 
 
 #-----abundance cutoffs of codominance-----
