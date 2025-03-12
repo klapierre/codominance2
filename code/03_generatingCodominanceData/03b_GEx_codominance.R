@@ -30,7 +30,8 @@ GEx <- read.csv('GEx_cleaned_11June2020.csv') %>%
   group_by(site, year, exage, block, trt, genus_species) %>%
   summarise(cover=mean(cover)) %>%
   ungroup() %>%
-  mutate(exp_unit=paste(site, block, trt, year, sep='::'))
+  mutate(project_name='0', community_type='0') %>% 
+  mutate(exp_unit=paste(site, project_name, community_type, block, trt, year, sep='::'))
 
   
 #############################################
@@ -104,11 +105,11 @@ Cmax <- differenceData %>%
   rename(num_codominants=num_ranks) %>%
   select(exp_unit, Cmax, num_codominants) %>%
   mutate(exp_unit2=exp_unit) %>%
-  separate(exp_unit2, into=c('site', 'block', 'trt', 'year'), sep='::') %>%
-  mutate(year=as.integer(year)) %>%
+  separate(exp_unit2, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::') %>%
+  mutate(calendar_year=as.integer(calendar_year)) %>%
   left_join(evenness) %>% 
   mutate(num_codominants_fix = ifelse(Cmax==0, richness, num_codominants)) %>% # for completely even communities (Evar=1 and Cmax=0), then set num_codominants to number of species in plot (richness) [[does not apply for GEx]]
-  select(-num_codominants) %>% 
+  select(-num_codominants, -year) %>% 
   rename(num_codominants=num_codominants_fix)
 
 codomSppList <- Cmax%>%
@@ -123,13 +124,17 @@ codomSppList <- Cmax%>%
 ##### Plots -- gut check if number of codominants is correct #####
 
 siteProjComm <- codomSppList %>%
-  select(site, block) %>%
+  select(site_code, project_name, community_type, plot_id) %>%
   unique()
 
 rankCodominance <- Cmax %>% 
   select(exp_unit, num_codominants) %>% 
   left_join(rankOrder) %>% 
-  mutate(site_proj_comm=paste(site, block, sep='_'))
+  rename(calendar_year=year,
+         plot_id=block,
+         treatment=trt,
+         site_code=site) %>% 
+  mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_'))
 
 # write.csv(rankCodominance, 'gex_codominantsRankAll_20250312.csv', row.names=F)
 
@@ -186,39 +191,39 @@ ggplot(data=codomSppList, aes(x=Cmax, y=num_codominants)) +
 #   geom_point() +
 #   xlab('Cmax') + ylab('Number of Codominants')
 # #export at 800x800
-
-
-
-#### 4 or more codom only #####
-
-##### Plots -- gut check if number of codominants is correct #####
-
-siteProjComm <- codomSppList %>%
-  select(site, block) %>%
-  unique()
-
-rankCodominance <- Cmax %>% 
-  select(exp_unit, num_codominants) %>% 
-  left_join(rankOrder) %>% 
-  mutate(site_proj_comm=paste(site, block, sep='_')) %>% 
-  filter(num_codominants>3)
-
-
-site_proj_comm_vector_4 <- unique(rankCodominance$site_proj_comm)
-
-for(PROJ in 1:length(site_proj_comm_vector_4)){
-  ggplot(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]),
-         aes(x=rank, y=relcov)) +
-    facet_wrap(~exp_unit, scales='free') +
-    geom_point() +
-    geom_line() +
-    geom_vline(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]), 
-               mapping=aes(xintercept=num_codominants+0.5), color="blue") +
-    ggtitle(site_proj_comm_vector_4[PROJ]) +
-    theme_bw()
-  
-  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\rank abundance curves\\4ormore\\",
-                         site_proj_comm_vector_4[PROJ], "_RAC.png"),
-         width = 35, height = 35, dpi = 300, units = "in", device='png')
-  
-}
+# 
+# 
+# 
+# #### 4 or more codom only #####
+# 
+# ##### Plots -- gut check if number of codominants is correct #####
+# 
+# siteProjComm <- codomSppList %>%
+#   select(site, block) %>%
+#   unique()
+# 
+# rankCodominance <- Cmax %>% 
+#   select(exp_unit, num_codominants) %>% 
+#   left_join(rankOrder) %>% 
+#   mutate(site_proj_comm=paste(site, block, sep='_')) %>% 
+#   filter(num_codominants>3)
+# 
+# 
+# site_proj_comm_vector_4 <- unique(rankCodominance$site_proj_comm)
+# 
+# for(PROJ in 1:length(site_proj_comm_vector_4)){
+#   ggplot(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]),
+#          aes(x=rank, y=relcov)) +
+#     facet_wrap(~exp_unit, scales='free') +
+#     geom_point() +
+#     geom_line() +
+#     geom_vline(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]), 
+#                mapping=aes(xintercept=num_codominants+0.5), color="blue") +
+#     ggtitle(site_proj_comm_vector_4[PROJ]) +
+#     theme_bw()
+#   
+#   ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\rank abundance curves\\4ormore\\",
+#                          site_proj_comm_vector_4[PROJ], "_RAC.png"),
+#          width = 35, height = 35, dpi = 300, units = "in", device='png')
+#   
+# }

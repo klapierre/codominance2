@@ -15,13 +15,13 @@ source("code/02_functions.R")
 # environmental data for each project: details on line 165
 # envData <- readRDS("data/envData.rds")
 
-# categorical groups of codoms: details on line 237
+# categorical groups of codoms: details on line 234
 # numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# list of all spp and ranks: details on line 254
+# list of all spp and ranks: details on line 251
 # allSppList <- readRDS("data/allSppList.rds")
 
-# list of codominant spp and ranks: details on line 264
+# list of codominant spp and ranks: details on line 261
 # codomSppList <- readRDS("data/codomSppList.rds")
 
 
@@ -60,24 +60,22 @@ unique(corre$trt_type)
 
 #gex
 
+gexEnv <- read_csv('data/gex/gex-metadata-with-other-env-layers-v2.csv') %>% 
+  rename(site_code=site)
+
 gex <- read_csv('data/GEx/gex_codominants_list_20250312.csv') %>%
   dplyr::select(-genus_species, -relcov, -rank) %>%
   unique() %>% 
-  left_join(read_csv('data/gex/gex_richEven_20240213.csv'))%>%
-  left_join(read_csv('data/gex/gex-metadata-with-other-env-layers-v2.csv')) %>%
+  left_join(read_csv('data/gex/gex_richEven_20240213.csv')) %>%
+  left_join(gexEnv) %>%
   unique() %>% 
   mutate(database='gex', 
-         project_name='NA', 
-         community_type='NA',
+         project_name='0', 
+         community_type='0',
          trt_type=ifelse(trt=='G', 'control', 'herb_removal'), 
          plot_permenant='NA', 
          MAT=bio1/10)%>%
-  rename(site_code = site,
-         plot_id = block, 
-         calendar_year = year, 
-         treatment_year = exage,
-         plot_id = block, 
-         treatment = trt, 
+  rename(treatment_year = exage,
          plot_size_m2 = PlotSize, 
          MAP = bio12,
          gamma_rich = sprich,
@@ -94,7 +92,6 @@ gex <- read_csv('data/GEx/gex_codominants_list_20250312.csv') %>%
                 Cmax, num_codominants, richness, Evar)
 
 unique(gex$trt_type)
-
 
 
 #NutNet
@@ -125,7 +122,7 @@ nutnet <- read_csv('data/NutNet/NutNet_codominants_list_plot_20250312.csv') %>%
   unique() %>%
   left_join(read_csv('data/NutNet/nutnet_plot_richEven_20240213.csv')) %>% 
   left_join(nutnetSiteInfo) %>%
-  mutate(database='nutnet', project_name='NA', community_type='NA', plot_size_m2=1, plot_permenant='y',
+  mutate(database='nutnet', project_name='0', community_type='0', plot_size_m2=1, plot_permenant='y',
          trt_type=ifelse(year_trt<1, 'control',
                   ifelse(trt=='Control', 'control',
                   ifelse(trt=='Fence', 'herb_removal', 
@@ -176,9 +173,6 @@ correAbund <- read_csv('data/CoRRE/corre_codominantsRankAll_20250312.csv') %>%
   mutate(database='corre')
 
 gexAbund <- read_csv('data/GEx/gex_codominantsRankAll_20250312.csv') %>% 
-  rename(site_code=site, treatment=trt, calendar_year=year) %>% 
-  mutate(plot_id=paste(block, treatment, sep='_'),
-         project_name=0, community_type=0) %>% 
   dplyr::select(exp_unit, site_code, project_name, plot_id, community_type, treatment, calendar_year, genus_species, relcov, rank) %>% 
   mutate(database='gex')
 
