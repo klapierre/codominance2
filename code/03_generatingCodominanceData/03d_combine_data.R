@@ -8,17 +8,19 @@
 source("code/01_library.R")
 source("code/02_functions.R")
 
-# categorical groups of codoms: details on line 220
+
+# list of all spp and ranks: details on line 158
+# expInfo <- readRDS("data/expInfo.rds")
+
+# categorical groups of codoms: details on line 232
 # numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# list of all spp and ranks: details on line 237
+# list of all spp and ranks: details on line 249
 # allSppList <- readRDS("data/allSppList.rds")
 
-# list of all spp and ranks: details on line 247
+# list of all spp and ranks: details on line 259
 # codomSppList <- readRDS("data/codomSppList.rds")
 
-# list of all spp and ranks: details on line 257
-# envData <- readRDS("data/envData.rds")
 
 
 #kim's laptop
@@ -147,10 +149,15 @@ individualExperiments <- rbind(corre, gex, nutnet)
 unique(individualExperiments$trt_type) # identify treatments
 
 expInfo <- individualExperiments %>%
-  dplyr::select(exp_unit, database, site_code, project_name, community_type, 
-                plot_size_m2, plot_number, plot_permenant, MAP, MAT, gamma_rich, anpp,
-                trt_type) %>%
-  unique()
+  mutate(trt_type2=ifelse(project_name=='IRG' & treatment=='i', 'irr',
+                   ifelse(project_name=='IRG' & treatment=='c', 'control',
+                          trt_type))) %>% 
+  dplyr::select(exp_unit, database, site_code, project_name, community_type, plot_id, treatment, trt_type2,
+                plot_size_m2, plot_number, plot_permenant, MAP, MAT, gamma_rich, anpp) %>%
+  unique() %>% 
+  rename(trt_type=trt_type2)
+
+saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
 
 
 #-----abundance cutoffs of codominance-----
@@ -209,7 +216,6 @@ filterMeanPlotLevel <- filterComplete %>%
 
 # group number of codominants into 4 categories 
 df_grouped <- filterComplete %>% 
-  left_join(expInfo) %>%  # join with experimental info to understand treatments
   mutate(group = case_when(num_codominants == 1 ~ "monodominated",
                            num_codominants == 2 ~ "codominated",
                            num_codominants == 3 ~ "tridominated",
@@ -251,13 +257,3 @@ codomSppList <- df_grouped %>%
                 group, num_group, genus_species, rank)
 
 saveRDS(codomSppList, file = "data/codomSppList.rds") # saving derived data for analyses
-
-
-
-# Export environmental data for each experiment ----------------------------------------------------------
-envData <- filterComplete %>% 
-  select(database, site_proj_comm, exp_unit, site_code, project_name, community_type, plot_id, calendar_year, treatment_year, 
-         treatment, trt_type, plot_size_m2, plot_number, plot_permenant, MAP, MAT, gamma_rich, anpp, richness, Evar) %>% 
-  unique()
-
-saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
