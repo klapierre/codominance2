@@ -154,13 +154,22 @@ unique(individualExperiments$trt_type) # identify treatments
 
 expInfo <- individualExperiments %>%
   dplyr::select(exp_unit, database, site_code, project_name, community_type, plot_id, treatment, trt_type,
-                plot_size_m2, plot_number, plot_permenant, MAP, MAT, gamma_rich, anpp) %>%
+                plot_size_m2, plot_number, plot_permenant) %>%
   unique()
 
 saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
 
 
-GISlayers <- read.csv('data/Environmental Data/Codominance_AllSiteData.csv')
+GISlayers <- read.csv('data/Environmental Data/Codominance_AllSiteData.csv') %>% 
+  dplyr::select(site_code, Latitude, Longitude, HumanDisturbance, N_Deposition) %>% 
+  unique()
+
+envData <- individualExperiments %>%
+  dplyr::select(database, site_code, project_name, community_type, MAP, MAT, gamma_rich, anpp) %>%
+  unique() %>% 
+  left_join(read.csv('data/CoRRE/CoRRE_siteLocationClimate_2021.csv')) %>% 
+  dplyr::select(-Location, -Continent, -PubLat, -PubLong, -Offset, -Tmin, -Tmax, -aridityValues, -Latitude, -Longitude) %>% 
+  left_join(GISlayers)
 
 saveRDS(GISlayers, file = "data/envData.rds") # saving derived data for analyses
 
