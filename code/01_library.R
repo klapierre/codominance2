@@ -15,5 +15,4 @@ pacman::p_load(here,
                foreign, # Q1 analysis
                Hmisc, # Q1 analysis
                nnet, # Q1 analysis
-               DescTools, # Q1 analysis
                tidyverse) 
