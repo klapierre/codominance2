@@ -19,13 +19,14 @@ source("code/02_functions.R")
  
  
  # Calculate mode ----------------------------------------------------------
+ # Note: DescTools::Mode() can return more than one value when there are ties, take max() after DescTools::Mode() to make it a scalar
  
  # calculate mode across years for all plots
  modePlot <- numCodomPlotYear %>%  
    group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
    reframe(plot_codom = Mode(num_group)) %>% # mode function must be capital here 
    ungroup()  
- 
+
  
  # calculate mode across all control plots for each experiment
  modeSite <- modePlot %>%
