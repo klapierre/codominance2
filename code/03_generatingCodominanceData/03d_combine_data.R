@@ -9,37 +9,33 @@ source("code/01_library.R")
 source("code/02_functions.R")
 
 
-# experiment information, including treatments and environmental characteristics: details on line 160
+# experiment information, including treatments and environmental characteristics: details on line 156
 # expInfo <- readRDS("data/expInfo.rds")
 
-# environmental data for each project: details on line 177
+# environmental data for each project: details on line 173
 # envData <- readRDS("data/envData.rds")
 
-# categorical groups of codoms: details on line 245
+# categorical groups of codoms: details on line 241
 # numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# list of all spp and ranks: details on line 262
+# list of all spp and ranks: details on line 258
 # allSppList <- readRDS("data/allSppList.rds")
 
-# list of codominant spp and ranks: details on line 272
+# list of codominant spp and ranks: details on line 268
 # codomSppList <- readRDS("data/codomSppList.rds")
 
 
 
-#kim's laptop
-setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance')
-
-
 # Read data ---------------------------------------------------------------
 
-corre <- read.csv('data/CoRRE/corre_codominants_list_20250312.csv') %>%
+corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/CoRRE/corre_codominants_list_20250312.csv') %>%
   dplyr::select(-block, -genus_species, -relcov, -rank) %>%
   unique() %>%
-  left_join(read_csv('data/corre/corre_richEven_20240208.csv')) %>%
-  left_join(read_csv('data/corre/corre_plot_size.csv')) %>%
-  left_join(read_csv('data/corre/corre_siteBiotic_2021.csv')) %>%
-  left_join(read_csv('data/corre/corre_siteLocationClimate_2021.csv')) %>%
-  left_join(read_csv('data/corre/corre_ExperimentInfo_2021.csv')) %>% 
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/corre/corre_richEven_20240208.csv')) %>%
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/corre/corre_plot_size.csv')) %>%
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/corre/corre_siteBiotic_2021.csv')) %>%
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/corre/corre_siteLocationClimate_2021.csv')) %>%
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/corre/corre_ExperimentInfo_2021.csv')) %>% 
   group_by(site_code, project_name, community_type, calendar_year, treatment) %>%
   mutate(plot_number=length(plot_id),
          database='corre') %>%
@@ -64,13 +60,13 @@ unique(corre$trt_type)
 
 #gex
 
-gexEnv <- read_csv('data/gex/gex-metadata-with-other-env-layers-v2.csv') %>% 
+gexEnv <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/gex/gex-metadata-with-other-env-layers-v2.csv') %>% 
   rename(site_code=site)
 
-gex <- read_csv('data/GEx/gex_codominants_list_20250312.csv') %>%
+gex <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/GEx/gex_codominants_list_20250312.csv') %>%
   dplyr::select(-genus_species, -relcov, -rank) %>%
   unique() %>% 
-  left_join(read_csv('data/gex/gex_richEven_20240213.csv')) %>%
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/gex/gex_richEven_20240213.csv')) %>%
   left_join(gexEnv) %>%
   unique() %>% 
   mutate(database='gex', 
@@ -99,7 +95,7 @@ unique(gex$trt_type)
 
 
 #NutNet
-nutnetANPP <- read_csv('data/NutNet/comb-by-plot-clim-soil-diversity_2023-11-07.csv') %>%
+nutnetANPP <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/NutNet/comb-by-plot-clim-soil-diversity_2023-11-07.csv') %>%
   filter(trt=='Control') %>%
   group_by(site_code, year) %>%
   summarise(anpp=mean((vascular_live_mass+nonvascular_live_mass), na.rm=T)) %>%
@@ -109,7 +105,7 @@ nutnetANPP <- read_csv('data/NutNet/comb-by-plot-clim-soil-diversity_2023-11-07.
   summarise(anpp=mean(anpp, na.rm=T)) %>%
   ungroup()
 
-nutnetSiteInfo <- read_csv('data/NutNet/comb-by-plot-clim-soil-diversity_2023-11-07.csv') %>%
+nutnetSiteInfo <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/NutNet/comb-by-plot-clim-soil-diversity_2023-11-07.csv') %>%
   group_by(site_code) %>%
   mutate(experiment_length=max(year_trt)) %>%
   ungroup() %>%
@@ -121,10 +117,10 @@ nutnetSiteInfo <- read_csv('data/NutNet/comb-by-plot-clim-soil-diversity_2023-11
   dplyr::select(site_code, treatment, calendar_year, MAP, MAT, gamma_rich, anpp, experiment_length, plot_number) %>%
   unique()
 
-nutnet <- read_csv('data/NutNet/NutNet_codominants_list_plot_20250312.csv') %>%
+nutnet <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/NutNet/NutNet_codominants_list_plot_20250312.csv') %>%
   dplyr::select(exp_unit, site_code, plot_id, calendar_year, year_trt, treatment, Cmax, num_codominants) %>%
   unique() %>%
-  left_join(read_csv('data/NutNet/nutnet_plot_richEven_20240213.csv')) %>% 
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/NutNet/nutnet_plot_richEven_20240213.csv')) %>% 
   left_join(nutnetSiteInfo) %>%
   mutate(database='nutnet', project_name='0', community_type='0', plot_size_m2=1, plot_permenant='y',
          trt_type=ifelse(year_trt<1, 'control',
@@ -160,14 +156,14 @@ expInfo <- individualExperiments %>%
 saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
 
 
-GISlayers <- read.csv('data/Environmental Data/Codominance_AllSiteData.csv') %>% 
+GISlayers <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/Environmental Data/Codominance_AllSiteData.csv') %>% 
   dplyr::select(site_code, Latitude, Longitude, HumanDisturbance, N_Deposition) %>% 
   unique()
 
 envData <- individualExperiments %>%
   dplyr::select(database, site_code, project_name, community_type, MAP, MAT, gamma_rich, anpp) %>%
   unique() %>% 
-  left_join(read.csv('data/CoRRE/CoRRE_siteLocationClimate_2021.csv')) %>% 
+  left_join(read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/CoRRE/CoRRE_siteLocationClimate_2021.csv')) %>% 
   dplyr::select(-Location, -Continent, -PubLat, -PubLong, -Offset, -Tmin, -Tmax, -aridityValues, -Latitude, -Longitude) %>% 
   left_join(GISlayers) %>% 
   group_by(database, site_code, project_name, community_type) %>% 
@@ -179,16 +175,16 @@ saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
 
 #-----abundance cutoffs of codominance-----
 
-correAbund <- read_csv('data/CoRRE/corre_codominantsRankAll_20250312.csv') %>% 
+correAbund <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/CoRRE/corre_codominantsRankAll_20250312.csv') %>% 
   dplyr::select(exp_unit, site_code, project_name, community_type, plot_id, treatment, calendar_year, genus_species, relcov, rank) %>% 
   filter(project_name != "NutNet") %>% #remove NutNet data from CoRRE to avoid duplicates with NutNet database
   mutate(database='corre')
 
-gexAbund <- read_csv('data/GEx/gex_codominantsRankAll_20250312.csv') %>% 
+gexAbund <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/GEx/gex_codominantsRankAll_20250312.csv') %>% 
   dplyr::select(exp_unit, site_code, project_name, community_type, plot_id, treatment, calendar_year, genus_species, relcov, rank) %>% 
   mutate(database='gex')
 
-nutnetAbund <- read_csv('data/NutNet/NutNet_codominantsRankAll_20250312.csv') %>% 
+nutnetAbund <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data/NutNet/NutNet_codominantsRankAll_20250312.csv') %>% 
   mutate(project_name=0, community_type=0) %>% 
   dplyr::select(exp_unit, site_code, project_name, community_type, plot_id, treatment, calendar_year, genus_species, relcov, rank) %>% 
   mutate(database='nutnet')

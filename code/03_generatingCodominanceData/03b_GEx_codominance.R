@@ -9,9 +9,6 @@
 source('code\\01_library.R')
 source('code\\02_functions.R')
 
-#kim's laptop
-setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx')
-
 theme_set(theme_bw())
 theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
              axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
@@ -21,7 +18,7 @@ theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)
 
 
 ###read in data
-GEx <- read.csv('GEx_cleaned_11June2020.csv') %>%
+GEx <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>%
   mutate(drop=ifelse(genus_species_use=="#N/A"|genus_species_use=="Dead unidentified"|
                      genus_species_use=="Leaf.Litter"|genus_species_use=="cactus__dead_", 1, 0)) %>%
   filter(drop!=1) %>%
@@ -50,7 +47,7 @@ evenness <- relCover %>%
   community_structure(time.var = 'year', abundance.var = 'relcov',
                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 
-# write.csv(evenness, 'gex_richEven_20240213.csv', row.names=F)
+# write.csv(evenness, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\gex_richEven_20240213.csv', row.names=F)
 
 #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
 rankOrder <- relCover %>%
@@ -118,7 +115,7 @@ codomSppList <- Cmax%>%
   filter(rank<=num_codominants)%>%
   ungroup()
 
-# write.csv(codomSppList, 'GEx_codominants_list_20250312.csv', row.names=F)
+# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\GEx_codominants_list_20250312.csv', row.names=F)
 
 
 ##### Plots -- gut check if number of codominants is correct #####
@@ -136,7 +133,7 @@ rankCodominance <- Cmax %>%
          site_code=site) %>% 
   mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_'))
 
-# write.csv(rankCodominance, 'gex_codominantsRankAll_20250312.csv', row.names=F)
+# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\gex_codominantsRankAll_20250312.csv', row.names=F)
 
 site_proj_comm_vector <- unique(rankCodominance$site_proj_comm)
 

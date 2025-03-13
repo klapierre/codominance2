@@ -9,18 +9,16 @@
 source('code\\01_library.R')
 source('code\\02_functions.R')
 
-#kim's laptop
-setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\\\nutnet')
 
 ###read in data
-nutnetSp <- read.csv('NutNet_clean_spp_names_20240710.csv', fileEncoding="latin1") %>% 
+nutnetSp <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv', fileEncoding="latin1") %>% 
   filter(!is.na(New.Species), New.Species!='sp.') %>% 
   mutate(database='NutNet', species_matched=paste(New.Genus, New.Species, sep=' ')) %>% 
   select(Taxon, species_matched) %>% 
   unique() %>% 
   mutate(species_matched=str_to_sentence(species_matched))
 
-nutnet <- read.csv('full-cover_2023-11-07.csv') %>%
+nutnet <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\full-cover_2023-11-07.csv') %>%
   rename(cover=max_cover) %>%
   filter(live==1, !(Taxon %in% c('GROUND', 'OTHER LITTER', 'OTHER ARISTIDA CONTORTA (DEAD)', 'OTHER SALSOLA KALI (DEAD)', 'OTHER TRIODIA BASEDOWII (DEAD)', 'OTHER ANIMAL DROPPINGS', 'OTHER ROCK', 'OTHER ANIMAL DIGGINGS', 'OTHER WOODY OVERSTORY', 'OTHER STANDING DEAD', 'OTHER ANIMAL DIGGING', 'OTHER SOIL BIOCRUST', 'OTHER WOOD', 'OTHER SHELL', 'DEER'))) %>%
   left_join(nutnetSp) %>% 
@@ -50,7 +48,7 @@ evennessPlot <- relCover %>%
   community_structure(time.var = 'calendar_year', abundance.var = 'relcov',
                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 
-# write.csv(evennessPlot, 'nutnet_plot_richEven_20240213.csv', row.names=F)
+# write.csv(evennessPlot, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\nutnet_plot_richEven_20240213.csv', row.names=F)
 
 #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
 rankOrder <- relCover %>%
@@ -119,7 +117,7 @@ codomSppList <- Cmax %>%
   filter(rank<=num_codominants) %>%
   ungroup()
 
-# write.csv(codomSppList, 'NutNet_codominants_list_plot_20250312.csv', row.names=F)
+# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\NutNet_codominants_list_plot_20250312.csv', row.names=F)
 
 
 
@@ -133,7 +131,7 @@ rankCodominance <- Cmax %>%
   select(exp_unit, num_codominants) %>%
   left_join(rankOrder)
 
-# write.csv(rankCodominance, 'NutNet_codominantsRankAll_20250312.csv', row.names=F)
+# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\NutNet_codominantsRankAll_20250312.csv', row.names=F)
 
 site_proj_comm_vector <- unique(rankCodominance$site_code)
 
@@ -180,7 +178,7 @@ for(PROJ in 1:length(site_proj_comm_vector)){
 #   community_structure(time.var = 'year', abundance.var = 'relcov',
 #                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 # 
-# # write.csv(evennessBlock, 'nutnet_block_richEven_20240213.csv', row.names=F)
+# # write.csv(evennessBlock, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\nutnet_block_richEven_20240213.csv', row.names=F)
 # 
 # #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
 # rankOrderBlock <- relCoverBlock %>%
@@ -245,7 +243,7 @@ for(PROJ in 1:length(site_proj_comm_vector)){
 #   filter(rank<=num_codominants) %>%
 #   ungroup()
 # 
-# # write.csv(codomSppListBlock, 'NutNet_codominants_list_block_01292021.csv', row.names=F)
+# # write.csv(codomSppListBlock, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\NutNet_codominants_list_block_01292021.csv', row.names=F)
 # 
 # 
 # 
@@ -272,7 +270,7 @@ for(PROJ in 1:length(site_proj_comm_vector)){
 #   community_structure(time.var = 'year', abundance.var = 'relcov',
 #                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 # 
-# # write.csv(evennessSite, 'nutnet_site_richEven_01292021.csv', row.names=F)
+# # write.csv(evennessSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\nutnet_site_richEven_01292021.csv', row.names=F)
 # 
 # #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
 # rankOrderSite <- relCoverSite%>%
@@ -337,7 +335,7 @@ for(PROJ in 1:length(site_proj_comm_vector)){
 #   filter(rank<=num_codominants)%>%
 #   ungroup()
 # 
-# # write.csv(codomSppListSite, 'NutNet_codominants_list_site_01292021.csv', row.names=F)
+# # write.csv(codomSppListSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\NutNet\\NutNet_codominants_list_site_01292021.csv', row.names=F)
 
 
 
