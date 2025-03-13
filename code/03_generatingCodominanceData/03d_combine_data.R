@@ -12,16 +12,16 @@ source("code/02_functions.R")
 # experiment information, including treatments and environmental characteristics: details on line 160
 # expInfo <- readRDS("data/expInfo.rds")
 
-# environmental data for each project: details on line 165
+# environmental data for each project: details on line 177
 # envData <- readRDS("data/envData.rds")
 
-# categorical groups of codoms: details on line 234
+# categorical groups of codoms: details on line 245
 # numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# list of all spp and ranks: details on line 251
+# list of all spp and ranks: details on line 262
 # allSppList <- readRDS("data/allSppList.rds")
 
-# list of codominant spp and ranks: details on line 261
+# list of codominant spp and ranks: details on line 272
 # codomSppList <- readRDS("data/codomSppList.rds")
 
 
@@ -169,9 +169,12 @@ envData <- individualExperiments %>%
   unique() %>% 
   left_join(read.csv('data/CoRRE/CoRRE_siteLocationClimate_2021.csv')) %>% 
   dplyr::select(-Location, -Continent, -PubLat, -PubLong, -Offset, -Tmin, -Tmax, -aridityValues, -Latitude, -Longitude) %>% 
-  left_join(GISlayers)
+  left_join(GISlayers) %>% 
+  group_by(database, site_code, project_name, community_type) %>% 
+  summarise_at(vars(MAP:N_Deposition), .funs=mean, na.rm=T) %>% 
+  ungroup()
 
-saveRDS(GISlayers, file = "data/envData.rds") # saving derived data for analyses
+saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
 
 
 #-----abundance cutoffs of codominance-----
