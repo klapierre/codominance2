@@ -3,7 +3,7 @@
 ##  05_Q1_site_modes.R: Calculate mode of codominance numbers in control plots and 
 ##  compare to environmental data.
 ##
-##  Authors: Ashley LaRoque, Elise Grabda (modified K. Komatsu)
+##  Authors: Ashley LaRoque, Jordan Winter, Elise Grabda (modified K. Komatsu)
 ##  Date created: 
 ################################################################################
 
