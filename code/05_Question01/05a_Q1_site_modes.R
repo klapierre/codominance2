@@ -11,22 +11,10 @@ source("code/01_library.R")
 source("code/02_functions.R")
 
 
-# # includes categorical groups 'format_data'
-#  df_grouped<- readRDS("data_formatted/df_grouped.rds")
-# 
-# # mode of codoms from 'format_data'
-#  df_mode_q1 <- readRDS("data_formatted/df_mode_q1.rds")
-#  
-# # mode combined with map data from 'map_mode'
-#  df_combined <- readRDS('data_formatted/df_combined.rds')
- 
- 
- 
  # Read data ---------------------------------------------------------------
  
  numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>% 
    separate(exp_unit, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::', remove=F) %>% 
-   left_join(readRDS("data/envData.rds")) %>% 
    left_join(readRDS("data/expInfo.rds"))
  
  
@@ -44,50 +32,50 @@ source("code/02_functions.R")
    filter(trt_type=='control') %>%  
    group_by(site_code, project_name, community_type) %>% # mode generated from these
    reframe(mode_site = Mode(plot_codom)) %>%  
-   ungroup()
+   ungroup() %>% 
+   left_join(readRDS("data/envData.rds"))
  
  # saveRDS(modeSite, file = "data/modeSite.rds")
 
 
-# boxplots for each predictor #
-ggplot(df_combined, aes(x=as.factor(mode_yr), y=abs(Latitude)))+
+ # Visualizing each predictor with boxplots ----------------------------------------------------------
+ggplot(modeSite, aes(x=as.factor(mode_site), y=abs(Latitude)))+
   geom_boxplot()+
   coord_flip()
 
-ggplot(doms, aes(x=as.factor(mode_yr), y=MAP))+
+ggplot(modeSite, aes(x=as.factor(mode_site), y=MAP))+
   geom_boxplot()+
   coord_flip()
 
-ggplot(doms, aes(x=as.factor(mode_yr), y=MAT))+
+ggplot(modeSite, aes(x=as.factor(mode_site), y=MAT))+
   geom_boxplot()+
   coord_flip()
 
-ggplot(doms, aes(x=as.factor(mode_yr), y=GDiv))+
+ggplot(modeSite, aes(x=as.factor(mode_site), y=gamma_rich))+
   geom_boxplot()+
   coord_flip()
 
-ggplot(doms, aes(x=as.factor(mode_yr), y=ANPP))+
+ggplot(modeSite, aes(x=as.factor(mode_site), y=anpp))+
   geom_boxplot()+
   coord_flip()
 
-ggplot(doms, aes(x=as.factor(mode_yr), y=HumanDisturbance))+
+ggplot(modeSite, aes(x=as.factor(mode_site), y=HumanDisturbance))+
   geom_boxplot()+
   coord_flip()
 
-ggplot(doms, aes(x=as.factor(mode_yr), y=N_Deposition))+
+ggplot(modeSite, aes(x=as.factor(mode_site), y=N_Deposition))+
   geom_boxplot()+
   coord_flip()
 
-factors <-doms[,c(10,11,12,13,14,15)]
+factors <-modeSite[,c(6:13)]
 chart.Correlation(factors, method = "spearman")
 
-summary()
 
-# Analyses #
-library(nnet, MASS)
-a <- multinom(factor(df_combined$mode_yr,
-                     levels = c(4,3,2,1)) ~ MAP+GDiv+HumanDisturbance+N_Deposition+MAP*MAT*ANPP+GDiv*N_Deposition*HumanDisturbance ,
-              data=df_combined)
+# Multinomial Analysis ----------------------------------------------------------
+
+a <- multinom(factor(modeSite$mode_site,
+                     levels = c(4,3,2,1)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
+              data=modeSite)
 stepAIC(a, direction = "backward")
 
 coef <- summary(a)$coefficients
