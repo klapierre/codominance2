@@ -1,6 +1,7 @@
 # source code for packages to install and load
 
 # install.packages("pacman")
+
 pacman::p_load(here,
                nlme,
                lsmeans,
@@ -11,6 +12,7 @@ pacman::p_load(here,
                psych, # data generation
                # TaxonStand, # data generation
                WorldFlora, # data generation
+               DescTools, # data generation
                MASS, # Q1 analysis
                foreign, # Q1 analysis
                Hmisc, # Q1 analysis
