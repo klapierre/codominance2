@@ -19,8 +19,7 @@ README file for codominance project
 | `code/04_generatingTraitData/04a_NutNet_traits.R`                 | imputing continous and gathering categorical trait data for NutNet species not in CoRRE Trait Data      |
 | `code/04_generatingTraitData/04b_allTraits_mergeFile.R`           |  merge trait data from CoRRE database and new NutNet trait data         |
 | `code/05_Question01/05_Q1_site_modes.R`                           |  calculates num codominant modes per site in control plots only         |
-| `code/05_Question01/05b_map.R`                                    |  create dataset for map generation                                      |
-| `code/05_Question01/05c_Q1_multinomial_model.R`                   |  multinomial model to determine drivers of codominance globally         |
+
 
 
 
