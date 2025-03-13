@@ -26,24 +26,28 @@ nutnet <- read.csv('full-cover_2023-11-07.csv') %>%
   left_join(nutnetSp) %>% 
   mutate(genus_species=ifelse(is.na(species_matched), Taxon, species_matched)) %>% 
   mutate(trt=as.character(ifelse(year_trt<1, 'Control', as.character(trt)))) %>% 
-  select(-Taxon, -species_matched)
+  select(-Taxon, -species_matched) %>%
+  mutate(project_name='0', community_type='0') %>% 
+  rename(plot_id=plot,
+         treatment=trt,
+         calendar_year=year) %>% 
+  mutate(exp_unit=paste(site_code, project_name, community_type, plot_id, treatment, calendar_year, sep='::')) %>% 
+  filter(cover>0)
 
 
 # -----calculate Cmax (codominance metric) - plot-level-----
 
 #calculate relative abundance
-relCover <- nutnet %>%
-  mutate(exp_unit=paste(site_code, block, plot, trt, year, sep='::')) %>% #group by plot
-  group_by(exp_unit, site_code, block, plot, trt, year) %>%
+relCover <- nutnet %>% 
+  group_by(exp_unit, site_code, project_name, community_type, plot_id, treatment, calendar_year) %>%
   summarise(totcov=sum(cover)) %>%
   ungroup() %>%
   right_join(nutnet) %>%
-  filter(cover>0) %>%
   mutate(relcov=(cover/totcov)*100) %>%
   select(-cover, -totcov)
 
 evennessPlot <- relCover %>%
-  community_structure(time.var = 'year', abundance.var = 'relcov',
+  community_structure(time.var = 'calendar_year', abundance.var = 'relcov',
                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 
 # write.csv(evennessPlot, 'nutnet_plot_richEven_20240213.csv', row.names=F)
@@ -102,8 +106,8 @@ Cmax <- differenceData %>%
   rename(num_codominants=num_ranks) %>%
   select(exp_unit, Cmax, num_codominants) %>%
   mutate(exp_unit2=exp_unit) %>%
-  separate(exp_unit2, into=c('site', 'block', 'plot', 'trt', 'year'), sep='::') %>%
-  mutate(plot=as.integer(plot), year=as.integer(year), block=as.integer(block)) %>%
+  separate(exp_unit2, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::') %>%
+  mutate(plot_id=as.integer(plot_id), calendar_year=as.integer(calendar_year)) %>%
   left_join(evennessPlot) %>% 
   mutate(num_codominants_fix = ifelse(Cmax==0, richness, num_codominants)) %>% # for completely even communities (Evar=1 and Cmax=0), then set num_codominants to number of species in plot (richness)
   select(-num_codominants) %>% 

@@ -9,7 +9,7 @@ source("code/01_library.R")
 source("code/02_functions.R")
 
 
-# experiment information, including treatments and environmental characteristics: details on line 158
+# experiment information, including treatments and environmental characteristics: details on line 160
 # expInfo <- readRDS("data/expInfo.rds")
 
 # environmental data for each project: details on line 165
@@ -52,8 +52,12 @@ corre <- read.csv('data/CoRRE/corre_codominants_list_20250312.csv') %>%
                 plot_size_m2, plot_number, plot_permenant, MAP, MAT, rrich, anpp, Cmax,
                 num_codominants, richness, Evar) %>%
   rename(gamma_rich=rrich) %>% 
-  filter(project_name != "NutNet") #remove NutNet data from CoRRE to avoid duplicates with NutNet database
-
+  filter(project_name != "NutNet") %>%  #remove NutNet data from CoRRE to avoid duplicates with NutNet database
+  mutate(trt_type2=ifelse(project_name=='IRG' & treatment=='i', 'irr',
+                   ifelse(project_name=='IRG' & treatment=='c', 'control',
+                          trt_type))) %>% 
+  dplyr::select(-trt_type) %>% 
+  rename(trt_type=trt_type2)
 
 unique(corre$trt_type)
 
@@ -112,27 +116,27 @@ nutnetSiteInfo <- read_csv('data/NutNet/comb-by-plot-clim-soil-diversity_2023-11
   group_by(site_code, year) %>%
   mutate(plot_number=length(plot)) %>%
   ungroup() %>%
-  rename(MAP=MAP_v2, MAT=MAT_v2, gamma_rich=site_richness) %>%
+  rename(MAP=MAP_v2, MAT=MAT_v2, gamma_rich=site_richness, calendar_year=year, treatment=trt) %>%
   left_join(nutnetANPP) %>%
-  dplyr::select(site_code, trt, year, MAP, MAT, gamma_rich, anpp, experiment_length, plot_number) %>%
+  dplyr::select(site_code, treatment, calendar_year, MAP, MAT, gamma_rich, anpp, experiment_length, plot_number) %>%
   unique()
 
 nutnet <- read_csv('data/NutNet/NutNet_codominants_list_plot_20250312.csv') %>%
-  dplyr::select(exp_unit, site_code, plot, year, year_trt, trt, Cmax, num_codominants) %>%
+  dplyr::select(exp_unit, site_code, plot_id, calendar_year, year_trt, treatment, Cmax, num_codominants) %>%
   unique() %>%
   left_join(read_csv('data/NutNet/nutnet_plot_richEven_20240213.csv')) %>% 
   left_join(nutnetSiteInfo) %>%
   mutate(database='nutnet', project_name='0', community_type='0', plot_size_m2=1, plot_permenant='y',
          trt_type=ifelse(year_trt<1, 'control',
-                  ifelse(trt=='Control', 'control',
-                  ifelse(trt=='Fence', 'herb_removal', 
-                  ifelse(trt=='NPK+Fence', 'mult_nutrient*herb_removal',
-                  ifelse(trt=='N', 'N',
-                  ifelse(trt=='P', 'P', 
-                  ifelse(trt=='K', 'K', 
-                  ifelse(trt=='NP', 'N*P', 
+                  ifelse(treatment=='Control', 'control',
+                  ifelse(treatment=='Fence', 'herb_removal', 
+                  ifelse(treatment=='NPK+Fence', 'mult_nutrient*herb_removal',
+                  ifelse(treatment=='N', 'N',
+                  ifelse(treatment=='P', 'P', 
+                  ifelse(treatment=='K', 'K', 
+                  ifelse(treatment=='NP', 'N*P', 
                          'mult_nutrient'))))))))) %>%
-  rename(plot_id=plot, calendar_year=year, treatment_year=year_trt, treatment=trt) %>%
+  rename(treatment_year=year_trt) %>%
   dplyr::select(database, exp_unit, site_code, project_name, community_type, plot_id,
                 calendar_year, treatment_year, treatment, trt_type, plot_size_m2, plot_number,
                 plot_permenant, MAP, MAT, gamma_rich, anpp, experiment_length, Cmax, 
@@ -149,13 +153,9 @@ individualExperiments <- rbind(corre, gex, nutnet)
 unique(individualExperiments$trt_type) # identify treatments
 
 expInfo <- individualExperiments %>%
-  mutate(trt_type2=ifelse(project_name=='IRG' & treatment=='i', 'irr',
-                   ifelse(project_name=='IRG' & treatment=='c', 'control',
-                          trt_type))) %>% 
-  dplyr::select(exp_unit, database, site_code, project_name, community_type, plot_id, treatment, trt_type2,
+  dplyr::select(exp_unit, database, site_code, project_name, community_type, plot_id, treatment, trt_type,
                 plot_size_m2, plot_number, plot_permenant, MAP, MAT, gamma_rich, anpp) %>%
-  unique() %>% 
-  rename(trt_type=trt_type2)
+  unique()
 
 saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
 
@@ -173,11 +173,10 @@ correAbund <- read_csv('data/CoRRE/corre_codominantsRankAll_20250312.csv') %>%
   mutate(database='corre')
 
 gexAbund <- read_csv('data/GEx/gex_codominantsRankAll_20250312.csv') %>% 
-  dplyr::select(exp_unit, site_code, project_name, plot_id, community_type, treatment, calendar_year, genus_species, relcov, rank) %>% 
+  dplyr::select(exp_unit, site_code, project_name, community_type, plot_id, treatment, calendar_year, genus_species, relcov, rank) %>% 
   mutate(database='gex')
 
 nutnetAbund <- read_csv('data/NutNet/NutNet_codominantsRankAll_20250312.csv') %>% 
-  rename(calendar_year=year, plot_id=plot, treatment=trt) %>% 
   mutate(project_name=0, community_type=0) %>% 
   dplyr::select(exp_unit, site_code, project_name, community_type, plot_id, treatment, calendar_year, genus_species, relcov, rank) %>% 
   mutate(database='nutnet')
