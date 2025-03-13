@@ -19,12 +19,5 @@ README file for codominance project
 | `code/04_generatingTraitData/04a_NutNet_traits.R`                 | imputing continous and gathering categorical trait data for NutNet species not in CoRRE Trait Data      |
 | `code/04_generatingTraitData/04b_allTraits_mergeFile.R`           |  merge trait data from CoRRE database and new NutNet trait data         |
 | `code/05_Question01/05_Q1_site_modes.R`                           |  calculates num codominant modes per site in control plots only         |
-
-
-
-
-| `code/analysis_q1.R`                                              | multinomial model relating \# of codominance to envrionmental variables |
-| `code/format_data.R`                                              | entry point of data formatting; combining all codominance data.         |
-| `code/map_mode.R`                                                 | generating source information for GIS                                   |
-| `code/allTraits_mergeFile.R`                                      | getting all trait data together                                         |
-| `code/sample_gawdist`                                             | sample code for calculating dendrogram trait distance `gawdist()`       |
+| `code/06_Question02/06a_Q2_generate_codom_groups.R`               |  generates lists of codominating species that most commonly occur in each experiment         |
+| `code/06_Question02/sample_gawdist`                               | sample code for calculating dendrogram trait distance `gawdist()`       |
