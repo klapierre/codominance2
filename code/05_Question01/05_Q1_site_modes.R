@@ -91,3 +91,35 @@ p_values
 exp(coef(a))
 
 head(round(fitted(a),2))
+
+
+
+# Visualizing distribution of codominance across sites ----------------------------------------------------------
+
+mapData <- modeSite %>% 
+  mutate(codom_category = ifelse(mode_site == 1, "Monodominated", 
+                          ifelse(mode_site == 2, "Codominated", 
+                          ifelse(mode_site == 3, "Tridominated", 
+                                 "Even")))) %>% 
+  filter(!is.na(N_Deposition))
+
+mapData$codom_category <- factor(mapData$codom_category, levels = c("Monodominated", "Codominated", "Tridominated", "Even"))
+
+autumnalPalette <- c("#02385A", "#A63922", "#D8B573", 'grey')
+
+mapData %>% 
+  ggplot(aes(x="", y=mode_site, fill = codom_category)) +
+  geom_bar(stat = "identity", width=1) +
+  coord_polar("y",start=0)
+
+ggplot(mapData, aes(x = codom_category, fill = codom_category)) +
+  geom_histogram(stat = "count") +
+  stat_count(binwidth = 1, 
+             geom = 'text', 
+             color = 'white', 
+             aes(label = after_stat(count)),
+             position = position_stack(vjust = 0.5))+
+  xlab("Site Dominance")+
+  ylab("Count")+
+  scale_fill_manual(values = autumnalPalette) +
+  theme(legend.position = "none")
