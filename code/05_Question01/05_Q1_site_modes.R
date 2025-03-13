@@ -19,7 +19,6 @@ source("code/02_functions.R")
  
  
  # Calculate mode ----------------------------------------------------------
- # Note: DescTools::Mode() can return more than one value when there are ties, take max() after DescTools::Mode() to make it a scalar
  
  # calculate mode across years for all plots
  modePlot <- numCodomPlotYear %>%  
