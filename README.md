@@ -15,8 +15,11 @@ README file for codominance project
 | `code/03_generatingCodominaceData/03a_CoRRE_codominance.R`        | determining codominance for CoRRE database                              |
 | `code/03_generatingCodominaceData/03b_GEx_codominance.R`          | determining codominance for GEx database                                |
 | `code/03_generatingCodominaceData/03c_NutNet_codominance.R`       | determining codominance for NutNet database                             |
-| `code/03_generatingCodominaceData/03d_combine_data.R`             | merging databases: generates codomSppList.rds and numCodomPlotYear.rds  |
+| `code/03_generatingCodominaceData/03d_combine_data.R`             | merging databases: generates allSppList.rds, codomSppList.rds, numCodomPlotYear.rds, and envData.rds  |
 | `code/04_generatingTraitData/04_NutNet_traits.R`                  | imputing continous and gathering categorical trait data for NutNet species not in CoRRE Trait Data      |
+| `code/05_Question01/05a_site_mode.R`                              |  calculates num codominant modes per site in control plots only         |
+| `code/05_Question01/05b_map.R`                                    |  create dataset for map generation                                      |
+| `code/05_Question01/05c_Q1_multinomial_model.R`                   |  multinomial model to determine drivers of codominance globally         |
 
 
 
