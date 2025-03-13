@@ -21,17 +21,17 @@ barGraphStats <- function(data, variable, byFactorNames) {
   return(finalSummaryStats)
 }  
 
-#mode
-mode <- function(codes){
-  which.max(tabulate(codes))
-}
-
-# mode (used to calculate mode for codominance groups across years)
-Mode <- function(x, na.rm = FALSE) {
-  if(na.rm){
-    x = x[!is.na(x)]
-  }
-
-  ux <- unique(x)
-  return(ux[which.max(tabulate(match(x, ux)))])
-}
+# #mode
+# mode <- function(codes){
+#   which.max(tabulate(codes))
+# }
+# 
+# # mode (used to calculate mode for codominance groups across years)
+# Mode <- function(x, na.rm = FALSE) {
+#   if(na.rm){
+#     x = x[!is.na(x)]
+#   }
+# 
+#   ux <- unique(x)
+#   return(ux[which.max(tabulate(match(x, ux)))])
+# }

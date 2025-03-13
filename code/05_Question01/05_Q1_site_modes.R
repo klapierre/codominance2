@@ -11,34 +11,89 @@ source("code/01_library.R")
 source("code/02_functions.R")
 
 
- # Read data ---------------------------------------------------------------
+# Read data ---------------------------------------------------------------
  
- numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>% 
+numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>% 
    separate(exp_unit, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::', remove=F) %>% 
    left_join(readRDS("data/expInfo.rds"))
  
+
  
- # Calculate mode ----------------------------------------------------------
+# Calculate mode across years for all plots ----------------------------------------------------------
  
- # calculate mode across years for all plots
- modePlot <- numCodomPlotYear %>%  
+# create a dataframe of codominant group for plots with a single timepoint (because can't calculate mode of singleton)
+singletonCodomPlotYear <- numCodomPlotYear %>% 
    group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-   reframe(plot_codom = Mode(num_group)) %>% # mode function must be capital here 
-   ungroup()  
-
- 
- # calculate mode across all control plots for each experiment
- modeSite <- modePlot %>%
-   filter(trt_type=='control') %>%  
-   group_by(site_code, project_name, community_type) %>% # mode generated from these
-   reframe(mode_site = Mode(plot_codom)) %>%  
+   mutate(length=length(plot_id)) %>% 
    ungroup() %>% 
-   left_join(readRDS("data/envData.rds"))
+   filter(length==1) %>% 
+   rename(plot_codom=num_group) %>% 
+   dplyr::select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, plot_codom) 
  
- # saveRDS(modeSite, file = "data/modeSite.rds")
+# calculate mode across years for all plots
+modePlotTrue <- numCodomPlotYear %>%  
+   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
+   reframe(plot_codom = DescTools::Mode(num_group)) %>% # mode function must be capital here 
+   ungroup() %>% 
+   filter(!is.na(plot_codom)) %>%
+   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
+   summarise(plot_codom=round(mean(plot_codom), digits=0), .groups='drop') %>% # calculate mean for ties
+   rbind(singletonCodomPlotYear)
+
+# for plots with singleton ties for modes, calculate mean and round to nearest integer
+multipleMode <- numCodomPlotYear %>% 
+   select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, num_group, calendar_year) %>% 
+   unique() %>% 
+   full_join(modePlotTrue) %>% 
+   filter(is.na(plot_codom)) %>%
+   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
+   summarise(plot_codom=round(mean(num_group), digits=0), .groups='drop')
+ 
+# bind dataframes for averaged ties and true modes at plot level
+modePlot <- rbind(modePlotTrue, multipleMode)
 
 
- # Visualizing each predictor with boxplots ----------------------------------------------------------
+# Calculate mode across all control plots for each experiment ------------------
+
+# create a dataframe of codominant group for experiments with a single plot (because can't calculate mode of singleton)
+singletonCodomPlot <- modePlot %>% 
+  filter(trt_type=='control') %>% 
+  group_by(database, site_code, project_name, community_type) %>% 
+  mutate(length=length(community_type)) %>% 
+  ungroup() %>% 
+  filter(length==1) %>% 
+  rename(mode_site=plot_codom) %>% 
+  dplyr::select(database, site_code, project_name, community_type, mode_site) 
+
+# calculate mode across plots for each experiment, dropping those with ties
+modeSiteTrue <- modePlot %>%
+   filter(trt_type=='control') %>%
+   group_by(database, site_code, project_name, community_type) %>% # mode generated from these
+   reframe(mode_site = DescTools::Mode(plot_codom)) %>%  
+   ungroup() %>% 
+   group_by(database, site_code, project_name, community_type) %>% 
+   summarise(mode_site=round(mean(mode_site), digits=0), .groups='drop') %>% # calculate mean for ties
+   filter(!is.na(mode_site)) %>% 
+   rbind(singletonCodomPlot)
+
+# for plots with ties for modes, calculate mean and round to nearest integer
+multipleModeProj <- modePlot %>% 
+  filter(trt_type=='control') %>% 
+  select(database, site_code, project_name, community_type, plot_id, plot_codom) %>% 
+  full_join(modeSiteTrue) %>% 
+  filter(is.na(mode_site)) %>%
+  group_by(database, site_code, project_name, community_type) %>% 
+  summarise(mode_site=round(mean(plot_codom), digits=0), .groups='drop')
+
+# bind dataframes for average ties and true modes at site level
+modeSite <- rbind(modeSiteTrue, multipleModeProj) %>% 
+  left_join(readRDS("data/envData.rds"))
+
+ 
+# saveRDS(modeSite, file = "data/modeSite.rds")
+
+
+# Visualizing each predictor with boxplots ----------------------------------------------------------
 ggplot(modeSite, aes(x=as.factor(mode_site), y=abs(Latitude)))+
   geom_boxplot()+
   coord_flip()
