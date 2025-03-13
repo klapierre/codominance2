@@ -1,6 +1,6 @@
 
 ################################################################################
-##  06_Q2_formatCodominants.R: Get codominating species from codom list.
+##  06a_Q2_formatCodominants.R: Get codominating species from codom list.
 ##
 ##  Authors: Akira Terui, Jordan Winter (modified K. Komatsu)
 ##  Date created: January 29, 2025
