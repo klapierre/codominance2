@@ -87,7 +87,8 @@ multipleModeProj <- modePlot %>%
 
 # bind dataframes for average ties and true modes at site level
 modeSite <- rbind(modeSiteTrue, multipleModeProj) %>% 
-  left_join(readRDS("data/envData.rds"))
+  left_join(readRDS("data/envData.rds")) %>% 
+  mutate(lumpMode = ifelse(mode_site == 3, 2, mode_site))
 
  
 # saveRDS(modeSite, file = "data/modeSite.rds")
@@ -128,8 +129,8 @@ chart.Correlation(factors, method = "spearman")
 
 # Multinomial Analysis ----------------------------------------------------------
 
-a <- multinom(factor(modeSite$mode_site,
-                     levels = c(4,3,2,1)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
+multinom.baseline1 <- multinom(factor(modeSite$lumpMode,
+                     levels = c(1,2,4)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
               data=modeSite)
 stepAIC(a, direction = "backward")
 
@@ -146,6 +147,105 @@ p_values
 exp(coef(a))
 
 head(round(fitted(a),2))
+
+naomit <- modeSite %>% 
+  na.omit()
+
+predict.data.map <- data.frame(tibble(
+  MAP = seq(from = min(naomit$MAP), to = max(naomit$MAP), length.out = 100), 
+  MAT = mean(naomit$MAT),
+  gamma_rich = mean(naomit$gamma_rich),
+  HumanDisturbance = mean(naomit$HumanDisturbance),
+  N_Deposition = mean(naomit$N_Deposition),
+  anpp = mean(naomit$anpp)
+))
+predict.data.mat <- data.frame(tibble(
+  MAT = seq(from = min(naomit$MAT), to = max(naomit$MAT), length.out = 100), 
+  MAP = mean(naomit$MAP),
+  gamma_rich = mean(naomit$gamma_rich),
+  HumanDisturbance = mean(naomit$HumanDisturbance),
+  N_Deposition = mean(naomit$N_Deposition),
+  anpp = mean(naomit$anpp)
+))
+predict.data.gamma <- data.frame(tibble(
+  gamma_rich = seq(from = min(naomit$gamma_rich), to = max(naomit$gamma_rich), length.out = 100), 
+  MAT = mean(naomit$MAT),
+  MAP = mean(naomit$MAP),
+  HumanDisturbance = mean(naomit$HumanDisturbance),
+  N_Deposition = mean(naomit$N_Deposition),
+  anpp = mean(naomit$anpp)
+))
+predict.data.hdisturb <- data.frame(tibble(
+  HumanDisturbance = seq(from = min(naomit$HumanDisturbance), to = max(naomit$HumanDisturbance), length.out = 100), 
+  MAT = mean(naomit$MAT),
+  gamma_rich = mean(naomit$gamma_rich),
+  MAP = mean(naomit$MAP),
+  N_Deposition = mean(naomit$N_Deposition),
+  anpp = mean(naomit$anpp)
+))
+predict.data.ndep <- data.frame(tibble(
+  N_Deposition = seq(from = min(naomit$N_Deposition), to = max(naomit$N_Deposition), length.out = 100), 
+  MAT = mean(naomit$MAT),
+  gamma_rich = mean(naomit$gamma_rich),
+  HumanDisturbance = mean(naomit$HumanDisturbance),
+  MAP = mean(naomit$MAP),
+  anpp = mean(naomit$anpp)
+))
+predict.data.anpp <- data.frame(tibble(
+  anpp = seq(from = min(naomit$anpp), to = max(naomit$anpp), length.out = 100), 
+  MAT = mean(naomit$MAT),
+  gamma_rich = mean(naomit$gamma_rich),
+  HumanDisturbance = mean(naomit$HumanDisturbance),
+  N_Deposition = mean(naomit$N_Deposition),
+  MAP = mean(naomit$MAP)
+))
+
+predict.map <- cbind(predict.data.map,data.frame(predict(multinom.baseline1, newdata = predict.data.map, type = "probs")))
+predict.mat <- cbind(predict.data.mat,data.frame(predict(multinom.baseline1, newdata = predict.data.mat, type = "probs")))
+predict.ndep <- cbind(predict.data.ndep,data.frame(predict(multinom.baseline1, newdata = predict.data.ndep, type = "probs")))
+predict.hdisturb <- cbind(predict.data.hdisturb,data.frame(predict(multinom.baseline1, newdata = predict.data.hdisturb, type = "probs")))
+predict.gdiv <- cbind(predict.data.gamma,data.frame(predict(multinom.baseline1, newdata = predict.data.gamma, type = "probs")))
+predict.anpp <- cbind(predict.data.anpp,data.frame(predict(multinom.baseline1, newdata = predict.data.anpp, type = "probs")))
+
+p.gather.map <- gather(predict.map, key= "codom", value = "Probability", 7:9)
+p.gather.mat <- gather(predict.mat, key= "codom", value = "Probability", 7:9)
+p.gather.ndep <- gather(predict.ndep, key= "codom", value = "Probability", 7:9)
+p.gather.hdisturb <- gather(predict.hdisturb, key= "codom", value = "Probability", 7:9)
+p.gather.gdiv <- gather(predict.gdiv, key= "codom", value = "Probability", 7:9)
+p.gather.anpp <- gather(predict.anpp, key= "codom", value = "Probability", 7:9)
+
+grid.arrange(
+p.gather.map %>% 
+  ggplot(aes(x= MAP, y= Probability, colour = codom))+
+  geom_line()+
+  labs(y= "Probability")+
+  theme(legend.position = "none"),
+p.gather.mat %>% 
+  ggplot(aes(x= MAT, y= Probability, colour = codom))+
+  geom_line()+
+  labs(y= "Probability")+
+  theme(legend.position = "none"),
+p.gather.ndep %>% 
+  ggplot(aes(x= N_Deposition, y= Probability, colour = codom))+
+  geom_line()+
+  labs(y= "Probability")+
+  theme(legend.position = "none"),
+p.gather.hdisturb %>% 
+  ggplot(aes(x= HumanDisturbance, y= Probability, colour = codom))+
+  geom_line()+
+  labs(y= "Probability")+
+  theme(legend.position = "none"),
+p.gather.gdiv %>% 
+  ggplot(aes(x= gamma_rich, y= Probability, colour = codom))+
+  geom_line()+
+  labs(y= "Probability")+
+  theme(legend.position = "none"),
+p.gather.anpp %>% 
+  ggplot(aes(x= anpp, y= Probability, colour = codom))+
+  geom_line()+
+  labs(y= "Probability")+
+  theme(legend.position = "none")
+)
 
 
 
