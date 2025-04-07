@@ -118,22 +118,28 @@ usite <- unique(df_codom_cl$site_proj_comm)
 df_p <- foreach(k = usite,
                 .combine = bind_rows) %do% {
                   
+                  ## select one site
                   df_codom_i <- df_codom_cl %>% 
                     filter(site_proj_comm == k) %>% 
                     mutate(pair_id = as.numeric(factor(pair_id)))
                   
+                  ## define species pool of the site
                   df_pool_i <- df_pool_cl %>% 
-                    filter(site_proj_comm == k)
+                    filter(site_proj_comm == k) %>% 
+                    arrange(species)
                   
+                  ## trait distance matrix for the site
                   md <- df_pool_i %>%
                     select(LDMC:n_fixation_type) %>% 
                     as.data.frame() %>% 
                     FD::gowdis() %>% 
                     data.matrix()
                   
+                  ## species pool
                   pool <- df_pool_i %>% 
                     pull(species)
                   
+                  ## get trait distance of the co-dominants
                   df_dist <- get_dist(data = df_codom_i,
                                       pool = pool,
                                       md = md) %>% 
