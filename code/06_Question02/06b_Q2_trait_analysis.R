@@ -84,7 +84,6 @@ if (n_all != sum(c(n_cl, n_omit)))
 
 # species pool dataframe ####
 ## use "df_pool_cl" for analysis
-
 df_pool <- df_pool0 %>% 
   rename(species = genus_species) %>% 
   left_join(df_trait,
