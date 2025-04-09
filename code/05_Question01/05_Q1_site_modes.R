@@ -132,6 +132,9 @@ chart.Correlation(factors, method = "spearman")
 multinom.baseline1 <- multinom(factor(modeSite$lumpMode,
                      levels = c(1,2,4)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
               data=modeSite)
+a <- multinom(factor(modeSite$lumpMode,
+                        levels = c(1,2,4)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
+                 data=modeSite)
 stepAIC(a, direction = "backward")
 
 coef <- summary(a)$coefficients
@@ -248,6 +251,75 @@ p.gather.anpp %>%
 )
 
 
+# code clean up  from 154 to 251----------------------------------------------------------
+
+df_om <- modeSite %>% 
+  na.omit()
+
+var <- c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp")
+
+df_seq <- foreach(v = var, .combine = bind_cols) %do% {
+  
+  df_v <- df_om %>% 
+    select(v)
+  
+  out <- seq(from = min(df_v), 
+             to = max(df_v), 
+             length.out = 100)
+  
+}
+colnames(df_seq) <- c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp")
+
+df_predicted <- foreach(v = var, .combine = bind_cols) %do% {
+ 
+   df_s <- df_seq %>% 
+    select(v)
+   
+   df_p <- cbind(df_s, 
+                 data.frame(predict(multinom.baseline1, 
+                                    newdata = df_seq, # values generated differ from previous code.... investigate
+                                    type = "probs")))
+  
+}
+
+
+df_comb <- df_predicted %>% 
+  pivot_longer(cols = starts_with("X"), names_to = "Codom", values_to = "Probability") %>%
+  mutate(Codom = case_when(Codom == "X1...2" ~ "X1",
+                           Codom == "X2...3" ~ "X2",
+                           Codom == "X4...4" ~ "X4",
+                           Codom == "X1...6" ~ "X1",
+                           Codom == "X2...7" ~ "X2",
+                           Codom == "X4...8" ~ "X4",
+                           Codom == "X1...10" ~ "X1",
+                           Codom == "X2...11" ~ "X2",
+                           Codom == "X4...12" ~ "X4",
+                           Codom == "X1...14" ~ "X1",
+                           Codom == "X2...15" ~ "X2",
+                           Codom == "X4...16" ~ "X4",
+                           Codom == "X1...18" ~ "X1",
+                           Codom == "X2...19" ~ "X2",
+                           Codom == "X4...20" ~ "X4",
+                           Codom == "X1...22" ~ "X1",
+                           Codom == "X2...23" ~ "X2",
+                           Codom == "X4...24" ~ "X4")) # needs to be redone but i have tried for hours and cannot get it to work the same
+
+df_comb <- df_comb %>% 
+  pivot_longer(cols = c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp"),
+                 names_to = "Variable", values_to = "Value")
+
+ggplot(df_comb, aes(x = Value, y = Probability, color = Codom)) +
+  geom_line() +  
+  facet_wrap(~ Variable,
+             scales = "free") +
+  labs(y = "Probability" ) 
+ # theme(legend.position = "none")
+
+p.gather.map %>% 
+  ggplot(aes(x= MAP, y= Probability, colour = codom))+
+  geom_line()+
+  labs(y= "Probability")+
+  theme(legend.position = "none")
 
 # Visualizing distribution of codominance across sites ----------------------------------------------------------
 
