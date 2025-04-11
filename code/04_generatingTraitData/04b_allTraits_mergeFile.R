@@ -11,10 +11,10 @@ library(tidyverse)
 
 
 ##### CoRRE and GEx Traits from EDI #####
-correGExTraitsContinuous <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=edi.1533.3&entityid=169fc12d10ac20b0e504f8d5ca0b8ee8') %>% 
+correGExTraitsContinuous <- read.csv('https://pasta.lternet.edu/package/data/eml/edi/1533/3/169fc12d10ac20b0e504f8d5ca0b8ee8') %>% 
   select(-family, -source, -imputation_error, -error_risk_overall, -error_risk_family, -error_risk_genus)
 
-correGExTraitsCategorical <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=edi.1533.3&entityid=5ebbc389897a6a65dd0865094a8d0ffd') %>% 
+correGExTraitsCategorical <- read.csv('https://pasta.lternet.edu/package/data/eml/edi/1533/3/5ebbc389897a6a65dd0865094a8d0ffd') %>% 
   select(-family, -source, -error_risk_overall)
 
 
