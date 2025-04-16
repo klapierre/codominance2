@@ -251,75 +251,127 @@ p.gather.anpp %>%
 )
 
 
-# code clean up  from 154 to 251----------------------------------------------------------
+# Ashley- code clean up from above----------------------------------------------------------
 
+# Generate mean (later used in model predicted data)
 df_om <- modeSite %>% 
-  na.omit()
+  na.omit() %>% 
+  mutate(MAP_mean = mean(MAP),
+         MAT_mean = mean(MAT),
+         gamma_rich_mean = mean(gamma_rich),
+         HumanDisturbance_mean = mean(HumanDisturbance),
+         N_Deposition_mean = mean(N_Deposition),
+         anpp_mean = mean(anpp)) 
 
-var <- c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp")
+# Variables of interest
+var <- c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp") 
 
+# Generate sequence of values looped for each variable 
 df_seq <- foreach(v = var, .combine = bind_cols) %do% {
   
   df_v <- df_om %>% 
     select(v)
   
-  out <- seq(from = min(df_v), 
+  out <- as_tibble(seq(from = min(df_v), 
              to = max(df_v), 
-             length.out = 100)
+             length.out = 100))
   
 }
-colnames(df_seq) <- c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp")
+# Set column names 
+colnames(df_seq) <- var
 
-df_predicted <- foreach(v = var, .combine = bind_cols) %do% {
- 
-   df_s <- df_seq %>% 
-    select(v)
-   
-   df_p <- cbind(df_s, 
-                 data.frame(predict(multinom.baseline1, 
-                                    newdata = df_seq, # values generated differ from previous code.... investigate
+# Add identifier column to link dataframes 
+df_seq <- df_seq %>% 
+  add_column(seq = seq(from = 1, to = 100, length.out = 100))
+
+# Combine dataframes- variable means and sequence 
+df_r <- df_om %>% 
+  select(ends_with("_mean")) %>% 
+  slice(1:100) %>% 
+  add_column(seq = seq(from = 1, to = 100, length.out = 100)) %>% 
+  full_join(df_seq, by = "seq") 
+
+# Mean of variables of interest
+var2 <- c("MAP_mean", "MAT_mean", "gamma_rich_mean", "HumanDisturbance_mean", "N_Deposition_mean", "anpp_mean") 
+
+# Predict data using model, sequence, and mean
+df_predicted <- foreach(v = var, 
+                        v2 = var2,
+                        .combine = bind_cols) %do% {
+ # Select variable sequence
+   df_v <- df_r %>% 
+    select(v, seq)
+ # Select means for all other variables   
+   df_m <- df_r %>% 
+     select(ends_with("_mean"), seq) %>% 
+     select(!v2)
+ # Combine data sets to predict from   
+   df_s <- df_v %>% 
+     full_join(df_m, by = "seq") %>% 
+     select(!seq) %>% 
+     rename_with(~str_remove(., '_mean'))
+ # Predict data
+   df_p <- cbind(df_s,
+                 data.frame(predict(multinom.baseline1,
+                                    newdata = df_s,
                                     type = "probs")))
-  
+ # Format for figure interpretation   
+   df_c <- df_p %>% 
+     select(v, starts_with("X")) %>% 
+     pivot_longer(cols = starts_with("X"), 
+                  names_to = "Codom", 
+                  values_to = "Probability")
 }
 
+# Clarify column names 
+df_combined <- df_predicted %>% 
+  select(Codom...2, MAP, MAT, gamma_rich, HumanDisturbance, N_Deposition, anpp,
+         starts_with("Probability")) %>% 
+  rename(Codom = Codom...2,
+         "Gamma Diversity" = gamma_rich,
+         "Human Disturbance" = HumanDisturbance, 
+         "N Deposition" = N_Deposition,
+         ANPP = anpp,
+         Prob_MAP = Probability...3,
+         Prob_MAT = Probability...6,
+         Prob_gamma = Probability...9,
+         Prob_Human = Probability...12,
+         Prob_N = Probability...15,
+         Prob_anpp = Probability...18)
 
-df_comb <- df_predicted %>% 
-  pivot_longer(cols = starts_with("X"), names_to = "Codom", values_to = "Probability") %>%
-  mutate(Codom = case_when(Codom == "X1...2" ~ "X1",
-                           Codom == "X2...3" ~ "X2",
-                           Codom == "X4...4" ~ "X4",
-                           Codom == "X1...6" ~ "X1",
-                           Codom == "X2...7" ~ "X2",
-                           Codom == "X4...8" ~ "X4",
-                           Codom == "X1...10" ~ "X1",
-                           Codom == "X2...11" ~ "X2",
-                           Codom == "X4...12" ~ "X4",
-                           Codom == "X1...14" ~ "X1",
-                           Codom == "X2...15" ~ "X2",
-                           Codom == "X4...16" ~ "X4",
-                           Codom == "X1...18" ~ "X1",
-                           Codom == "X2...19" ~ "X2",
-                           Codom == "X4...20" ~ "X4",
-                           Codom == "X1...22" ~ "X1",
-                           Codom == "X2...23" ~ "X2",
-                           Codom == "X4...24" ~ "X4")) # needs to be redone but i have tried for hours and cannot get it to work the same
+# Assign names
+prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_Human", "Prob_N", "Prob_anpp")
+named_var <- c("MAP", "MAT", "Gamma Diversity", "Human Disturbance", "N Deposition", "ANPP")
 
-df_comb <- df_comb %>% 
-  pivot_longer(cols = c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp"),
-                 names_to = "Variable", values_to = "Value")
+# Generate figures using loop across variables and their probabilities 
+output <- foreach(v = named_var, p = prob) %do% {
+    
+ # Select respective variable and its probability 
+  df_combo <- df_combined %>% 
+    select(Codom, v, p) %>% 
+    rename(v1 = v, p1 = p)
+  
+ # Generate figure 
+  fig <- ggplot(df_combo, aes(x = v1, y = p1, color = Codom)) +
+    geom_point() + # ggMarginal must use geom_point
+    labs(y = "Probability",
+         x = v) +
+    theme_minimal() +
+    theme(legend.position = "top") +
+    scale_color_manual(name = "Codominance Level", 
+                       values = c("#02385A", "#A63922", "#D8B573"))
+  
+ # Add density plot on y-axis
+  fig_q1 <- ggExtra::ggMarginal(fig, type = 'density', margins = 'y',
+                     size = 5, groupColour = TRUE, groupFill = TRUE)
+  
+} 
 
-ggplot(df_comb, aes(x = Value, y = Probability, color = Codom)) +
-  geom_line() +  
-  facet_wrap(~ Variable,
-             scales = "free") +
-  labs(y = "Probability" ) 
- # theme(legend.position = "none")
 
-p.gather.map %>% 
-  ggplot(aes(x= MAP, y= Probability, colour = codom))+
-  geom_line()+
-  labs(y= "Probability")+
-  theme(legend.position = "none")
+# Arrange each plot into grid format
+ print(grid.arrange(output[[1]], output[[2]], output[[3]], 
+                   output[[4]], output[[5]], output[[6]],
+                   nrow = 2, ncol = 3))
 
 # Visualizing distribution of codominance across sites ----------------------------------------------------------
 
