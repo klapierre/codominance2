@@ -16,11 +16,11 @@ theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)
              legend.title=element_blank(), legend.text=element_text(size=20))
 
 ###read in data
-sppNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>%
+sppNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>%
   select(genus_species, species_matched) %>%
   unique()
 
-corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>%
+corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>%
   # select(-X) %>%
   left_join(sppNames) %>%
   rename(old_name=genus_species, cover=abundance) %>%
@@ -44,7 +44,7 @@ evenness <- relCover %>%
   community_structure(time.var = 'calendar_year', abundance.var = 'relcov',
                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 
-# write.csv(evenness, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\CoRRE\\corre_richEven_20240208.csv', row.names=F)
+# write.csv(evenness, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\corre_richEven_20240208.csv', row.names=F)
 
 #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
 rankOrder <- relCover %>%
@@ -114,7 +114,7 @@ codomSppList <- Cmax %>%
   filter(rank<=num_codominants) %>%
   ungroup()
 
-# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\CoRRE\\corre_codominants_list_20250312.csv', row.names=F)
+# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\corre_codominants_list_20250312.csv', row.names=F)
 
 siteProjComm <- codomSppList %>%
   select(site_code, project_name, community_type) %>%
@@ -128,7 +128,7 @@ rankCodominance <- Cmax  %>%
   left_join(rankOrder)  %>% 
   mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_'))
 
-# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\CoRRE\\corre_codominantsRankAll_20250312.csv', row.names=F)
+# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\corre_codominantsRankAll_20250312.csv', row.names=F)
 
 site_proj_comm_vector <- unique(rankCodominance$site_proj_comm)
 
@@ -143,7 +143,7 @@ for(PROJ in 1:length(site_proj_comm_vector)){
     ggtitle(site_proj_comm_vector[PROJ]) +
     theme_bw()
   
-  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\rank abundance curves\\",
+  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\rank abundance curves\\",
                          site_proj_comm_vector[PROJ], "_RAC.png"),
          width = 35, height = 35, dpi = 300, units = "in", device='png')
   

@@ -20,5 +20,4 @@ pacman::p_load(here,
                tidyverse,
                gridExtra,
                foreach, # Q1 for each loop creation
-               ggExtra,
-               )  
+               ggExtra)  

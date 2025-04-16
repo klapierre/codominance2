@@ -250,6 +250,57 @@ p.gather.anpp %>%
   theme(legend.position = "none")
 )
 
+#### random forest modeling attempt ####
+library(randomForest)
+library(caret)
+
+predictors <- c("MAP", "MAT", "gamma_rich",
+                "anpp", "HumanDisturbance", "N_Deposition")
+
+response <- "lumpMode"
+
+select_predictors <- modeSite %>% 
+  select(MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition, lumpMode) %>% 
+  na.omit()
+
+# Split data into training (80%) and testing (20%) sets
+set.seed(120)
+trainIndex <- createDataPartition(select_predictors$lumpMode, p = 0.8, list = FALSE)
+trainData <- select_predictors[trainIndex, ]
+testData <- select_predictors[-trainIndex, ]
+
+# Train the Random Forest model
+rf_model <- randomForest(lumpMode ~ ., data = trainData[, c(response, predictors)], 
+                         ntree = 1000, importance = TRUE)
+
+# Print model summary
+print(rf_model)
+
+# Feature Importance Plot
+importance_df <- data.frame(Feature = rownames(importance(rf_model)), 
+                            Importance = importance(rf_model)[, 1])
+
+ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Variable Importance in Random Forest Model", 
+       x = "Predictor Variable", y = "Importance Score") +
+  theme_minimal()
+
+# Predict on test set
+testData$Predicted <- predict(rf_model, newdata = testData[, predictors])
+
+# Compute R-squared
+r2 <- cor(testData$lumpMode, testData$Predicted)^2
+
+# Scatter Plot: Observed vs Predicted
+ggplot(testData, aes(x = lumpMode, y = Predicted)) +
+  geom_point(alpha = 0.7, color = "darkblue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = paste("Observed vs. Predicted (R? =", round(r2, 2), ")"),
+       x = "Observed Nodule Number", y = "Predicted Nodule Number") +
+  theme_minimal()
+
 
 # Ashley- code clean up from above----------------------------------------------------------
 

@@ -13,6 +13,9 @@
 #   - for all species pairs (null distribution)
 # 3. keep how many species/sites are excluded
 
+# ISSUE:
+# Some pairs are duplicated in the outcome, look into codes to fix
+
 # setup -------------------------------------------------------------------
 
 rm(list = ls())
@@ -38,9 +41,19 @@ df_codom0 <- readRDS("data/Q2ctlGroupsSite.rds") %>%
 
 ## data for trait data
 ## - clonal data are removed because of high uncertainty
-## - photosynthetic pathway needs to be fixed - too many "uncertain"
+## - photosynthetic pathway needs to be fixed - some "uncertain"
 df_trait <- readRDS("data/allTraits.rds") %>% 
-  dplyr::select(-clonal)
+  dplyr::select(species,
+                LDMC, 
+                SLA,
+                SRL, 
+                leaf_N,
+                plant_height_vegetative,
+                seed_dry_mass,
+                growth_form, 
+                lifespan,
+                photosynthetic_pathway, 
+                n_fixation_type)
 
 ## data for species pool
 df_pool0 <- readRDS("data/allSppList.rds") %>% 
@@ -99,7 +112,8 @@ df_pool_cl <- df_pool %>%
   right_join(df_pool,
              by = "site_proj_comm") %>% 
   drop_na(LDMC:n_fixation_type) %>% 
-  select(-c(flag)) %>%
+  select(c(site_proj_comm:species, 
+           LDMC:n_fixation_type)) %>% 
   mutate(across(.cols = where(is.character),
                 .fns = function(x) {
                   if (n_distinct(x) > 2) {
@@ -146,3 +160,12 @@ df_p <- foreach(k = usite,
                   
                   return(df_dist)
                 }
+
+df_p %>% 
+  filter(p_na < 0.20) %>% 
+  ggplot(aes(x = p)) +
+  geom_histogram()
+
+# linking p to environmental factors --------------------------------------
+
+
