@@ -394,6 +394,9 @@ df_combined <- df_predicted %>%
 prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_anpp", "Prob_Human", "Prob_N")
 named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Disturbance", "N Deposition")
 
+#library("gridExtra") dont think i need these now but have to double check
+#library("grid")
+
 # Generate figures using loop across variables and their probabilities 
 output <- foreach(v = named_var, p = prob) %do% {
     
@@ -410,21 +413,29 @@ output <- foreach(v = named_var, p = prob) %do% {
     theme_bw() +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
-          legend.position = "none") +
-    scale_color_manual(#name = "",
-                       #labels = c("Monodominance", "Codominance", "Even"),
+          legend.position = "right") +
+    scale_color_manual(name = "",
+                       labels = c("Monodominance", "Codominance", "Even"),
                        values = c("#02385A", "#A63922", "#D8B573"))
+
+  # Grab legend from fig 
+  legend <- get_legend(fig) 
+  
+  # Remove legend so density can be added 
+  fig2 <- fig + theme(legend.position = "none")
   
  # Add density plot on y-axis
-  fig_q1 <- ggExtra::ggMarginal(fig, type = 'density', margins = 'y',
+  fig_q1 <- ggExtra::ggMarginal(fig2, type = 'density', margins = 'y',
                      size = 5, groupColour = TRUE, groupFill = TRUE)
   
 } 
 
+
 # Arrange each plot into grid format
-print(grid.arrange(output[[1]], output[[2]], output[[3]], 
-                   output[[4]], output[[5]], output[[6]],
-                   nrow = 2, ncol = 3))
+print(grid.arrange(output[[1]], output[[2]], output[[3]], legend,
+                   output[[4]], output[[5]], output[[6]], 
+                   nrow = 2, ncol = 4))
+
 
 # Visualizing distribution of codominance across sites ----------------------------------------------------------
 
