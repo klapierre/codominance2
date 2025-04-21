@@ -3,7 +3,7 @@
 ##  05_Q1_site_modes.R: Calculate mode of codominance numbers in control plots and 
 ##  compare to environmental data.
 ##
-##  Authors: Ashley LaRoque, Jordan Winter, Elise Grabda (modified K. Komatsu)
+##  Authors: Ashley LaRoque, Jordan Winter, Elise Grabda, Alyssa Young, Rachael Brenneman (modified K. Komatsu)
 ##  Date created: 
 ################################################################################
 
@@ -151,6 +151,8 @@ exp(coef(a))
 
 head(round(fitted(a),2))
 
+##########################################################################
+## DON'T USE THIS BLOCK OF CODE ANYMORE ####
 naomit <- modeSite %>% 
   na.omit()
 
@@ -249,60 +251,11 @@ p.gather.anpp %>%
   labs(y= "Probability")+
   theme(legend.position = "none")
 )
-
-#### random forest modeling attempt ####
-library(randomForest)
-library(caret)
-
-predictors <- c("MAP", "MAT", "gamma_rich",
-                "anpp", "HumanDisturbance", "N_Deposition")
-
-response <- "lumpMode"
-
-select_predictors <- modeSite %>% 
-  select(MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition, lumpMode) %>% 
-  na.omit()
-
-# Split data into training (80%) and testing (20%) sets
-set.seed(120)
-trainIndex <- createDataPartition(select_predictors$lumpMode, p = 0.8, list = FALSE)
-trainData <- select_predictors[trainIndex, ]
-testData <- select_predictors[-trainIndex, ]
-
-# Train the Random Forest model
-rf_model <- randomForest(lumpMode ~ ., data = trainData[, c(response, predictors)], 
-                         ntree = 1000, importance = TRUE)
-
-# Print model summary
-print(rf_model)
-
-# Feature Importance Plot
-importance_df <- data.frame(Feature = rownames(importance(rf_model)), 
-                            Importance = importance(rf_model)[, 1])
-
-ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
-  coord_flip() +
-  labs(title = "Variable Importance in Random Forest Model", 
-       x = "Predictor Variable", y = "Importance Score") +
-  theme_minimal()
-
-# Predict on test set
-testData$Predicted <- predict(rf_model, newdata = testData[, predictors])
-
-# Compute R-squared
-r2 <- cor(testData$lumpMode, testData$Predicted)^2
-
-# Scatter Plot: Observed vs Predicted
-ggplot(testData, aes(x = lumpMode, y = Predicted)) +
-  geom_point(alpha = 0.7, color = "darkblue") +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-  labs(title = paste("Observed vs. Predicted (R? =", round(r2, 2), ")"),
-       x = "Observed Nodule Number", y = "Predicted Nodule Number") +
-  theme_minimal()
+#######################################################################
 
 
-# Ashley- code clean up from above----------------------------------------------------------
+
+# Code to generate figure of multinomial model----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
 df_om <- modeSite %>% 
@@ -394,11 +347,18 @@ df_combined <- df_predicted %>%
 prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_anpp", "Prob_Human", "Prob_N")
 named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Disturbance", "N Deposition")
 
-#library("gridExtra") dont think i need these now but have to double check
-#library("grid")
+
+
+# need these packages to put legend in figure 
+library("gridExtra")
+library("grid")
+
+
+# Pre-allocate list
+output <- list()
 
 # Generate figures using loop across variables and their probabilities 
-output <- foreach(v = named_var, p = prob) %do% {
+output <- foreach(v = named_var, p = prob, .combine = 'c') %do% {
     
  # Select respective variable and its probability 
   df_combo <- df_combined %>% 
@@ -407,19 +367,20 @@ output <- foreach(v = named_var, p = prob) %do% {
   
  # Generate figure 
   fig <- ggplot(df_combo, aes(x = v1, y = p1, color = Codom)) +
-    geom_point() + # ggMarginal must use geom_point
+    geom_point(size=2) + # ggMarginal must use geom_point
     labs(y = "Probability",
          x = v) +
+    ylim(0.0,0.8) +
     theme_bw() +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
+          text = element_text(size = 25),
+          axis.text.x=element_text(size = 20),
+          axis.text.y=element_text(size = 20),
           legend.position = "right") +
     scale_color_manual(name = "",
-                       labels = c("Monodominance", "Codominance", "Even"),
+                       labels = c("Monodominated", "Codominated", "Even"),
                        values = c("#02385A", "#A63922", "#D8B573"))
-
-  # Grab legend from fig 
-  legend <- get_legend(fig) 
   
   # Remove legend so density can be added 
   fig2 <- fig + theme(legend.position = "none")
@@ -427,14 +388,114 @@ output <- foreach(v = named_var, p = prob) %do% {
  # Add density plot on y-axis
   fig_q1 <- ggExtra::ggMarginal(fig2, type = 'density', margins = 'y',
                      size = 5, groupColour = TRUE, groupFill = TRUE)
-  
+ 
+  list(fig_q1)  # Return plot as list item 
 } 
 
 
-# Arrange each plot into grid format
-print(grid.arrange(output[[1]], output[[2]], output[[3]], legend,
-                   output[[4]], output[[5]], output[[6]], 
-                   nrow = 2, ncol = 4))
+
+get_legend <- function(myplot) {
+  tmp <- ggplotGrob(myplot)
+  gtable::gtable_filter(tmp, "guide-box")
+}
+
+
+# Create standalone plot to extract legend using the first variable pair
+example_df <- df_combined %>%
+  select(Codom, all_of(named_var[1]), all_of(prob[1])) %>%
+  rename(v1 = all_of(named_var[1]), p1 = all_of(prob[1]))
+
+legend_plot <- ggplot(example_df, aes(x = v1, y = p1, color = Codom)) +
+  geom_point() +
+  theme(legend.position = "right",
+        legend.text = element_text(size = 20),    # make labels smaller
+        legend.key.size = unit(0.4, "cm"),        # make color boxes smaller
+        legend.spacing.y = unit(0.2, "cm"),        # reduce vertical spacing
+        # Make legend background clear
+        legend.background = element_rect(fill = "transparent", color = NA),
+        legend.box.background = element_rect(fill = "transparent", color = NA),
+        legend.key = element_rect(fill = "transparent", color = NA)
+           ) +
+  # make legend dots bigger
+  guides(color = guide_legend(override.aes = list(size = 5))) +
+  scale_color_manual(name = "",
+                     labels = c("Monodominated", "Codominated", "Even"),
+                     values = c("#02385A", "#A63922", "#D8B573"))
+
+legend <- get_legend(legend_plot)
+
+# Overlay the legend on the top-right of the first plot
+plot_with_legend <- grobTree(
+  output[[1]],  # already a gtable/grob from ggMarginal
+  grobTree(legend, vp = viewport(x = 0.87, y = 1.37, just = c("right", "top")))
+)
+
+# Replace only the first plot with overlaid legend
+display_output <- output
+display_output[[1]] <- plot_with_legend
+
+# Show all plots
+grid.arrange(grobs = display_output, nrow = 2, ncol = 3)
+
+
+
+
+
+
+
+
+#### random forest modeling attempt ####
+library(randomForest)
+library(caret)
+
+predictors <- c("MAP", "MAT", "gamma_rich",
+                "anpp", "HumanDisturbance", "N_Deposition")
+
+response <- "lumpMode"
+
+select_predictors <- modeSite %>% 
+  select(MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition, lumpMode) %>% 
+  na.omit()
+
+# Split data into training (80%) and testing (20%) sets
+set.seed(120)
+trainIndex <- createDataPartition(select_predictors$lumpMode, p = 0.8, list = FALSE)
+trainData <- select_predictors[trainIndex, ]
+testData <- select_predictors[-trainIndex, ]
+
+# Train the Random Forest model
+rf_model <- randomForest(lumpMode ~ ., data = trainData[, c(response, predictors)], 
+                         ntree = 1000, importance = TRUE)
+
+# Print model summary
+print(rf_model)
+
+# Feature Importance Plot
+importance_df <- data.frame(Feature = rownames(importance(rf_model)), 
+                            Importance = importance(rf_model)[, 1])
+
+ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Variable Importance in Random Forest Model", 
+       x = "Predictor Variable", y = "Importance Score") +
+  theme_minimal()
+
+# Predict on test set
+testData$Predicted <- predict(rf_model, newdata = testData[, predictors])
+
+# Compute R-squared
+r2 <- cor(testData$lumpMode, testData$Predicted)^2
+
+# Scatter Plot: Observed vs Predicted
+ggplot(testData, aes(x = lumpMode, y = Predicted)) +
+  geom_point(alpha = 0.7, color = "darkblue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = paste("Observed vs. Predicted (R? =", round(r2, 2), ")"),
+       x = "Observed", y = "Predicted") +
+  theme_minimal()
+
+
 
 
 # Visualizing distribution of codominance across sites ----------------------------------------------------------
