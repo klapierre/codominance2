@@ -391,8 +391,8 @@ df_combined <- df_predicted %>%
          Prob_anpp = Probability...18)
 
 # Assign names
-prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_Human", "Prob_N", "Prob_anpp")
-named_var <- c("MAP", "MAT", "Gamma Diversity", "Human Disturbance", "N Deposition", "ANPP")
+prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_anpp", "Prob_Human", "Prob_N")
+named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Disturbance", "N Deposition")
 
 # Generate figures using loop across variables and their probabilities 
 output <- foreach(v = named_var, p = prob) %do% {
@@ -407,9 +407,12 @@ output <- foreach(v = named_var, p = prob) %do% {
     geom_point() + # ggMarginal must use geom_point
     labs(y = "Probability",
          x = v) +
-    theme_minimal() +
-    theme(legend.position = "top") +
-    scale_color_manual(name = "Codominance Level", 
+    theme_bw() +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          legend.position = "none") +
+    scale_color_manual(#name = "",
+                       #labels = c("Monodominance", "Codominance", "Even"),
                        values = c("#02385A", "#A63922", "#D8B573"))
   
  # Add density plot on y-axis
@@ -418,9 +421,8 @@ output <- foreach(v = named_var, p = prob) %do% {
   
 } 
 
-
 # Arrange each plot into grid format
- print(grid.arrange(output[[1]], output[[2]], output[[3]], 
+print(grid.arrange(output[[1]], output[[2]], output[[3]], 
                    output[[4]], output[[5]], output[[6]],
                    nrow = 2, ncol = 3))
 
