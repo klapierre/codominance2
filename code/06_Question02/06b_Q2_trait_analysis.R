@@ -15,6 +15,8 @@
 
 # ISSUE:
 # Some pairs are duplicated in the outcome, look into codes to fix
+# - duplicates appear when there are overlaps in tri-dominant and co-dominant pairs
+# - removed duplicates with distinct() function
 
 # setup -------------------------------------------------------------------
 
@@ -153,10 +155,12 @@ df_p <- foreach(k = usite,
                     pull(species)
                   
                   ## get trait distance of the co-dominants
+                  ## use `distinct()` to remove duplicates - duplicates appear when tri-dominants and co-dominants share species
                   df_dist <- get_dist(data = df_codom_i,
                                       pool = pool,
                                       md = md) %>% 
-                    mutate(p_na = unique(df_pool_i$p_na))
+                    mutate(p_na = unique(df_pool_i$p_na)) %>% 
+                    distinct()
                   
                   return(df_dist)
                 }
@@ -168,4 +172,26 @@ df_p %>%
 
 # linking p to environmental factors --------------------------------------
 
+## p value and 
+df_m <- readRDS("data/envData.rds") %>% 
+  mutate(site_proj_comm = paste0(site_code, "_", 
+                                 project_name, "_",
+                                 community_type)) %>% 
+  right_join(df_p,
+            by = "site_proj_comm") %>% 
+  select(-Latitude, -Longitude)
 
+df_m %>% 
+  pivot_longer(cols = MAP:N_Deposition,
+               values_to = "x",
+               names_to = "var") %>% 
+  ggplot(aes(y = p,
+             x = x)) +
+  geom_point(alpha = 0.2) +
+  facet_wrap(facets =~ var, 
+             scales = "free",
+             strip.position = "bottom")  +
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.placement = "outside",
+        axis.title.x = element_blank())
