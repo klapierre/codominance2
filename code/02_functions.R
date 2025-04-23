@@ -68,7 +68,9 @@ get_dist <- function(data, pool, md) {
                          bind_cols(tibble(sp1 = m_combo[1, ],
                                           sp2 = m_combo[2, ],
                                           dist = d,
-                                          p = sapply(d, function(x) mean(x > vd)))
+                                          p = sapply(d, function(x) mean(x > vd)),
+                                          n_pool = length(vd),
+                                          n_obs = sapply(d, function(x) sum(x > vd)))
                          ) %>% 
                          return()
                      }
