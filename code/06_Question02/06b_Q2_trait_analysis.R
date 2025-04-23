@@ -55,7 +55,12 @@ df_trait <- readRDS("data/allTraits.rds") %>%
                 growth_form, 
                 lifespan,
                 photosynthetic_pathway, 
-                n_fixation_type)
+                n_fixation_type) %>% 
+  mutate(photosynthetic_pathway = case_when(photosynthetic_pathway == "uncertain" ~ "C3",
+                                            photosynthetic_pathway == "possible C4" ~ "C4",
+                                            photosynthetic_pathway == "possible CAM" ~ "CAM",
+                                            photosynthetic_pathway == "C3-C4 Intermediate" ~ "hybrid",
+                                            .default = photosynthetic_pathway))
 
 ## data for species pool
 df_pool0 <- readRDS("data/allSppList.rds") %>% 
