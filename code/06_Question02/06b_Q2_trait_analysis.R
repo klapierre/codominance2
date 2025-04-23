@@ -195,3 +195,20 @@ df_m %>%
   theme(strip.background = element_blank(),
         strip.placement = "outside",
         axis.title.x = element_blank())
+
+## quick analysis
+## next step
+## - try linear and non-linear (GAM or quadratic terms) models
+## - nested random effect of continent/eco-region
+## - include weight factor in analysis
+glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
+                   scale(anpp) + 
+                   scale(MAP) + 
+                   scale(MAT) + 
+                   scale(gamma_rich) +
+                   scale(HumanDisturbance) +
+                   scale(N_Deposition) +
+                   (1 | site_proj_comm),
+                 family = glmmTMB::betabinomial,
+                 data = df_m) %>% 
+  summary()
