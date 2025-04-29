@@ -20,4 +20,8 @@ pacman::p_load(here,
                tidyverse,
                gridExtra,
                foreach, # Q1 for each loop creation
-               ggExtra)  
+               ggExtra,
+               grid, # Q1 legend
+               gridExtra, # Q1 legend
+               patchwork # Q1 combining plots 
+               )

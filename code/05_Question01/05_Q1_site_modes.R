@@ -88,9 +88,49 @@ multipleModeProj <- modePlot %>%
 # bind dataframes for average ties and true modes at site level
 modeSite <- rbind(modeSiteTrue, multipleModeProj) %>% 
   left_join(readRDS("data/envData.rds")) %>% 
-  mutate(lumpMode = ifelse(mode_site == 3, 2, mode_site))
+  mutate(lumpMode = ifelse(mode_site == 3, 2, mode_site)) 
 
- 
+
+# Histogram- count of codom level per variable ----------------------------
+
+df_hist <- modeSite %>% 
+  select(mode_site, lumpMode, MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition) %>% 
+  pivot_longer(cols = c("MAP", "MAT", "gamma_rich", "anpp", "HumanDisturbance", "N_Deposition"), 
+               names_to = "variable", values_to = "value") %>% 
+  mutate(lumpMode = ifelse(lumpMode == 1, "Monodominated", 
+                           ifelse(lumpMode == 2, "Codominated", "Even")),
+         mode.levels = factor(lumpMode, levels = c("Monodominated", "Codominated", "Even")))
+
+mode.labs <- c("monodominated", "codominated", "even")
+names(mode.labs) <- c("Monodominated", "Codominated", "Even")
+
+# bar counts are all the same per variable ...?
+# this is at the site level 
+ggplot(df_hist1, aes(mode.levels)) +
+  geom_bar(aes(fill = mode.levels)) +
+  facet_wrap(~ variable1,
+             labeller = labeller(mode.levels = mode.labs)) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_fill_manual(name = "",
+                    labels = c("Monodominated", "Codominated", "Even"),
+                    values = c("#02385A", "#A63922", "#D8B573")) +
+  labs(x = "Codominance Level",
+       y = "Count")
+
+# histogram of variable values
+ggplot(df_hist1, aes(value)) + # df_hist comes from formatted df above 
+  geom_histogram(aes(fill = mode.levels), bins = 50) +
+  facet_wrap(~ variable1,
+             scales = "free") +
+  theme_bw() +
+  theme(legend.position = "top") +
+  scale_fill_manual(name = "",
+                    labels = c("Monodominated", "Codominated", "Even"),
+                    values = c("#02385A", "#A63922", "#D8B573")) +
+  labs(x = "Value",
+       y = "Count")
+
 # saveRDS(modeSite, file = "data/modeSite.rds")
 
 
@@ -153,104 +193,104 @@ head(round(fitted(a),2))
 
 ##########################################################################
 ## DON'T USE THIS BLOCK OF CODE ANYMORE ####
-naomit <- modeSite %>% 
-  na.omit()
-
-predict.data.map <- data.frame(tibble(
-  MAP = seq(from = min(naomit$MAP), to = max(naomit$MAP), length.out = 100), 
-  MAT = mean(naomit$MAT),
-  gamma_rich = mean(naomit$gamma_rich),
-  HumanDisturbance = mean(naomit$HumanDisturbance),
-  N_Deposition = mean(naomit$N_Deposition),
-  anpp = mean(naomit$anpp)
-))
-predict.data.mat <- data.frame(tibble(
-  MAT = seq(from = min(naomit$MAT), to = max(naomit$MAT), length.out = 100), 
-  MAP = mean(naomit$MAP),
-  gamma_rich = mean(naomit$gamma_rich),
-  HumanDisturbance = mean(naomit$HumanDisturbance),
-  N_Deposition = mean(naomit$N_Deposition),
-  anpp = mean(naomit$anpp)
-))
-predict.data.gamma <- data.frame(tibble(
-  gamma_rich = seq(from = min(naomit$gamma_rich), to = max(naomit$gamma_rich), length.out = 100), 
-  MAT = mean(naomit$MAT),
-  MAP = mean(naomit$MAP),
-  HumanDisturbance = mean(naomit$HumanDisturbance),
-  N_Deposition = mean(naomit$N_Deposition),
-  anpp = mean(naomit$anpp)
-))
-predict.data.hdisturb <- data.frame(tibble(
-  HumanDisturbance = seq(from = min(naomit$HumanDisturbance), to = max(naomit$HumanDisturbance), length.out = 100), 
-  MAT = mean(naomit$MAT),
-  gamma_rich = mean(naomit$gamma_rich),
-  MAP = mean(naomit$MAP),
-  N_Deposition = mean(naomit$N_Deposition),
-  anpp = mean(naomit$anpp)
-))
-predict.data.ndep <- data.frame(tibble(
-  N_Deposition = seq(from = min(naomit$N_Deposition), to = max(naomit$N_Deposition), length.out = 100), 
-  MAT = mean(naomit$MAT),
-  gamma_rich = mean(naomit$gamma_rich),
-  HumanDisturbance = mean(naomit$HumanDisturbance),
-  MAP = mean(naomit$MAP),
-  anpp = mean(naomit$anpp)
-))
-predict.data.anpp <- data.frame(tibble(
-  anpp = seq(from = min(naomit$anpp), to = max(naomit$anpp), length.out = 100), 
-  MAT = mean(naomit$MAT),
-  gamma_rich = mean(naomit$gamma_rich),
-  HumanDisturbance = mean(naomit$HumanDisturbance),
-  N_Deposition = mean(naomit$N_Deposition),
-  MAP = mean(naomit$MAP)
-))
-
-predict.map <- cbind(predict.data.map,data.frame(predict(multinom.baseline1, newdata = predict.data.map, type = "probs")))
-predict.mat <- cbind(predict.data.mat,data.frame(predict(multinom.baseline1, newdata = predict.data.mat, type = "probs")))
-predict.ndep <- cbind(predict.data.ndep,data.frame(predict(multinom.baseline1, newdata = predict.data.ndep, type = "probs")))
-predict.hdisturb <- cbind(predict.data.hdisturb,data.frame(predict(multinom.baseline1, newdata = predict.data.hdisturb, type = "probs")))
-predict.gdiv <- cbind(predict.data.gamma,data.frame(predict(multinom.baseline1, newdata = predict.data.gamma, type = "probs")))
-predict.anpp <- cbind(predict.data.anpp,data.frame(predict(multinom.baseline1, newdata = predict.data.anpp, type = "probs")))
-
-p.gather.map <- gather(predict.map, key= "codom", value = "Probability", 7:9)
-p.gather.mat <- gather(predict.mat, key= "codom", value = "Probability", 7:9)
-p.gather.ndep <- gather(predict.ndep, key= "codom", value = "Probability", 7:9)
-p.gather.hdisturb <- gather(predict.hdisturb, key= "codom", value = "Probability", 7:9)
-p.gather.gdiv <- gather(predict.gdiv, key= "codom", value = "Probability", 7:9)
-p.gather.anpp <- gather(predict.anpp, key= "codom", value = "Probability", 7:9)
-
-grid.arrange(
-p.gather.map %>% 
-  ggplot(aes(x= MAP, y= Probability, colour = codom))+
-  geom_line()+
-  labs(y= "Probability")+
-  theme(legend.position = "none"),
-p.gather.mat %>% 
-  ggplot(aes(x= MAT, y= Probability, colour = codom))+
-  geom_line()+
-  labs(y= "Probability")+
-  theme(legend.position = "none"),
-p.gather.ndep %>% 
-  ggplot(aes(x= N_Deposition, y= Probability, colour = codom))+
-  geom_line()+
-  labs(y= "Probability")+
-  theme(legend.position = "none"),
-p.gather.hdisturb %>% 
-  ggplot(aes(x= HumanDisturbance, y= Probability, colour = codom))+
-  geom_line()+
-  labs(y= "Probability")+
-  theme(legend.position = "none"),
-p.gather.gdiv %>% 
-  ggplot(aes(x= gamma_rich, y= Probability, colour = codom))+
-  geom_line()+
-  labs(y= "Probability")+
-  theme(legend.position = "none"),
-p.gather.anpp %>% 
-  ggplot(aes(x= anpp, y= Probability, colour = codom))+
-  geom_line()+
-  labs(y= "Probability")+
-  theme(legend.position = "none")
-)
+# naomit <- modeSite %>% 
+#   na.omit()
+# 
+# predict.data.map <- data.frame(tibble(
+#   MAP = seq(from = min(naomit$MAP), to = max(naomit$MAP), length.out = 100), 
+#   MAT = mean(naomit$MAT),
+#   gamma_rich = mean(naomit$gamma_rich),
+#   HumanDisturbance = mean(naomit$HumanDisturbance),
+#   N_Deposition = mean(naomit$N_Deposition),
+#   anpp = mean(naomit$anpp)
+# ))
+# predict.data.mat <- data.frame(tibble(
+#   MAT = seq(from = min(naomit$MAT), to = max(naomit$MAT), length.out = 100), 
+#   MAP = mean(naomit$MAP),
+#   gamma_rich = mean(naomit$gamma_rich),
+#   HumanDisturbance = mean(naomit$HumanDisturbance),
+#   N_Deposition = mean(naomit$N_Deposition),
+#   anpp = mean(naomit$anpp)
+# ))
+# predict.data.gamma <- data.frame(tibble(
+#   gamma_rich = seq(from = min(naomit$gamma_rich), to = max(naomit$gamma_rich), length.out = 100), 
+#   MAT = mean(naomit$MAT),
+#   MAP = mean(naomit$MAP),
+#   HumanDisturbance = mean(naomit$HumanDisturbance),
+#   N_Deposition = mean(naomit$N_Deposition),
+#   anpp = mean(naomit$anpp)
+# ))
+# predict.data.hdisturb <- data.frame(tibble(
+#   HumanDisturbance = seq(from = min(naomit$HumanDisturbance), to = max(naomit$HumanDisturbance), length.out = 100), 
+#   MAT = mean(naomit$MAT),
+#   gamma_rich = mean(naomit$gamma_rich),
+#   MAP = mean(naomit$MAP),
+#   N_Deposition = mean(naomit$N_Deposition),
+#   anpp = mean(naomit$anpp)
+# ))
+# predict.data.ndep <- data.frame(tibble(
+#   N_Deposition = seq(from = min(naomit$N_Deposition), to = max(naomit$N_Deposition), length.out = 100), 
+#   MAT = mean(naomit$MAT),
+#   gamma_rich = mean(naomit$gamma_rich),
+#   HumanDisturbance = mean(naomit$HumanDisturbance),
+#   MAP = mean(naomit$MAP),
+#   anpp = mean(naomit$anpp)
+# ))
+# predict.data.anpp <- data.frame(tibble(
+#   anpp = seq(from = min(naomit$anpp), to = max(naomit$anpp), length.out = 100), 
+#   MAT = mean(naomit$MAT),
+#   gamma_rich = mean(naomit$gamma_rich),
+#   HumanDisturbance = mean(naomit$HumanDisturbance),
+#   N_Deposition = mean(naomit$N_Deposition),
+#   MAP = mean(naomit$MAP)
+# ))
+# 
+# predict.map <- cbind(predict.data.map,data.frame(predict(multinom.baseline1, newdata = predict.data.map, type = "probs")))
+# predict.mat <- cbind(predict.data.mat,data.frame(predict(multinom.baseline1, newdata = predict.data.mat, type = "probs")))
+# predict.ndep <- cbind(predict.data.ndep,data.frame(predict(multinom.baseline1, newdata = predict.data.ndep, type = "probs")))
+# predict.hdisturb <- cbind(predict.data.hdisturb,data.frame(predict(multinom.baseline1, newdata = predict.data.hdisturb, type = "probs")))
+# predict.gdiv <- cbind(predict.data.gamma,data.frame(predict(multinom.baseline1, newdata = predict.data.gamma, type = "probs")))
+# predict.anpp <- cbind(predict.data.anpp,data.frame(predict(multinom.baseline1, newdata = predict.data.anpp, type = "probs")))
+# 
+# p.gather.map <- gather(predict.map, key= "codom", value = "Probability", 7:9)
+# p.gather.mat <- gather(predict.mat, key= "codom", value = "Probability", 7:9)
+# p.gather.ndep <- gather(predict.ndep, key= "codom", value = "Probability", 7:9)
+# p.gather.hdisturb <- gather(predict.hdisturb, key= "codom", value = "Probability", 7:9)
+# p.gather.gdiv <- gather(predict.gdiv, key= "codom", value = "Probability", 7:9)
+# p.gather.anpp <- gather(predict.anpp, key= "codom", value = "Probability", 7:9)
+# 
+# grid.arrange(
+# p.gather.map %>% 
+#   ggplot(aes(x= MAP, y= Probability, colour = codom))+
+#   geom_line()+
+#   labs(y= "Probability")+
+#   theme(legend.position = "none"),
+# p.gather.mat %>% 
+#   ggplot(aes(x= MAT, y= Probability, colour = codom))+
+#   geom_line()+
+#   labs(y= "Probability")+
+#   theme(legend.position = "none"),
+# p.gather.ndep %>% 
+#   ggplot(aes(x= N_Deposition, y= Probability, colour = codom))+
+#   geom_line()+
+#   labs(y= "Probability")+
+#   theme(legend.position = "none"),
+# p.gather.hdisturb %>% 
+#   ggplot(aes(x= HumanDisturbance, y= Probability, colour = codom))+
+#   geom_line()+
+#   labs(y= "Probability")+
+#   theme(legend.position = "none"),
+# p.gather.gdiv %>% 
+#   ggplot(aes(x= gamma_rich, y= Probability, colour = codom))+
+#   geom_line()+
+#   labs(y= "Probability")+
+#   theme(legend.position = "none"),
+# p.gather.anpp %>% 
+#   ggplot(aes(x= anpp, y= Probability, colour = codom))+
+#   geom_line()+
+#   labs(y= "Probability")+
+#   theme(legend.position = "none")
+# )
 #######################################################################
 
 
@@ -347,18 +387,12 @@ df_combined <- df_predicted %>%
 prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_anpp", "Prob_Human", "Prob_N")
 named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Disturbance", "N Deposition")
 
-
-
-# need these packages to put legend in figure 
-library("gridExtra")
-library("grid")
-
-
 # Pre-allocate list
 output <- list()
 
 # Generate figures using loop across variables and their probabilities 
-output <- foreach(v = named_var, p = prob, .combine = 'c') %do% {
+output <- foreach(v = named_var, p = prob, 
+                  .combine = 'c') %do% {
     
  # Select respective variable and its probability 
   df_combo <- df_combined %>% 
@@ -367,20 +401,27 @@ output <- foreach(v = named_var, p = prob, .combine = 'c') %do% {
   
  # Generate figure 
   fig <- ggplot(df_combo, aes(x = v1, y = p1, color = Codom)) +
-    geom_point(size=2) + # ggMarginal must use geom_point
+    geom_point(size = 2) + # ggMarginal must use geom_point
     labs(y = "Probability",
          x = v) +
-    ylim(0.0,0.8) +
+    ylim(0.0, 0.8) +
     theme_bw() +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
           text = element_text(size = 25),
-          axis.text.x=element_text(size = 20),
-          axis.text.y=element_text(size = 20),
-          legend.position = "right") +
+          axis.text.x = element_text(size = 20),
+          axis.text.y = element_text(size = 20),
+          legend.position = "right",
+          legend.text = element_text(size = 16),
+          legend.background = element_rect(fill = "transparent", color = NA),
+          legend.box.background = element_rect(fill = "transparent", color = NA),
+          legend.key = element_rect(fill = "transparent", color = NA)) +
     scale_color_manual(name = "",
                        labels = c("Monodominated", "Codominated", "Even"),
                        values = c("#02385A", "#A63922", "#D8B573"))
+  
+  # Extract legend
+  legend <- get_legend(fig) 
   
   # Remove legend so density can be added 
   fig2 <- fig + theme(legend.position = "none")
@@ -392,54 +433,77 @@ output <- foreach(v = named_var, p = prob, .combine = 'c') %do% {
   list(fig_q1)  # Return plot as list item 
 } 
 
-
-
-get_legend <- function(myplot) {
-  tmp <- ggplotGrob(myplot)
-  gtable::gtable_filter(tmp, "guide-box")
-}
-
+# generate and add legend
+# get_legend <- function(myplot) {
+#   tmp <- ggplotGrob(myplot)
+#   gtable::gtable_filter(tmp, "guide-box")
+# }
 
 # Create standalone plot to extract legend using the first variable pair
-example_df <- df_combined %>%
-  select(Codom, all_of(named_var[1]), all_of(prob[1])) %>%
-  rename(v1 = all_of(named_var[1]), p1 = all_of(prob[1]))
-
-legend_plot <- ggplot(example_df, aes(x = v1, y = p1, color = Codom)) +
-  geom_point() +
-  theme(legend.position = "right",
-        legend.text = element_text(size = 20),    # make labels smaller
-        legend.key.size = unit(0.4, "cm"),        # make color boxes smaller
-        legend.spacing.y = unit(0.2, "cm"),        # reduce vertical spacing
-        # Make legend background clear
-        legend.background = element_rect(fill = "transparent", color = NA),
-        legend.box.background = element_rect(fill = "transparent", color = NA),
-        legend.key = element_rect(fill = "transparent", color = NA)
-           ) +
-  # make legend dots bigger
-  guides(color = guide_legend(override.aes = list(size = 5))) +
-  scale_color_manual(name = "",
-                     labels = c("Monodominated", "Codominated", "Even"),
-                     values = c("#02385A", "#A63922", "#D8B573"))
-
-legend <- get_legend(legend_plot)
+# example_df <- df_combined %>%
+#   select(Codom, all_of(named_var[1]), all_of(prob[1])) %>%
+#   rename(v1 = all_of(named_var[1]), p1 = all_of(prob[1]))
+# 
+# legend_plot <- ggplot(example_df, aes(x = v1, y = p1, color = Codom)) +
+#   geom_point() +
+#   theme(legend.position = "right",
+#         legend.text = element_text(size = 20),    # make labels smaller
+#         legend.key.size = unit(0.4, "cm"),        # make color boxes smaller
+#         legend.spacing.y = unit(0.2, "cm"),        # reduce vertical spacing
+#         # Make legend background clear
+#         legend.background = element_rect(fill = "transparent", color = NA),
+#         legend.box.background = element_rect(fill = "transparent", color = NA),
+#         legend.key = element_rect(fill = "transparent", color = NA)
+#            ) +
+#   # make legend dots bigger
+#   guides(color = guide_legend(override.aes = list(size = 5))) +
+#   scale_color_manual(name = "",
+#                      labels = c("Monodominated", "Codominated", "Even"),
+#                      values = c("#02385A", "#A63922", "#D8B573"))
+# 
+# legend <- get_legend(legend_plot)
 
 # Overlay the legend on the top-right of the first plot
 plot_with_legend <- grobTree(
   output[[1]],  # already a gtable/grob from ggMarginal
-  grobTree(legend, vp = viewport(x = 0.87, y = 1.37, just = c("right", "top")))
-)
+  grobTree(legend, vp = viewport(x = 0.87, y = 1.33, just = c("right", "top"))))
 
 # Replace only the first plot with overlaid legend
-display_output <- output
-display_output[[1]] <- plot_with_legend
+output[[1]] <- plot_with_legend
 
 # Show all plots
-grid.arrange(grobs = display_output, nrow = 2, ncol = 3)
+grid.arrange(grobs = output, nrow = 2, ncol = 3)
 
 
+out_hist <- foreach(h = named_var) %do% {
+  
+  # Prepare dataframe
+  df_o <- df_hist1 %>%
+    select(variable1, mode.levels, value) %>% 
+    filter(variable1 == h) %>% 
+    na.omit()
+  
+  # Generate histogram
+  fig_h <- ggplot(df_o, aes(value)) +
+    geom_histogram(aes(fill = mode.levels), bins = 50) +
+    theme_bw() +
+    theme(legend.position = "none",
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          plot.margin = unit(c(0, 2.2, 0, 1.3), "cm"),
+          plot.background = element_rect(fill = "white", colour = "white")) +
+    scale_fill_manual(name = "",
+                      labels = c("Monodominated", "Codominated", "Even"),
+                      values = c("#02385A", "#A63922", "#D8B573")) +
+    labs(x = "", y = "")
+}
 
 
+print(grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
+                   output[[1]], output[[2]], output[[3]], 
+                   out_hist[[4]], out_hist[[5]], out_hist[[6]], 
+                   output[[4]], output[[5]], output[[6]], 
+                   nrow = 4, ncol = 3, heights = c(1, 2, 1, 2)))
 
 
 
