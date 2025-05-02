@@ -11,14 +11,14 @@ source('code\\02_functions.R')
 
 
 ###read in data
-nutnetSp <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv', fileEncoding="latin1") %>% 
+nutnetSp <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv', fileEncoding="latin1") %>% 
   filter(!is.na(New.Species), New.Species!='sp.') %>% 
   mutate(database='NutNet', species_matched=paste(New.Genus, New.Species, sep=' ')) %>% 
   select(Taxon, species_matched) %>% 
   unique() %>% 
   mutate(species_matched=str_to_sentence(species_matched))
 
-nutnet <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet\\full-cover_2023-11-07.csv') %>%
+nutnet <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\full-cover_2023-11-07.csv') %>%
   rename(cover=max_cover) %>%
   filter(live==1, !(Taxon %in% c('GROUND', 'OTHER LITTER', 'OTHER ARISTIDA CONTORTA (DEAD)', 'OTHER SALSOLA KALI (DEAD)', 'OTHER TRIODIA BASEDOWII (DEAD)', 'OTHER ANIMAL DROPPINGS', 'OTHER ROCK', 'OTHER ANIMAL DIGGINGS', 'OTHER WOODY OVERSTORY', 'OTHER STANDING DEAD', 'OTHER ANIMAL DIGGING', 'OTHER SOIL BIOCRUST', 'OTHER WOOD', 'OTHER SHELL', 'DEER'))) %>%
   left_join(nutnetSp) %>% 
