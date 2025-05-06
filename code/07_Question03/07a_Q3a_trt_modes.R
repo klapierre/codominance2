@@ -241,8 +241,7 @@ ggplot(subset(modeTrt, !(trt_type2 %in% c('C','fungicide','light','lime','plant_
 
 
 #faceted, only subset with higher replication across sites
-ggplot(subset(modeTrt, !(trt_type2 %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone'))), 
-       aes(x = lump_mode_trt_cat, fill = lump_mode_trt_cat)) +
+ggplot(modeTrt, aes(x = lump_mode_trt_cat, fill = lump_mode_trt_cat)) +
   geom_bar(stat = "count", position='identity') +
   # stat_count(geom = 'text', 
   #            color = 'white', 
