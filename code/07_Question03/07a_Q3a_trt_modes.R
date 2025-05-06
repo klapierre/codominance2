@@ -159,7 +159,7 @@ modeTrt$trt_type2 <- factor(modeTrt$trt_type2, levels = c('N','P','K','N*P','mul
                                                           'CO2','irr','drought','temp','other',
                                                           'multiple_trts'))
 
-
+# saveRDS(modeTrt, file = "data/modeTrt.rds")
 
 # log linear model --------------------------------------------------------------------------------
 summaryTableTrt <- xtabs(~ trt_type2 + lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
