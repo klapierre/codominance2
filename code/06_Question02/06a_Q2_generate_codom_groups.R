@@ -2,7 +2,7 @@
 ################################################################################
 ##  06a_Q2_formatCodominants.R: Get codominating species from codom list.
 ##
-##  Authors: Akira Terui, Jordan Winter (modified K. Komatsu)
+##  Authors: Akira Terui, Jordan Winter, K. Komatsu
 ##  Date created: January 29, 2025
 ################################################################################
 
