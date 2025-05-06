@@ -1,4 +1,3 @@
-
 ################################################################################
 ##  07a_Q3a_trt_modes.R: Calculate mode of codominance numbers in treatment plots and 
 ##  compare to control plots and treatment data.
@@ -10,11 +9,19 @@
 source("code/01_library.R")
 source("code/02_functions.R")
 
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=20, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=16),
+             axis.title.y=element_text(size=20, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=16),
+             plot.title = element_text(size=24, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_text(size=20), legend.text=element_text(size=20))
+
 
 # Read data ---------------------------------------------------------------
 
 #mode codominance across control plots and years at all sites
-modesite <- readRDS("data/modeSite.rds") 
+modeSite <- readRDS("data/modeSite.rds") %>% 
+  mutate(lump_mode_site=ifelse(mode_site %in% c(2,3), 2, mode_site))
 
 
 #codominance number across all plots and years
@@ -38,9 +45,18 @@ numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>%
                                          "N*herb_removal","P*herb_removal","N*irr","N*irr*temp","N*temp","mult_nutrient*temp",
                                          "N*P*temp","mult_nutrient*mow_clip","N*burn*mow_clip","N*P*burn","N*P*mow_clip",
                                          "P*burn","P*mow_clip","mult_nutrient*herb_removal","mult_nutrient*herb_removal*mow_clip",
-                                         "temp*mow_clip","drought*temp","irr*temp","mult_nutrient","N*P"),1,0)) %>%
-  mutate(trt_type2=ifelse(disturb==1, 'disturbance', ifelse(multtrts==1, 'multiple trts', trt_type)))
- 
+                                         "temp*mow_clip","drought*temp","irr*temp","C*stone","irr*plant_mani", 
+                                         'irr*plant_mani*herb_removal',"mult_nutrient*drought","mult_nutrient*fungicide",
+                                         "mult_nutrient*plant_mani","mult_nutrient*plant_mani*herb_removal","N*fungicide",
+                                         "N*P*burn*mow_clip","N*P*plant_mani","N*plant_mani","N*plant_mani*disturbance",
+                                         "N*plant_mani*mow_clip","N*stone","N*temp*fungicide","P*plant_mani","plant_mani*disturbance",
+                                         "plant_mani*herb_removal","plant_mani*mow_clip","precip_vari*temp","temp*fungicide"),1,0)) %>%
+  mutate(trt_type3=ifelse(disturb==1, 'disturbance', ifelse(multtrts==1, 'multiple_trts', trt_type))) %>%  
+  mutate(trt_type2=ifelse(trt_type3 %in% c('N','P','K','N*P','mult_nutrient','herb_removal','disturbance','CO2',
+                                           'irr','drought','temp','multiple_trts', 'control'), trt_type3, 'other')) %>%
+  filter(site_code!='ufrec.us', #filter out this site, which has no control plots
+         !grepl("plant_mani", trt_type)) #filter out any treatment that directly manipulates plant species 
+         
 #subset to final experiment year for each experiment and only treatment plots
 numCodomPlot <- numCodomPlotYear %>% 
   group_by(site_code, project_name, community_type, plot_id) %>% 
@@ -103,13 +119,13 @@ singletonCodomPlot <- numCodomPlot %>%
   mutate(length=length(community_type)) %>% 
   ungroup() %>% 
   filter(length==1) %>% 
-  rename(mode_trt=num_codominants) %>% 
+  rename(mode_trt=num_group) %>% 
   dplyr::select(database, site_code, project_name, community_type, trt_type2, mode_trt) 
 
 # calculate mode across plots for each experiment, dropping those with ties
 modeTrtTrue <- numCodomPlot %>%
    group_by(database, site_code, project_name, community_type, trt_type2) %>% # mode generated from these
-   reframe(mode_trt = DescTools::Mode(num_codominants)) %>%  
+   reframe(mode_trt = DescTools::Mode(num_group)) %>%  
    ungroup() %>% 
    group_by(database, site_code, project_name, community_type, trt_type2) %>% 
    summarise(mode_trt=round(mean(mode_trt), digits=0), .groups='drop') %>% # calculate mean for ties
@@ -118,56 +134,124 @@ modeTrtTrue <- numCodomPlot %>%
 
 # for plots with ties for modes, calculate mean and round to nearest integer
 multipleModeProj <- numCodomPlot %>% 
-  select(database, site_code, project_name, community_type, plot_id, trt_type2, num_codominants) %>% 
+  select(database, site_code, project_name, community_type, plot_id, trt_type2, num_group) %>% 
   full_join(modeTrtTrue) %>% 
   filter(is.na(mode_trt)) %>%
   group_by(database, site_code, project_name, community_type, trt_type2) %>% 
-  summarise(mode_trt=round(mean(num_codominants), digits=0), .groups='drop')
+  summarise(mode_trt=round(mean(num_group), digits=0), .groups='drop')
 
 # bind dataframes for average ties and true modes at site level
 modeTrt <- rbind(modeTrtTrue, multipleModeProj) %>% 
   left_join(readRDS("data/envData.rds")) %>% 
-  mutate(lumpMode = ifelse(mode_trt == 3, 2, mode_trt)) 
+  mutate(lump_mode_trt = ifelse(mode_trt == 3, 2, mode_trt)) %>% 
+  full_join(modeSite) %>% #join site codominance data (ctl plot data)
+  mutate(lump_mode_trt_cat = ifelse(lump_mode_trt==1, 'Monodominated',
+                             ifelse(lump_mode_trt==2, 'Codominated',
+                                    'Even')),
+         lump_mode_site_cat = ifelse(lump_mode_site==1, 'Monodominated',
+                             ifelse(lump_mode_site==2, 'Codominated',
+                                    'Even')))
+
+modeTrt$lump_mode_trt_cat <- factor(modeTrt$lump_mode_trt_cat, levels = c("Monodominated", "Codominated", "Even"))
+modeTrt$lump_mode_site_cat <- factor(modeTrt$lump_mode_site_cat, levels = c("Monodominated", "Codominated", "Even"))
+modeTrt$trt_type2 <- factor(modeTrt$trt_type2, levels = c('N','P','K','N*P','mult_nutrient',
+                                                          'herb_removal','disturbance',
+                                                          'CO2','irr','drought','temp','other',
+                                                          'multiple_trts'))
+
+# log linear model --------------------------------------------------------------------------------
+summaryTableTrt <- xtabs(~ trt_type2 + lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
+
+m1 <- loglm(~trt_type2+lump_mode_site_cat+lump_mode_trt_cat, data=summaryTableTrt) #independence
+m2 <- loglm(~lump_mode_trt_cat*(lump_mode_site_cat+trt_type2), data=summaryTableTrt) #conditional independence
+m3 <- loglm(~trt_type2+lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (trt_type2)
+m4 <- loglm(~lump_mode_site_cat+trt_type2*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (lump_mode_site_cat)
+
+anova(m1,m2,m3,m4)
+#model 4 (conditional independence - trt codom number depends on both trt type and site codom)
+
+
+# effect of site codominance
+modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
+
+print(chisq <- chisq.test(modeSiteCodom))
+# X-squared = 197.43, df = 4, p-value < 2.2e-16
+
+mosaicplot(modeSiteCodom, shade = TRUE, las=2,
+           main = "modeSiteCodom")
+
+
+# effect of treatment
+modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type2, data = modeTrt)
+
+print(chisq <- chisq.test(modeTrtCodom))
+# X-squared = 53.607, df = 24, p-value = 0.0004808
+
+mosaicplot(modeTrtCodom, shade = TRUE, las=2,
+           main = "modeTrtCodom")
 
 
 
-# Histogram- count of codom level per variable ----------------------------
-
-df_hist <- modeTrt %>% 
-  select(mode_trt, lumpMode, MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition) %>% 
-  pivot_longer(cols = c("MAP", "MAT", "gamma_rich", "anpp", "HumanDisturbance", "N_Deposition"), 
-               names_to = "variable", values_to = "value") %>% 
-  mutate(lumpMode = ifelse(lumpMode == 1, "Monodominated", 
-                    ifelse(lumpMode == 2, "Codominated", "Even")),
-         mode.levels = factor(lumpMode, levels = c("Monodominated", "Codominated", "Even")))
-
-
-# Visualizing distribution of codominance across sites ----------------------------------------------------------
-
-mapData <- modeTrt %>% 
-  mutate(codom_category = ifelse(mode_site == 1, "Monodominated", 
-                          ifelse(mode_site == 2, "Codominated", 
-                          ifelse(mode_site == 3, "Tridominated", 
-                                 "Even")))) %>% 
-  filter(!is.na(N_Deposition))
-
-mapData$codom_category <- factor(mapData$codom_category, levels = c("Monodominated", "Codominated", "Tridominated", "Even"))
+# Histogram- count of codom level per treatment and site codom number ----------------------------
 
 autumnalPalette <- c("#02385A", "#A63922", "#D8B573", 'grey')
 
-mapData %>% 
-  ggplot(aes(x="", y=mode_site, fill = codom_category)) +
-  geom_bar(stat = "identity", width=1) +
-  coord_polar("y",start=0)
-
-ggplot(mapData, aes(x = codom_category, fill = codom_category)) +
-  geom_histogram(stat = "count") +
-  stat_count(binwidth = 1, 
-             geom = 'text', 
+#overall
+ggplot(modeTrt, aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
+  geom_bar(stat = "count", position='stack') +
+  stat_count(geom = 'text', 
              color = 'white', 
              aes(label = after_stat(count)),
-             position = position_stack(vjust = 0.5))+
-  xlab("Site Dominance")+
-  ylab("Count")+
-  scale_fill_manual(values = autumnalPalette) +
-  theme(legend.position = "none")
+             position = position_stack(vjust = 0.5)) +
+  xlab("Site Dominance") +
+  ylab("Count") +
+  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance')
+
+# ggsave(file='Fig4a_trtHistograms_overall.png', width=10, height=10, units='in', dpi=300, bg='white')
+
+
+#stacked by treatment (don't run factor of trts above to get them all)
+ggplot(modeTrt, aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
+  geom_bar(stat = "count", position='stack') +
+  stat_count(geom = 'text', 
+             color = 'white', 
+             aes(label = after_stat(count)),
+             position = position_stack(vjust = 0.5)) +
+  xlab("Site Dominance") +
+  ylab("Count") +
+  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
+  facet_grid(rows='trt_type2', scales='free_y')
+
+# ggsave(file='Fig4b_trtHistograms_byTrt_all.png', width=10, height=30, units='in', dpi=300, bg='white')
+
+#stacked, only subset with higher replication across sites
+ggplot(subset(modeTrt, !(trt_type2 %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone') & !(is.na(trt_type2)))), 
+       aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
+  geom_bar(stat = "count", position='stack') +
+  stat_count(geom = 'text', 
+             color = 'white', 
+             aes(label = after_stat(count)),
+             position = position_stack(vjust = 0.5)) +
+  xlab("Site Dominance") +
+  ylab("Count") +
+  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
+  facet_grid(rows='trt_type2', scales='free_y')
+
+# ggsave(file='Fig4c_trtHistograms_byTrt_subset.png', width=10, height=30, units='in', dpi=300, bg='white')
+
+
+#faceted, only subset with higher replication across sites
+ggplot(subset(modeTrt, !(trt_type2 %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone'))), 
+       aes(x = lump_mode_trt_cat, fill = lump_mode_trt_cat)) +
+  geom_bar(stat = "count", position='identity') +
+  # stat_count(geom = 'text', 
+  #            color = 'white', 
+  #            aes(label = after_stat(count)),
+  #            position = position_stack(vjust = 0.5)) +
+  xlab("Treatment Dominance") +
+  ylab("Count") +
+  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
+  theme(legend.position='none') +
+  facet_grid(rows=vars(trt_type2), cols=vars(lump_mode_site_cat), scales='free_y') 
+
+# ggsave(file='Fig4d_trtHistograms_byTrt_facet.png', width=30, height=30, units='in', dpi=300, bg='white')
