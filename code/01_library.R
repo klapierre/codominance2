@@ -23,5 +23,5 @@ pacman::p_load(here,
                ggExtra,
                grid, # Q1 legend
                gridExtra, # Q1 legend
-               patchwork # Q1 combining plots 
-               )
+               patchwork, # Q1 combining plots 
+               sf)
