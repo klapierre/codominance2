@@ -191,7 +191,6 @@ mosaicplot(modeTrtCodom, shade = TRUE, las=2,
            main = "modeTrtCodom")
 
 
-
 # Histogram- count of codom level per treatment and site codom number ----------------------------
 
 autumnalPalette <- c("#02385A", "#A63922", "#D8B573", 'grey')
