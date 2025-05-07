@@ -9,19 +9,19 @@ source("code/01_library.R")
 source("code/02_functions.R")
 
 
-# experiment information, including treatments and environmental characteristics: details on line 179
+# experiment information, including treatments and environmental characteristics: details on line 181
 # expInfo <- readRDS("data/expInfo.rds")
 
-# environmental data for each project: details on line 196
+# environmental data for each project: details on line 198
 # envData <- readRDS("data/envData.rds")
 
-# categorical groups of codoms: details on line 267
+# categorical groups of codoms: details on line 269
 # numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# list of all spp and ranks: details on line 284
+# list of all spp and ranks: details on line 286
 # allSppList <- readRDS("data/allSppList.rds")
 
-# list of codominant spp and ranks: details on line 294
+# list of codominant spp and ranks: details on line 296
 # codomSppList <- readRDS("data/codomSppList.rds")
 
 
@@ -171,8 +171,10 @@ expInfo <- individualExperiments %>%
   mutate(trt_type3=ifelse(disturb==1, 'disturbance', ifelse(multtrts==1, 'multiple_trts', trt_type))) %>%  
   mutate(trt_type2=ifelse(trt_type3 %in% c('N','P','K','N*P','mult_nutrient','herb_removal','disturbance','CO2',
                                            'irr','drought','temp','multiple_trts', 'control'), trt_type3, 'other')) %>%
-  filter(!grepl("plant_mani", trt_type)) %>%  #filter out any treatment that directly manipulates plant species 
-  dplyr::select(exp_unit, database, site_code, project_name, community_type, plot_id, treatment, trt_type2,
+  filter(!grepl("plant_mani", trt_type)) %>%  #filter out any treatment that directly manipulates plant species
+  dplyr::select(-trt_type) %>% 
+  rename(trt_type=trt_type2) %>% 
+  dplyr::select(exp_unit, database, site_code, project_name, community_type, plot_id, treatment, trt_type,
                 plot_size_m2, plot_number, plot_permenant) %>%
   unique()
 
