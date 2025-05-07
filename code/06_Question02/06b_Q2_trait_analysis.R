@@ -177,21 +177,35 @@ df_p %>%
 
 # linking p to environmental factors --------------------------------------
 
-## p value and 
-df_m <- readRDS("data/envData.rds") %>% 
+## p value and environmental factors in sf
+sf_m <- readRDS("data/envData.rds") %>% 
   mutate(site_proj_comm = paste0(site_code, "_", 
                                  project_name, "_",
                                  community_type)) %>% 
   right_join(df_p,
             by = "site_proj_comm") %>% 
-  select(-Latitude, -Longitude)
+  st_as_sf(coords = c("Longitude", "Latitude"),
+           crs= 4326)
+
+## sf continent data
+sf_countries <- rnaturalearth::ne_countries(scale = "medium", 
+                                            returnclass = "sf") %>% 
+  dplyr::select(continent) %>% 
+  st_make_valid()
+
+df_m <- st_join(sf_m, 
+                sf_countries,
+                join = st_nearest_feature) %>% 
+  as_tibble() %>% 
+  dplyr::select(-geometry)
 
 df_m %>% 
   pivot_longer(cols = MAP:N_Deposition,
                values_to = "x",
                names_to = "var") %>% 
   ggplot(aes(y = p,
-             x = x)) +
+             x = x,
+             color = continent)) +
   geom_point(alpha = 0.2) +
   facet_wrap(facets =~ var, 
              scales = "free",
@@ -207,7 +221,6 @@ df_m %>%
 ## - nested random effect of continent/eco-region
 ## - include weight factor in analysis
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
-                   scale(anpp) + 
                    scale(MAP) + 
                    scale(MAT) + 
                    scale(gamma_rich) +
@@ -215,5 +228,16 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
                    scale(N_Deposition) +
                    (1 | site_proj_comm),
                  family = glmmTMB::betabinomial,
-                 data = df_m) %>% 
+                 data = df_m, 
+                 weights = 1 - p_na) %>% 
   summary()
+
+# mgcv::gam(cbind(n_obs, n_pool - n_obs) ~ 
+#             s(MAP) +
+#             s(MAT) +
+#             s(gamma_rich) +
+#             s(HumanDisturbance) +
+#             s(N_Deposition) +
+#             s(site_proj_comm, bs = "re"), 
+#           data = df_m,
+#           family = "binomial")
