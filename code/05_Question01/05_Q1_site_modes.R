@@ -99,14 +99,20 @@ df_hist <- modeSite %>%
                names_to = "variable", values_to = "value") %>% 
   mutate(lumpMode = ifelse(lumpMode == 1, "Monodominated", 
                            ifelse(lumpMode == 2, "Codominated", "Even")),
-         mode.levels = factor(lumpMode, levels = c("Monodominated", "Codominated", "Even")))
+         mode.levels = factor(lumpMode, levels = c("Monodominated", "Codominated", "Even")),
+         variable1 = case_when(variable == "MAP" ~ "MAP",
+                               variable == "MAT" ~ "MAT",
+                               variable == "gamma_rich" ~ "Gamma Diversity",
+                               variable == "anpp" ~ "ANPP",
+                               variable == "HumanDisturbance" ~ "Human Disturbance",
+                               variable == "N_Deposition" ~ "N Deposition")) 
 
 mode.labs <- c("monodominated", "codominated", "even")
 names(mode.labs) <- c("Monodominated", "Codominated", "Even")
 
 # bar counts are all the same per variable ...?
 # this is at the site level 
-ggplot(df_hist1, aes(mode.levels)) +
+ggplot(df_hist, aes(mode.levels)) +
   geom_bar(aes(fill = mode.levels)) +
   facet_wrap(~ variable1,
              labeller = labeller(mode.levels = mode.labs)) +
@@ -119,7 +125,7 @@ ggplot(df_hist1, aes(mode.levels)) +
        y = "Count")
 
 # histogram of variable values
-ggplot(df_hist1, aes(value)) + # df_hist comes from formatted df above 
+ggplot(df_hist, aes(value)) + # df_hist comes from formatted df above 
   geom_histogram(aes(fill = mode.levels), bins = 50) +
   facet_wrap(~ variable1,
              scales = "free") +
@@ -463,10 +469,11 @@ output <- foreach(v = named_var, p = prob,
 # 
 # legend <- get_legend(legend_plot)
 
+
 # Overlay the legend on the top-right of the first plot
 plot_with_legend <- grobTree(
   output[[1]],  # already a gtable/grob from ggMarginal
-  grobTree(legend, vp = viewport(x = 0.87, y = 1.33, just = c("right", "top"))))
+  grobTree(legend, vp = viewport(x = 1.16, y = 1.39, just = c("right", "top"))))
 
 # Replace only the first plot with overlaid legend
 output[[1]] <- plot_with_legend
@@ -478,7 +485,7 @@ grid.arrange(grobs = output, nrow = 2, ncol = 3)
 out_hist <- foreach(h = named_var) %do% {
   
   # Prepare dataframe
-  df_o <- df_hist1 %>%
+  df_o <- df_hist %>%
     select(variable1, mode.levels, value) %>% 
     filter(variable1 == h) %>% 
     na.omit()
