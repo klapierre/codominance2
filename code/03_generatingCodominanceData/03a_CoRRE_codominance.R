@@ -16,11 +16,11 @@ theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)
              legend.title=element_blank(), legend.text=element_text(size=20))
 
 ###read in data
-sppNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>%
+sppNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>%
   select(genus_species, species_matched) %>%
   unique()
 
-corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>%
+corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>%
   # select(-X) %>%
   left_join(sppNames) %>%
   rename(old_name=genus_species, cover=abundance) %>%
