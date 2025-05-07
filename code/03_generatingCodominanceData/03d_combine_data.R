@@ -292,4 +292,3 @@ codomSppList <- df_grouped %>%
                 group, num_group, genus_species, rank)
 
 saveRDS(codomSppList, file = "data/codomSppList.rds") # saving derived data for analyses
-
