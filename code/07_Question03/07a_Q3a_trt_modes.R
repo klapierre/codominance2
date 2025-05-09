@@ -28,32 +28,6 @@ modeSite <- readRDS("data/modeSite.rds") %>%
 numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>% 
   separate(exp_unit, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::', remove=F) %>% 
   left_join(readRDS("data/expInfo.rds")) %>% 
-  #create trt_type2 variable that groups some of the most common treatments together
-  mutate(disturb=ifelse(trt_type %in% c("mow_clip","burn","burn*graze","disturbance","burn*mow_clip"), 1, 0), #unify codes across datasets
-         # tCO2=ifelse(trt_type %in% c("CO2"), 1, 0),
-         drought=ifelse(trt_type %in% c("drought"), 1, 0),
-         # therb_removal=ifelse(trt_type %in% c("herb_removal"), 1, 0),
-         irg=ifelse(trt_type %in% c("irr"), 1, 0),
-         # ttemp=ifelse(trt_type %in% c("temp"), 1, 0),
-         # tn=ifelse(trt_type %in% c("N"), 1, 0),
-         # tp=ifelse(trt_type %in% c("P"), 1, 0),
-         multtrts=ifelse(trt_type %in% c("CO2*temp", "burn*graze","burn*mow_clip","drought*CO2*temp","drought*mow_clip",
-                                         "drought*temp*mow_clip","herb_removal*mow_clip","irr*CO2","irr*CO2*temp","irr*mow_clip",
-                                         "irr*herb_removal","irr*temp*mow_clip","N*CO2*temp","N*irr*CO2","N*irr*mow_clip",
-                                         "N*P*burn*graze", "mult_nutrient*irr","N*irr*CO2*temp", "N*CO2","N*mow_clip","N*burn",
-                                         "N*burn*graze","N*disturbance","P*burn*graze","P*burn*mow_clip","N*drought",
-                                         "N*herb_removal","P*herb_removal","N*irr","N*irr*temp","N*temp","mult_nutrient*temp",
-                                         "N*P*temp","mult_nutrient*mow_clip","N*burn*mow_clip","N*P*burn","N*P*mow_clip",
-                                         "P*burn","P*mow_clip","mult_nutrient*herb_removal","mult_nutrient*herb_removal*mow_clip",
-                                         "temp*mow_clip","drought*temp","irr*temp","C*stone","irr*plant_mani", 
-                                         'irr*plant_mani*herb_removal',"mult_nutrient*drought","mult_nutrient*fungicide",
-                                         "mult_nutrient*plant_mani","mult_nutrient*plant_mani*herb_removal","N*fungicide",
-                                         "N*P*burn*mow_clip","N*P*plant_mani","N*plant_mani","N*plant_mani*disturbance",
-                                         "N*plant_mani*mow_clip","N*stone","N*temp*fungicide","P*plant_mani","plant_mani*disturbance",
-                                         "plant_mani*herb_removal","plant_mani*mow_clip","precip_vari*temp","temp*fungicide"),1,0)) %>%
-  mutate(trt_type3=ifelse(disturb==1, 'disturbance', ifelse(multtrts==1, 'multiple_trts', trt_type))) %>%  
-  mutate(trt_type2=ifelse(trt_type3 %in% c('N','P','K','N*P','mult_nutrient','herb_removal','disturbance','CO2',
-                                           'irr','drought','temp','multiple_trts', 'control'), trt_type3, 'other')) %>%
   filter(site_code!='ufrec.us', #filter out this site, which has no control plots
          !grepl("plant_mani", trt_type)) #filter out any treatment that directly manipulates plant species 
          
@@ -66,7 +40,7 @@ numCodomPlot <- numCodomPlotYear %>%
   group_by(site_code, project_name, community_type, plot_id) %>% 
   filter(calendar_year==max(calendar_year)) %>% 
   ungroup() %>% 
-  filter(trt_type2!='control')
+  filter(trt_type!='control')
 
 # nutnetCtlOnly <- numCodomPlot %>% 
 #   filter(database=='nutnet') %>% 
@@ -81,30 +55,30 @@ numCodomPlot <- numCodomPlotYear %>%
 
 # create a dataframe of codominant group for plots with a single treatment (because can't calculate mode of singleton)
 singletonCodomPlotYear <- numCodomPlot %>%
-  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>%
   mutate(length=length(plot_id)) %>%
   ungroup() %>%
   filter(length==1) %>%
   rename(plot_codom=num_group) %>%
-  dplyr::select(database, site_code, project_name, community_type, plot_id, trt_type2, treatment, plot_codom)
+  dplyr::select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, plot_codom)
 
 # calculate mode across years for all plots
 modePlotTrue <- numCodomPlot %>%
-  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>%
   reframe(plot_codom = DescTools::Mode(num_group)) %>% # mode function must be capital here
   ungroup() %>%
   filter(!is.na(plot_codom)) %>%
-  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>%
   summarise(plot_codom=round(mean(plot_codom), digits=0), .groups='drop') %>% # calculate mean for ties
   rbind(singletonCodomPlotYear)
 
 # for plots with singleton ties for modes, calculate mean and round to nearest integer
 multipleMode <- numCodomPlot %>%
-  select(database, site_code, project_name, community_type, plot_id, trt_type2, treatment, num_group, calendar_year) %>%
+  select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, num_group, calendar_year) %>%
   unique() %>%
   full_join(modePlotTrue) %>%
   filter(is.na(plot_codom)) %>%
-  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>%
   summarise(plot_codom=round(mean(num_group), digits=0), .groups='drop')
 
 # bind dataframes for averaged ties and true modes at plot level
@@ -115,29 +89,29 @@ modePlot <- rbind(modePlotTrue, multipleMode)
 
 # create a dataframe of codominant group for experiments with a single plot (because can't calculate mode of singleton)
 singletonCodomPlot <- modePlot %>% 
-  group_by(database, site_code, project_name, community_type, trt_type2) %>% 
+  group_by(database, site_code, project_name, community_type, trt_type) %>% 
   mutate(length=length(community_type)) %>% 
   ungroup() %>% 
   filter(length==1) %>% 
   rename(mode_trt=plot_codom) %>% 
-  dplyr::select(database, site_code, project_name, community_type, trt_type2, mode_trt) 
+  dplyr::select(database, site_code, project_name, community_type, trt_type, mode_trt) 
 
 # calculate mode across plots for each experiment, dropping those with ties
 modeTrtTrue <- modePlot %>%
-   group_by(database, site_code, project_name, community_type, trt_type2) %>% # mode generated from these
+   group_by(database, site_code, project_name, community_type, trt_type) %>% # mode generated from these
    reframe(mode_trt = DescTools::Mode(plot_codom)) %>%  
    ungroup() %>% 
-   group_by(database, site_code, project_name, community_type, trt_type2) %>% 
+   group_by(database, site_code, project_name, community_type, trt_type) %>% 
    summarise(mode_trt=round(mean(mode_trt), digits=0), .groups='drop') %>% # calculate mean for ties
    filter(!is.na(mode_trt)) %>% 
    rbind(singletonCodomPlot)
 
 # for plots with ties for modes, calculate mean and round to nearest integer
 multipleModeProj <- modePlot %>% 
-  select(database, site_code, project_name, community_type, plot_id, trt_type2, plot_codom) %>% 
+  select(database, site_code, project_name, community_type, plot_id, trt_type, plot_codom) %>% 
   full_join(modeTrtTrue) %>% 
   filter(is.na(mode_trt)) %>%
-  group_by(database, site_code, project_name, community_type, trt_type2) %>% 
+  group_by(database, site_code, project_name, community_type, trt_type) %>% 
   summarise(mode_trt=round(mean(plot_codom), digits=0), .groups='drop')
 
 # bind dataframes for average ties and true modes at site level
@@ -154,7 +128,7 @@ modeTrt <- rbind(modeTrtTrue, multipleModeProj) %>%
 
 modeTrt$lump_mode_trt_cat <- factor(modeTrt$lump_mode_trt_cat, levels = c("Monodominated", "Codominated", "Even"))
 modeTrt$lump_mode_site_cat <- factor(modeTrt$lump_mode_site_cat, levels = c("Monodominated", "Codominated", "Even"))
-modeTrt$trt_type2 <- factor(modeTrt$trt_type2, levels = c('N','P','K','N*P','mult_nutrient',
+modeTrt$trt_type <- factor(modeTrt$trt_type, levels = c('N','P','K','N*P','mult_nutrient',
                                                           'herb_removal','disturbance',
                                                           'CO2','irr','drought','temp','other',
                                                           'multiple_trts'))
@@ -162,12 +136,12 @@ modeTrt$trt_type2 <- factor(modeTrt$trt_type2, levels = c('N','P','K','N*P','mul
 # saveRDS(modeTrt, file = "data/modeTrt.rds")
 
 # log linear model --------------------------------------------------------------------------------
-summaryTableTrt <- xtabs(~ trt_type2 + lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
+summaryTableTrt <- xtabs(~ trt_type + lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
 
-m1 <- loglm(~trt_type2+lump_mode_site_cat+lump_mode_trt_cat, data=summaryTableTrt) #independence
-m2 <- loglm(~lump_mode_trt_cat*(lump_mode_site_cat+trt_type2), data=summaryTableTrt) #conditional independence
-m3 <- loglm(~trt_type2+lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (trt_type2)
-m4 <- loglm(~lump_mode_site_cat+trt_type2*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (lump_mode_site_cat)
+m1 <- loglm(~trt_type+lump_mode_site_cat+lump_mode_trt_cat, data=summaryTableTrt) #independence
+m2 <- loglm(~lump_mode_trt_cat*(lump_mode_site_cat+trt_type), data=summaryTableTrt) #conditional independence
+m3 <- loglm(~trt_type+lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (trt_type)
+m4 <- loglm(~lump_mode_site_cat+trt_type*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (lump_mode_site_cat)
 
 anova(m1,m2,m3,m4)
 #model 4 (conditional independence - trt codom number depends on both trt type and site codom)
@@ -184,10 +158,10 @@ mosaicplot(modeSiteCodom, shade = TRUE, las=2,
 
 
 # effect of treatment
-modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type2, data = modeTrt)
+modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type, data = modeTrt)
 
 print(chisq <- chisq.test(modeTrtCodom))
-# X-squared = 58.965, df = 24, p-value = 8.928e-05
+# X-squared = 56.43, df = 24, p-value = 0.0002002
 
 mosaicplot(modeTrtCodom, shade = TRUE, las=2,
            main = "modeTrtCodom")
@@ -197,7 +171,7 @@ mosaicplot(modeTrtCodom, shade = TRUE, las=2,
 # library(glmmTMB)
 # 
 # model <- glmmTMB(
-#   lump_mode_trt_cat ~ trt_type2*lump_mode_site_cat + (1 | site_code),
+#   lump_mode_trt_cat ~ trt_type*lump_mode_site_cat + (1 | site_code),
 #   data = modeTrt,
 #   family = multinomial()
 # )
@@ -207,7 +181,7 @@ mosaicplot(modeTrtCodom, shade = TRUE, las=2,
 library(brms)
 
 model <- brm(
-  lump_mode_trt_cat ~ trt_type2 * lump_mode_site_cat + (1 | site_code),
+  lump_mode_trt_cat ~ trt_type * lump_mode_site_cat + (1 | site_code),
   data = modeTrt,
   family = categorical()
 )
@@ -223,22 +197,49 @@ summary(model)
 
 
 # Models for each treatment type comparing site codom grouping to trt codom grouping ----------------------------
-Nmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='N'))
+Nmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='N'))
 print(chisq <- chisq.test(Nmodel)) # X-squared = 6.6134, df = 4, p-value = 0.1578
 
-Pmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='P'))
+Pmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='P'))
 print(chisq <- chisq.test(Pmodel)) # X-squared = 13.044, df = 4, p-value = 0.01107
 mosaicplot(Pmodel, shade = TRUE, las=2, main = "Pmodel")
 
-NPmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='N*P'))
+NPmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='N*P'))
 print(chisq <- chisq.test(NPmodel)) # X-squared = 25.578, df = 4, p-value = 3.849e-05
 mosaicplot(NPmodel, shade = TRUE, las=2, main = "NPmodel")
 
-multNutModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='mult_nutrient'))
+multNutModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='mult_nutrient'))
 print(chisq <- chisq.test(multNutModel)) # X-squared = 41.885, df = 4, p-value = 1.762e-08
 mosaicplot(multNutModel, shade = TRUE, las=2, main = "multNutModel")
 
-#needs continuation if going this way...  but a mixed model with site as random effect seems better.
+herbRemModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='herb_removal'))
+print(chisq <- chisq.test(herbRemModel)) # X-squared = 53.358, df = 4, p-value = 7.173e-11
+mosaicplot(herbRemModel, shade = TRUE, las=2, main = "herbRemModel")
+
+disturbModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='disturbance'))
+print(chisq <- chisq.test(disturbModel)) # X-squared = NaN, df = 4, p-value = NA
+
+co2Model <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='CO2'))
+print(chisq <- chisq.test(co2Model)) # X-squared = 6.8333, df = 4, p-value = 0.145
+
+irrModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='irr'))
+print(chisq <- chisq.test(irrModel)) # X-squared = 19.5, df = 4, p-value = 0.0006267
+mosaicplot(irrModel, shade = TRUE, las=2, main = "irrModel")
+
+droughtModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='drought'))
+print(chisq <- chisq.test(droughtModel)) # X-squared = 14.422, df = 4, p-value = 0.006063
+mosaicplot(droughtModel, shade = TRUE, las=2, main = "droughtModel")
+
+tempModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='temp'))
+print(chisq <- chisq.test(tempModel)) # X-squared = 13.509, df = 4, p-value = 0.00904
+mosaicplot(tempModel, shade = TRUE, las=2, main = "tempModel")
+
+otherModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='other'))
+print(chisq <- chisq.test(otherModel)) # X-squared = 4.8636, df = 4, p-value = 0.3016
+
+multModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='multiple_trts'))
+print(chisq <- chisq.test(multModel)) # X-squared = 26.851, df = 4, p-value = 2.131e-05
+mosaicplot(multModel, shade = TRUE, las=2, main = "multModel")
 
 
 
@@ -271,12 +272,12 @@ ggplot(modeTrt, aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
   xlab("Site Dominance") +
   ylab("Count") +
   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-  facet_grid(rows='trt_type2', scales='free_y')
+  facet_grid(rows='trt_type', scales='free_y')
 
 # ggsave(file='Fig4b_trtHistograms_byTrt_all.png', width=10, height=30, units='in', dpi=300, bg='white')
 
 #stacked, only subset with higher replication across sites
-ggplot(subset(modeTrt, !(trt_type2 %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone') & !(is.na(trt_type2)))), 
+ggplot(subset(modeTrt, !(trt_type %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone') & !(is.na(trt_type)))), 
        aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
   geom_bar(stat = "count", position='stack') +
   stat_count(geom = 'text', 
@@ -286,7 +287,7 @@ ggplot(subset(modeTrt, !(trt_type2 %in% c('C','fungicide','light','lime','plant_
   xlab("Site Dominance") +
   ylab("Count") +
   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-  facet_grid(rows='trt_type2', scales='free_y')
+  facet_grid(rows='trt_type', scales='free_y')
 
 # ggsave(file='Fig4c_trtHistograms_byTrt_subset.png', width=10, height=30, units='in', dpi=300, bg='white')
 
@@ -302,6 +303,6 @@ ggplot(modeTrt, aes(x = lump_mode_trt_cat, fill = lump_mode_trt_cat)) +
   ylab("Count") +
   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
   theme(legend.position='none') +
-  facet_grid(rows=vars(trt_type2), cols=vars(lump_mode_site_cat), scales='free_y') 
+  facet_grid(rows=vars(trt_type), cols=vars(lump_mode_site_cat), scales='free_y') 
 
 # ggsave(file='Fig4d_trtHistograms_byTrt_facet.png', width=30, height=30, units='in', dpi=300, bg='white')
