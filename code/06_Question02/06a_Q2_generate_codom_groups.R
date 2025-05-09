@@ -20,7 +20,7 @@ codomSppList <- readRDS("data/codomSppList.rds") %>%
 
 #filter to control plots only
 codomControl <- codomSppList %>% 
-  filter(trt_type2=='control')
+  filter(trt_type=='control')
 
 Q2ctlGroupsSite <- codomControl %>%  
   # group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
