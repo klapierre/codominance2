@@ -44,7 +44,7 @@ Q3trtGroupsSite <- allSppList %>%
   filter(calendar_year==max(calendar_year)) %>% # filter to final experiment year
   ungroup() %>%
   group_by(exp_unit) %>%
-  mutate(group2=round(mean(num_group), digits=0)) %>% #average codom and round to nearest integer to fix ties
+  mutate(group2=round(mean(num_group), digits=0)) %>% # average codom and round to nearest integer to fix ties
   ungroup() %>% 
   select(-num_group, -group) %>% 
   rename(num_group=group2) %>% 
