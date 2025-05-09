@@ -24,9 +24,9 @@ modeTrt            <- readRDS("data/modeTrt.rds")
 expInfo            <- readRDS("data/expInfo.rds") 
 Q2ctlGroupsSite    <- readRDS("data/Q2ctlGroupsSite.rds") %>% 
                         select(-codom_freq_proj) %>% 
-                        rename(ctl_alpha1=alpha1,
-                               ctl_alpha2=alpha2,
-                               ctl_alpha3=alpha3) 
+                        rename(ctlm_alpha1=alpha1,
+                               ctlm_alpha2=alpha2,
+                               ctlm_alpha3=alpha3) 
 
 
 # Most common species combinations for each treatment in final year of experiment ------------------
@@ -76,13 +76,34 @@ Q3trtGroupsSite <- allSppList %>%
 
 allGroupsSite <- Q3trtGroupsSite %>% 
   select(-codom_freq_proj) %>% 
-  rename(trt_alpha1=alpha1,
-         trt_alpha2=alpha2,
-         trt_alpha3=alpha3) %>% 
+  rename(trtm_alpha1=alpha1,
+         trtm_alpha2=alpha2,
+         trtm_alpha3=alpha3) %>% 
   full_join(Q2ctlGroupsSite, relationship = 'many-to-many') %>% 
   rowwise() %>% 
-  mutate(any_match = length(intersect(
-    na.omit(c_across(starts_with("trt_"))),
-    na.omit(c_across(starts_with("ctl_"))))) > 0) %>%
-  ungroup()
+  mutate(any_match = length(intersect(na.omit(c_across(starts_with("trtm_"))),
+                                      na.omit(c_across(starts_with("ctlm_"))))) > 0) %>% 
+  mutate(num_match = length(intersect(na.omit(c_across(starts_with("trtm_"))),
+                                      na.omit(c_across(starts_with("ctlm_")))))) %>% 
+  mutate(num_antimatch = length(setdiff(na.omit(c_across(starts_with("trtm_"))),
+                                        na.omit(c_across(starts_with("ctlm_")))))) %>% 
+  mutate(trt_na = sum(is.na(c_across(starts_with("trtm_")))),
+         ctl_na = sum(is.na(c_across(starts_with("ctlm_"))))) %>% 
+  mutate(trt_codom = sum(!is.na(c_across(starts_with("trtm_")))),
+         ctl_codom = sum(!is.na(c_across(starts_with("ctlm_"))))) %>% 
+  ungroup() %>% 
+  mutate(match2=ifelse(num_match==0, 'none',
+               ifelse(ctl_codom==1 & num_match==1, 'full',
+               ifelse(ctl_codom %in% c(2,3) & trt_codom==1 & num_match==1, 'full',
+               ifelse(ctl_codom %in% c(2,3) & trt_codom==2 & num_match==2, 'full',
+               ifelse(ctl_codom==3 & trt_codom==3 & num_match==3, 'full',     
+                      'partial')))))) %>% 
+  mutate(match=ifelse(is.na(ctlm_alpha1), 'NA',
+               ifelse(is.na(trtm_alpha1), 'NA', 
+                      match2))) %>% 
+  select(site_code, project_name, community_type, trt_type, trtm_alpha1, trtm_alpha2, trtm_alpha3, ctlm_alpha1, ctlm_alpha2, ctlm_alpha3, trt_codom, ctl_codom, match)
+
+
+# saveRDS(allGroupsSite, file = "data/allGroupsSite.rds")
+
 
