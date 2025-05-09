@@ -75,57 +75,57 @@ numCodomPlot <- numCodomPlotYear %>%
 #   group_by(site_code, project_name, community_type) %>% 
 #   summarise(trt_num=length(treatment), .groups='drop') %>% 
 #   filter(trt_num==1)
-
+## 60 NutNet sites are control plots only, therefore not included in analyses below
  
-# # Calculate mode across years for all plots ----------------------------------------------------------
-#  
-# # create a dataframe of codominant group for plots with a single timepoint (because can't calculate mode of singleton)
-# singletonCodomPlotYear <- numCodomPlotYear %>% 
-#   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-#   mutate(length=length(plot_id)) %>% 
-#   ungroup() %>% 
-#   filter(length==1) %>% 
-#   rename(plot_codom=num_group) %>% 
-#   dplyr::select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, plot_codom) 
-#  
-# # calculate mode across years for all plots
-# modePlotTrue <- numCodomPlotYear %>%  
-#   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-#   reframe(plot_codom = DescTools::Mode(num_group)) %>% # mode function must be capital here 
-#   ungroup() %>% 
-#   filter(!is.na(plot_codom)) %>%
-#   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-#   summarise(plot_codom=round(mean(plot_codom), digits=0), .groups='drop') %>% # calculate mean for ties
-#   rbind(singletonCodomPlotYear)
-# 
-# # for plots with singleton ties for modes, calculate mean and round to nearest integer
-# multipleMode <- numCodomPlotYear %>% 
-#   select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, num_group, calendar_year) %>% 
-#   unique() %>% 
-#   full_join(modePlotTrue) %>% 
-#   filter(is.na(plot_codom)) %>%
-#   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-#   summarise(plot_codom=round(mean(num_group), digits=0), .groups='drop')
-#  
-# # bind dataframes for averaged ties and true modes at plot level
-# modePlot <- rbind(modePlotTrue, multipleMode)
+# Calculate mode across treatments for all plots ----------------------------------------------------------
+
+# create a dataframe of codominant group for plots with a single treatment (because can't calculate mode of singleton)
+singletonCodomPlotYear <- numCodomPlot %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  mutate(length=length(plot_id)) %>%
+  ungroup() %>%
+  filter(length==1) %>%
+  rename(plot_codom=num_group) %>%
+  dplyr::select(database, site_code, project_name, community_type, plot_id, trt_type2, treatment, plot_codom)
+
+# calculate mode across years for all plots
+modePlotTrue <- numCodomPlot %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  reframe(plot_codom = DescTools::Mode(num_group)) %>% # mode function must be capital here
+  ungroup() %>%
+  filter(!is.na(plot_codom)) %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  summarise(plot_codom=round(mean(plot_codom), digits=0), .groups='drop') %>% # calculate mean for ties
+  rbind(singletonCodomPlotYear)
+
+# for plots with singleton ties for modes, calculate mean and round to nearest integer
+multipleMode <- numCodomPlot %>%
+  select(database, site_code, project_name, community_type, plot_id, trt_type2, treatment, num_group, calendar_year) %>%
+  unique() %>%
+  full_join(modePlotTrue) %>%
+  filter(is.na(plot_codom)) %>%
+  group_by(database, site_code, project_name, community_type, plot_id, trt_type2, treatment) %>%
+  summarise(plot_codom=round(mean(num_group), digits=0), .groups='drop')
+
+# bind dataframes for averaged ties and true modes at plot level
+modePlot <- rbind(modePlotTrue, multipleMode)
 
 
-# Calculate mode across all treatment plots for each experiment ------------------
+# Calculate mode across all trt types for each experiment ------------------
 
 # create a dataframe of codominant group for experiments with a single plot (because can't calculate mode of singleton)
-singletonCodomPlot <- numCodomPlot %>% 
+singletonCodomPlot <- modePlot %>% 
   group_by(database, site_code, project_name, community_type, trt_type2) %>% 
   mutate(length=length(community_type)) %>% 
   ungroup() %>% 
   filter(length==1) %>% 
-  rename(mode_trt=num_group) %>% 
+  rename(mode_trt=plot_codom) %>% 
   dplyr::select(database, site_code, project_name, community_type, trt_type2, mode_trt) 
 
 # calculate mode across plots for each experiment, dropping those with ties
-modeTrtTrue <- numCodomPlot %>%
+modeTrtTrue <- modePlot %>%
    group_by(database, site_code, project_name, community_type, trt_type2) %>% # mode generated from these
-   reframe(mode_trt = DescTools::Mode(num_group)) %>%  
+   reframe(mode_trt = DescTools::Mode(plot_codom)) %>%  
    ungroup() %>% 
    group_by(database, site_code, project_name, community_type, trt_type2) %>% 
    summarise(mode_trt=round(mean(mode_trt), digits=0), .groups='drop') %>% # calculate mean for ties
@@ -133,12 +133,12 @@ modeTrtTrue <- numCodomPlot %>%
    rbind(singletonCodomPlot)
 
 # for plots with ties for modes, calculate mean and round to nearest integer
-multipleModeProj <- numCodomPlot %>% 
-  select(database, site_code, project_name, community_type, plot_id, trt_type2, num_group) %>% 
+multipleModeProj <- modePlot %>% 
+  select(database, site_code, project_name, community_type, plot_id, trt_type2, plot_codom) %>% 
   full_join(modeTrtTrue) %>% 
   filter(is.na(mode_trt)) %>%
   group_by(database, site_code, project_name, community_type, trt_type2) %>% 
-  summarise(mode_trt=round(mean(num_group), digits=0), .groups='drop')
+  summarise(mode_trt=round(mean(plot_codom), digits=0), .groups='drop')
 
 # bind dataframes for average ties and true modes at site level
 modeTrt <- rbind(modeTrtTrue, multipleModeProj) %>% 
@@ -177,7 +177,7 @@ anova(m1,m2,m3,m4)
 modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
 
 print(chisq <- chisq.test(modeSiteCodom))
-# X-squared = 197.43, df = 4, p-value < 2.2e-16
+# X-squared = 193.79, df = 4, p-value < 2.2e-16
 
 mosaicplot(modeSiteCodom, shade = TRUE, las=2,
            main = "modeSiteCodom")
@@ -187,10 +187,60 @@ mosaicplot(modeSiteCodom, shade = TRUE, las=2,
 modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type2, data = modeTrt)
 
 print(chisq <- chisq.test(modeTrtCodom))
-# X-squared = 53.607, df = 24, p-value = 0.0004808
+# X-squared = 58.965, df = 24, p-value = 8.928e-05
 
 mosaicplot(modeTrtCodom, shade = TRUE, las=2,
            main = "modeTrtCodom")
+
+
+
+# library(glmmTMB)
+# 
+# model <- glmmTMB(
+#   lump_mode_trt_cat ~ trt_type2*lump_mode_site_cat + (1 | site_code),
+#   data = modeTrt,
+#   family = multinomial()
+# )
+
+# Account for random effect of site in model (using bayesian regression models)
+
+library(brms)
+
+model <- brm(
+  lump_mode_trt_cat ~ trt_type2 * lump_mode_site_cat + (1 | site_code),
+  data = modeTrt,
+  family = categorical()
+)
+
+# There were 3 divergent transitions after warmup.
+# There were 3997 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10.
+# The largest R-hat is 3.21, indicating chains have not mixed.
+# Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable. Running the chains for more iterations may help
+# Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable. Running the chains for more iterations may help.
+
+
+summary(model)
+
+
+# Models for each treatment type comparing site codom grouping to trt codom grouping ----------------------------
+Nmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='N'))
+print(chisq <- chisq.test(Nmodel)) # X-squared = 6.6134, df = 4, p-value = 0.1578
+
+Pmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='P'))
+print(chisq <- chisq.test(Pmodel)) # X-squared = 13.044, df = 4, p-value = 0.01107
+mosaicplot(Pmodel, shade = TRUE, las=2, main = "Pmodel")
+
+NPmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='N*P'))
+print(chisq <- chisq.test(NPmodel)) # X-squared = 25.578, df = 4, p-value = 3.849e-05
+mosaicplot(NPmodel, shade = TRUE, las=2, main = "NPmodel")
+
+multNutModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type2=='mult_nutrient'))
+print(chisq <- chisq.test(multNutModel)) # X-squared = 41.885, df = 4, p-value = 1.762e-08
+mosaicplot(multNutModel, shade = TRUE, las=2, main = "multNutModel")
+
+#needs continuation if going this way...  but a mixed model with site as random effect seems better.
+
+
 
 
 # Histogram- count of codom level per treatment and site codom number ----------------------------
