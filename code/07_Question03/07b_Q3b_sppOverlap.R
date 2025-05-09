@@ -34,7 +34,7 @@ Q2ctlGroupsSite    <- readRDS("data/Q2ctlGroupsSite.rds") %>%
 Q3trtGroupsSite <- allSppList %>% 
   left_join(expInfo) %>% 
   filter(trt_type!='control') %>% #filter out control plots
-  #create trt_type2 variable that groups some of the most common treatments together
+  #create trt_type variable that groups some of the most common treatments together
   mutate(disturb=ifelse(trt_type %in% c("mow_clip","burn","burn*graze","disturbance","burn*mow_clip"), 1, 0), #unify codes across datasets
          # tCO2=ifelse(trt_type %in% c("CO2"), 1, 0),
          drought=ifelse(trt_type %in% c("drought"), 1, 0),
@@ -58,7 +58,7 @@ Q3trtGroupsSite <- allSppList %>%
                                          "N*plant_mani*mow_clip","N*stone","N*temp*fungicide","P*plant_mani","plant_mani*disturbance",
                                          "plant_mani*herb_removal","plant_mani*mow_clip","precip_vari*temp","temp*fungicide"),1,0)) %>%
   mutate(trt_type3=ifelse(disturb==1, 'disturbance', ifelse(multtrts==1, 'multiple_trts', trt_type))) %>%  
-  mutate(trt_type2=ifelse(trt_type3 %in% c('N','P','K','N*P','mult_nutrient','herb_removal','disturbance','CO2',
+  mutate(trt_type=ifelse(trt_type3 %in% c('N','P','K','N*P','mult_nutrient','herb_removal','disturbance','CO2',
                                            'irr','drought','temp','multiple_trts', 'control'), trt_type3, 'other')) %>%
   filter(site_code!='ufrec.us', #filter out this site, which has no control plots
          !grepl("plant_mani", trt_type)) %>% #filter out any treatment that directly manipulates plant species  
@@ -83,14 +83,14 @@ Q3trtGroupsSite <- allSppList %>%
   ungroup() %>% 
   dplyr::select(-rank) %>% 
   pivot_wider(names_from=alphabetical_rank, values_from=genus_species) %>% # generate a list of codominating species groups
-  group_by(site_code, project_name, community_type, trt_type2, plot_id, alpha1, alpha2, alpha3) %>% 
+  group_by(site_code, project_name, community_type, trt_type, plot_id, alpha1, alpha2, alpha3) %>% 
   summarise(codom_freq_plot=length(plot_id), .groups="drop") %>% # frequency of each species group within a plot through time
-  group_by(site_code, project_name, community_type, trt_type2, plot_id) %>% 
+  group_by(site_code, project_name, community_type, trt_type, plot_id) %>% 
   filter(codom_freq_plot==max(codom_freq_plot)) %>%  # drop any species group that is not most common in a plot through time
   ungroup() %>% 
-  group_by(site_code, project_name, community_type, trt_type2, alpha1, alpha2, alpha3) %>% 
+  group_by(site_code, project_name, community_type, trt_type, alpha1, alpha2, alpha3) %>% 
   summarise(codom_freq_proj=length(community_type), .groups="drop") %>% # frequency of each species group within an experimental treatment across plots
-  group_by(site_code, project_name, community_type, trt_type2) %>% 
+  group_by(site_code, project_name, community_type, trt_type) %>% 
   filter(codom_freq_proj==max(codom_freq_proj)) %>%  # drop any species group that is not most common within an experimental treatment across plots
   ungroup()
 
