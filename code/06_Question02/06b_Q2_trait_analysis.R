@@ -28,6 +28,7 @@ source("code/02_functions.R")
 
 ## data for codominant species
 df_codom0 <- readRDS("data/Q2ctlGroupsSite.rds") %>% 
+  filter(!is.na(alpha2)) %>% 
   group_by(site_code,
            project_name,
            community_type) %>% 
