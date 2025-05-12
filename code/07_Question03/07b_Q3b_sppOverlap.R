@@ -93,15 +93,15 @@ allGroupsSite <- Q3trtGroupsSite %>%
          ctl_codom = sum(!is.na(c_across(starts_with("ctlm_"))))) %>% 
   ungroup() %>% 
   mutate(match2=ifelse(num_match==0, 'none',
-               ifelse(ctl_codom==1 & num_match==1, 'full',
-               ifelse(ctl_codom %in% c(2,3) & trt_codom==1 & num_match==1, 'full',
-               ifelse(ctl_codom %in% c(2,3) & trt_codom==2 & num_match==2, 'full',
-               ifelse(ctl_codom==3 & trt_codom==3 & num_match==3, 'full',     
-                      'partial')))))) %>% 
+                ifelse(ctl_codom==1 & trt_codom==1 & num_match==1, 'full',
+                ifelse(ctl_codom==2 & trt_codom==2 & num_match==2, 'full',
+                ifelse(ctl_codom==3 & trt_codom==3 & num_match==3, 'full',     
+                      'partial'))))) %>% 
   mutate(match=ifelse(is.na(ctlm_alpha1), 'NA',
                ifelse(is.na(trtm_alpha1), 'NA', 
                       match2))) %>% 
-  select(site_code, project_name, community_type, trt_type, trtm_alpha1, trtm_alpha2, trtm_alpha3, ctlm_alpha1, ctlm_alpha2, ctlm_alpha3, trt_codom, ctl_codom, match)
+  select(site_code, project_name, community_type, trt_type, trtm_alpha1, trtm_alpha2, trtm_alpha3,
+         ctlm_alpha1, ctlm_alpha2, ctlm_alpha3, trt_codom, ctl_codom, match)
 
 
 # saveRDS(allGroupsSite, file = "data/allGroupsSite.rds")
