@@ -101,9 +101,29 @@ allGroupsSite <- Q3trtGroupsSite %>%
                ifelse(is.na(trtm_alpha1), 'NA', 
                       match2))) %>% 
   select(site_code, project_name, community_type, trt_type, trtm_alpha1, trtm_alpha2, trtm_alpha3,
-         ctlm_alpha1, ctlm_alpha2, ctlm_alpha3, trt_codom, ctl_codom, match)
+         ctlm_alpha1, ctlm_alpha2, ctlm_alpha3, trt_codom, ctl_codom, match) %>% 
+  filter(trt_codom!=0, ctl_codom!=0)
 
 
 # saveRDS(allGroupsSite, file = "data/allGroupsSite.rds")
 
 
+summaryTableTrt <- xtabs(~ trt_type + as.factor(ctl_codom) + as.factor(trt_codom) + match, data = allGroupsSite)
+
+m1 <- loglm(~trt_type+as.factor(ctl_codom)+as.factor(trt_codom)+match, data=summaryTableTrt) #independence
+m2 <- loglm(~as.factor(trt_codom)*(as.factor(ctl_codom)+trt_type+match), data=summaryTableTrt) #conditional independence
+m3 <- loglm(~trt_type+match+as.factor(ctl_codom)*as.factor(trt_codom), data=summaryTableTrt) #joint independence (trt_type)
+m4 <- loglm(~as.factor(ctl_codom)+match+trt_type*as.factor(trt_codom), data=summaryTableTrt) #joint independence (lump_mode_site_cat)
+
+anova(m1,m2,m3,m4)
+#model 4 (conditional independence - trt codom number depends on both trt type and site codom)
+
+
+# effect of site codominance
+modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
+
+print(chisq <- chisq.test(modeSiteCodom))
+# X-squared = 193.79, df = 4, p-value < 2.2e-16
+
+mosaicplot(modeSiteCodom, shade = TRUE, las=2,
+           main = "modeSiteCodom")
