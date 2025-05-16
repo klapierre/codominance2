@@ -123,21 +123,21 @@ summaryOverlapTable <- as.data.frame(overlapTable) %>%
   group_by(trt_type) %>%
   mutate(percent=Freq/sum(Freq)) %>% 
   ungroup() %>% 
-  mutate(trt_type_nice=ifelse(trt_type=='mult_nutrient', 'Multiple\nNutrients', 
-                       ifelse(trt_type=='herb_removal', 'Herbivore\nRemoval',
+  mutate(trt_type_nice=ifelse(trt_type=='mult_nutrient', 'Mult. Nutrients', 
+                       ifelse(trt_type=='herb_removal', 'Herbivore Rem.',
                        ifelse(trt_type=='disturbance', 'Disturbance',
                        ifelse(trt_type=='irr', 'Irrigation',
                        ifelse(trt_type=='drought', 'Drought',
                        ifelse(trt_type=='temp', 'Warming',
                        ifelse(trt_type=='other', 'Other',
-                       ifelse(trt_type=='multiple_trts', 'Multiple\nTreatments', as.character(trt_type)))))))))) %>% 
+                       ifelse(trt_type=='multiple_trts', 'Mult. Trts', as.character(trt_type)))))))))) %>% 
   mutate(match_nice=str_to_sentence(match))
 
 summaryOverlapTable$trt_type_nice <- factor(summaryOverlapTable$trt_type_nice, 
-                                            levels = c('N','P','K','N*P','Multiple\nNutrients',
-                                                       'Herbivore\nRemoval','Disturbance',
+                                            levels = c('N','P','K','N*P','Mult. Nutrients',
+                                                       'Herbivore Rem.','Disturbance',
                                                        'CO2','Irrigation','Drought','Warming','Other',
-                                                       'Multiple\nTreatments'))
+                                                       'Mult. Trts'))
 
 summaryOverlapTable$match_nice <- factor(summaryOverlapTable$match_nice, levels = c('Full', 'Partial', 'None'))
 
@@ -150,4 +150,4 @@ ggplot(summaryOverlapTable, aes(x=trt_type_nice , y=match_nice)) +
   xlab('') + ylab('Species Overlap') + labs(fill='Column\nPercentage') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-# ggsave(file='Fig6_heatMapOverlapTrt.png', width=20, height=5, units='in', dpi=300, bg='white')
+# ggsave(file='Fig6_heatMapOverlapTrt.png', width=10, height=4, units='in', dpi=300, bg='white')
