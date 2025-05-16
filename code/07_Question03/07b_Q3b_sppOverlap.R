@@ -108,22 +108,46 @@ allGroupsSite <- Q3trtGroupsSite %>%
 # saveRDS(allGroupsSite, file = "data/allGroupsSite.rds")
 
 
-summaryTableTrt <- xtabs(~ trt_type + as.factor(ctl_codom) + as.factor(trt_codom) + match, data = allGroupsSite)
 
-m1 <- loglm(~trt_type+as.factor(ctl_codom)+as.factor(trt_codom)+match, data=summaryTableTrt) #independence
-m2 <- loglm(~as.factor(trt_codom)*(as.factor(ctl_codom)+trt_type+match), data=summaryTableTrt) #conditional independence
-m3 <- loglm(~trt_type+match+as.factor(ctl_codom)*as.factor(trt_codom), data=summaryTableTrt) #joint independence (trt_type)
-m4 <- loglm(~as.factor(ctl_codom)+match+trt_type*as.factor(trt_codom), data=summaryTableTrt) #joint independence (lump_mode_site_cat)
+# Effect of trt type on overlap between trt species and ctl species ----------------------------------------------------
 
-anova(m1,m2,m3,m4)
-#model 4 (conditional independence - trt codom number depends on both trt type and site codom)
+overlapTable <- xtabs(~ match + trt_type, data = allGroupsSite)
 
+print(chisq <- chisq.test(overlapTable))
+# X-squared = 95.146, df = 24, p-value = 1.995e-10
 
-# effect of site codominance
-modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
+mosaicplot(overlapTable, shade = TRUE, las=2,
+           main = "overlapTable")
 
-print(chisq <- chisq.test(modeSiteCodom))
-# X-squared = 193.79, df = 4, p-value < 2.2e-16
+summaryOverlapTable <- as.data.frame(overlapTable) %>% 
+  group_by(trt_type) %>%
+  mutate(percent=Freq/sum(Freq)) %>% 
+  ungroup() %>% 
+  mutate(trt_type_nice=ifelse(trt_type=='mult_nutrient', 'Multiple\nNutrients', 
+                       ifelse(trt_type=='herb_removal', 'Herbivore\nRemoval',
+                       ifelse(trt_type=='disturbance', 'Disturbance',
+                       ifelse(trt_type=='irr', 'Irrigation',
+                       ifelse(trt_type=='drought', 'Drought',
+                       ifelse(trt_type=='temp', 'Warming',
+                       ifelse(trt_type=='other', 'Other',
+                       ifelse(trt_type=='multiple_trts', 'Multiple\nTreatments', as.character(trt_type)))))))))) %>% 
+  mutate(match_nice=str_to_sentence(match))
 
-mosaicplot(modeSiteCodom, shade = TRUE, las=2,
-           main = "modeSiteCodom")
+summaryOverlapTable$trt_type_nice <- factor(summaryOverlapTable$trt_type_nice, 
+                                            levels = c('N','P','K','N*P','Multiple\nNutrients',
+                                                       'Herbivore\nRemoval','Disturbance',
+                                                       'CO2','Irrigation','Drought','Warming','Other',
+                                                       'Multiple\nTreatments'))
+
+summaryOverlapTable$match_nice <- factor(summaryOverlapTable$match_nice, levels = c('Full', 'Partial', 'None'))
+
+ggplot(summaryOverlapTable, aes(x=trt_type_nice , y=match_nice)) +
+  geom_tile(aes(fill=percent)) +
+  geom_text(aes(label=Freq), size=6, color='grey40') +
+  # geom_text(aes(label=round(100*percent, digits=0))) +
+  scale_fill_gradient(low='#F8FBF8', high='#031B88') +
+  scale_y_discrete(limits=rev) +
+  xlab('') + ylab('Species Overlap') + labs(fill='Column\nPercentage') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+# ggsave(file='Fig6_heatMapOverlapTrt.png', width=20, height=5, units='in', dpi=300, bg='white')
