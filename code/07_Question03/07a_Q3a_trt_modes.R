@@ -14,7 +14,7 @@ theme_update(axis.title.x=element_text(size=20, vjust=-0.35, margin=margin(t=15)
              axis.title.y=element_text(size=20, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=16),
              plot.title = element_text(size=24, vjust=2),
              panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
-             legend.title=element_text(size=20), legend.text=element_text(size=20))
+             legend.title=element_text(size=16), legend.text=element_text(size=14))
 
 
 # Read data ---------------------------------------------------------------
@@ -124,7 +124,10 @@ modeTrt <- rbind(modeTrtTrue, multipleModeProj) %>%
                                     'Even')),
          lump_mode_site_cat = ifelse(lump_mode_site==1, 'Monodominated',
                              ifelse(lump_mode_site==2, 'Codominated',
-                                    'Even')))
+                                    'Even'))) 
+  # %>% mutate(drop=ifelse(database=='nutnet' & trt_type=='herb_removal', 1, 
+  #             ifelse(database=='nutnet' & trt_type=='multiple_trts', 1, 0))) %>% 
+  # filter(drop==0) #drops herbivore removal trts from all NutNet sites (which often have low grazing pressure compared to GEx)
 
 modeTrt$lump_mode_trt_cat <- factor(modeTrt$lump_mode_trt_cat, levels = c("Monodominated", "Codominated", "Even"))
 modeTrt$lump_mode_site_cat <- factor(modeTrt$lump_mode_site_cat, levels = c("Monodominated", "Codominated", "Even"))
@@ -135,6 +138,45 @@ modeTrt$trt_type <- factor(modeTrt$trt_type, levels = c('N','P','K','N*P','mult_
 
 # saveRDS(modeTrt, file = "data/modeTrt.rds")
 
+
+# trt vs ctl chisquared model --------------------------------------------------------------------------------
+
+modeSite2 <- modeSite %>% 
+  mutate(lump_mode_cat=ifelse(lump_mode_site==1, 'Monodominated',
+                       ifelse(lump_mode_site==2, 'Codominated', 'Even'))) %>%
+  select(database, site_code, project_name, community_type, lump_mode_cat) %>%  
+  mutate(trt_type='control')
+
+modeAll <- modeTrt %>% 
+  select(database, site_code, project_name, community_type, trt_type, lump_mode_trt_cat) %>% 
+  rename(lump_mode_cat=lump_mode_trt_cat) %>% 
+  rbind(modeSite2) %>% 
+  mutate(trt_ctl=ifelse(trt_type=='control', 'Control', 'Treatment'))
+
+summaryTableAll <- xtabs(~ trt_ctl + lump_mode_cat, data = modeAll)
+
+print(chisq <- chisq.test(summaryTableAll))
+# X-squared = 9.6499, df = 2, p-value = 0.008027
+
+mosaicplot(summaryTableAll, shade = TRUE, las=2,
+           main = "summaryTableAll")
+
+summaryTableAllPercent <- as.data.frame(summaryTableAll) %>% 
+  group_by(trt_ctl) %>%
+  mutate(percent=Freq/sum(Freq)) %>% 
+  ungroup()
+
+ggplot(summaryTableAllPercent, aes(x=trt_ctl, y=lump_mode_cat)) +
+  geom_tile(aes(fill=100*percent), color='white') +
+  geom_text(aes(label=Freq), size=6, color='grey40') +
+  # geom_text(aes(label=round(100*percent, digits=0))) +
+  scale_fill_gradient(low='#F8FBF8', high='#031B88') +
+  scale_y_discrete(limits=rev) +
+  xlab('') + ylab('') + labs(fill='Column\nPercentage')
+
+# ggsave(file='Fig4b_heatMapTrt.png', width=7, height=3, units='in', dpi=300, bg='white')
+  
+
 # log linear model --------------------------------------------------------------------------------
 summaryTableTrt <- xtabs(~ trt_type + lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
 
@@ -142,8 +184,11 @@ m1 <- loglm(~trt_type+lump_mode_site_cat+lump_mode_trt_cat, data=summaryTableTrt
 m2 <- loglm(~lump_mode_trt_cat*(lump_mode_site_cat+trt_type), data=summaryTableTrt) #conditional independence
 m3 <- loglm(~trt_type+lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (trt_type)
 m4 <- loglm(~lump_mode_site_cat+trt_type*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (lump_mode_site_cat)
+m5 <- loglm(~lump_mode_trt_cat*lump_mode_site_cat, data=summaryTableTrt) #only lump_mode_site_cat
+m6 <- loglm(~lump_mode_trt_cat*trt_type, data=summaryTableTrt) #only trt_type
+m7 <- loglm(~trt_type*lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt) #fully saturated
 
-anova(m1,m2,m3,m4)
+anova(m1,m2,m3,m4,m5,m6,m7)
 #model 4 (conditional independence - trt codom number depends on both trt type and site codom)
 
 
@@ -156,6 +201,21 @@ print(chisq <- chisq.test(modeSiteCodom))
 mosaicplot(modeSiteCodom, shade = TRUE, las=2,
            main = "modeSiteCodom")
 
+summaryModeSiteCodom <- as.data.frame(modeSiteCodom) %>% 
+  group_by(lump_mode_site_cat ) %>%
+  mutate(percent=Freq/sum(Freq)) %>% 
+  ungroup()
+
+ggplot(summaryModeSiteCodom, aes(x=lump_mode_site_cat , y=lump_mode_trt_cat)) +
+  geom_tile(aes(fill=percent)) +
+  geom_text(aes(label=Freq), size=6, color='grey40') +
+  # geom_text(aes(label=round(100*percent, digits=0))) +
+  scale_fill_gradient(low='#F8FBF8', high='#031B88') +
+  scale_y_discrete(limits=rev) +
+  xlab('Control') + ylab('Treatment') + labs(fill='Column\nPercentage')
+
+# ggsave(file='Fig5a_heatMapSiteTrt.png', width=10, height=5, units='in', dpi=300, bg='white')
+
 
 # effect of treatment
 modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type, data = modeTrt)
@@ -166,143 +226,98 @@ print(chisq <- chisq.test(modeTrtCodom))
 mosaicplot(modeTrtCodom, shade = TRUE, las=2,
            main = "modeTrtCodom")
 
+summaryModeTrtCodom <- as.data.frame(modeTrtCodom) %>% 
+  group_by(trt_type) %>%
+  mutate(percent=Freq/sum(Freq)) %>% 
+  ungroup() %>% 
+  mutate(trt_type_nice=ifelse(trt_type=='mult_nutrient', 'Multiple\nNutrients', 
+                       ifelse(trt_type=='herb_removal', 'Herbivore\nRemoval',
+                       ifelse(trt_type=='disturbance', 'Disturbance',
+                       ifelse(trt_type=='irr', 'Irrigation',
+                       ifelse(trt_type=='drought', 'Drought',
+                       ifelse(trt_type=='temp', 'Warming',
+                       ifelse(trt_type=='other', 'Other',
+                       ifelse(trt_type=='multiple_trts', 'Multiple\nTreatments', as.character(trt_type))))))))))
 
+summaryModeTrtCodom$trt_type_nice <- factor(summaryModeTrtCodom$trt_type_nice, 
+                                            levels = c('N','P','K','N*P','Multiple\nNutrients',
+                                                       'Herbivore\nRemoval','Disturbance',
+                                                       'CO2','Irrigation','Drought','Warming','Other',
+                                                       'Multiple\nTreatments'))
 
-# library(glmmTMB)
-# 
-# model <- glmmTMB(
-#   lump_mode_trt_cat ~ trt_type*lump_mode_site_cat + (1 | site_code),
-#   data = modeTrt,
-#   family = multinomial()
-# )
+ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=lump_mode_trt_cat)) +
+  geom_tile(aes(fill=percent)) +
+  geom_text(aes(label=Freq), size=6, color='grey40') +
+  # geom_text(aes(label=round(100*percent, digits=0))) +
+  scale_fill_gradient(low='#F8FBF8', high='#031B88') +
+  scale_y_discrete(limits=rev) +
+  xlab('') + ylab('Treatment') + labs(fill='Column\nPercentage') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-# Account for random effect of site in model (using bayesian regression models)
-
-library(brms)
-
-model <- brm(
-  lump_mode_trt_cat ~ trt_type * lump_mode_site_cat + (1 | site_code),
-  data = modeTrt,
-  family = categorical()
-)
-
-# There were 3 divergent transitions after warmup.
-# There were 3997 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10.
-# The largest R-hat is 3.21, indicating chains have not mixed.
-# Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable. Running the chains for more iterations may help
-# Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable. Running the chains for more iterations may help.
-
-
-summary(model)
-
-
-# Models for each treatment type comparing site codom grouping to trt codom grouping ----------------------------
-Nmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='N'))
-print(chisq <- chisq.test(Nmodel)) # X-squared = 6.6134, df = 4, p-value = 0.1578
-
-Pmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='P'))
-print(chisq <- chisq.test(Pmodel)) # X-squared = 13.044, df = 4, p-value = 0.01107
-mosaicplot(Pmodel, shade = TRUE, las=2, main = "Pmodel")
-
-NPmodel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='N*P'))
-print(chisq <- chisq.test(NPmodel)) # X-squared = 25.578, df = 4, p-value = 3.849e-05
-mosaicplot(NPmodel, shade = TRUE, las=2, main = "NPmodel")
-
-multNutModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='mult_nutrient'))
-print(chisq <- chisq.test(multNutModel)) # X-squared = 41.885, df = 4, p-value = 1.762e-08
-mosaicplot(multNutModel, shade = TRUE, las=2, main = "multNutModel")
-
-herbRemModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='herb_removal'))
-print(chisq <- chisq.test(herbRemModel)) # X-squared = 53.358, df = 4, p-value = 7.173e-11
-mosaicplot(herbRemModel, shade = TRUE, las=2, main = "herbRemModel")
-
-disturbModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='disturbance'))
-print(chisq <- chisq.test(disturbModel)) # X-squared = NaN, df = 4, p-value = NA
-
-co2Model <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='CO2'))
-print(chisq <- chisq.test(co2Model)) # X-squared = 6.8333, df = 4, p-value = 0.145
-
-irrModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='irr'))
-print(chisq <- chisq.test(irrModel)) # X-squared = 19.5, df = 4, p-value = 0.0006267
-mosaicplot(irrModel, shade = TRUE, las=2, main = "irrModel")
-
-droughtModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='drought'))
-print(chisq <- chisq.test(droughtModel)) # X-squared = 14.422, df = 4, p-value = 0.006063
-mosaicplot(droughtModel, shade = TRUE, las=2, main = "droughtModel")
-
-tempModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='temp'))
-print(chisq <- chisq.test(tempModel)) # X-squared = 13.509, df = 4, p-value = 0.00904
-mosaicplot(tempModel, shade = TRUE, las=2, main = "tempModel")
-
-otherModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='other'))
-print(chisq <- chisq.test(otherModel)) # X-squared = 4.8636, df = 4, p-value = 0.3016
-
-multModel <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = subset(modeTrt, trt_type=='multiple_trts'))
-print(chisq <- chisq.test(multModel)) # X-squared = 26.851, df = 4, p-value = 2.131e-05
-mosaicplot(multModel, shade = TRUE, las=2, main = "multModel")
-
-
+# ggsave(file='Fig5b_heatMapTrtTrt.png', width=20, height=5, units='in', dpi=300, bg='white')
 
 
 # Histogram- count of codom level per treatment and site codom number ----------------------------
 
 autumnalPalette <- c("#02385A", "#A63922", "#D8B573", 'grey')
 
-#overall
-ggplot(modeTrt, aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
+#overall by trt codom category
+ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat)), aes(x = lump_mode_trt_cat, fill = lump_mode_site_cat)) +
   geom_bar(stat = "count", position='stack') +
-  stat_count(geom = 'text', 
-             color = 'white', 
+  stat_count(geom = 'text',
+             color = 'white',
              aes(label = after_stat(count)),
              position = position_stack(vjust = 0.5)) +
-  xlab("Site Dominance") +
-  ylab("Count") +
-  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance')
-
-# ggsave(file='Fig4a_trtHistograms_overall.png', width=10, height=10, units='in', dpi=300, bg='white')
-
-
-#stacked by treatment (don't run factor of trts above to get them all)
-ggplot(modeTrt, aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
-  geom_bar(stat = "count", position='stack') +
-  stat_count(geom = 'text', 
-             color = 'white', 
-             aes(label = after_stat(count)),
-             position = position_stack(vjust = 0.5)) +
-  xlab("Site Dominance") +
-  ylab("Count") +
-  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-  facet_grid(rows='trt_type', scales='free_y')
-
-# ggsave(file='Fig4b_trtHistograms_byTrt_all.png', width=10, height=30, units='in', dpi=300, bg='white')
-
-#stacked, only subset with higher replication across sites
-ggplot(subset(modeTrt, !(trt_type %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone') & !(is.na(trt_type)))), 
-       aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
-  geom_bar(stat = "count", position='stack') +
-  stat_count(geom = 'text', 
-             color = 'white', 
-             aes(label = after_stat(count)),
-             position = position_stack(vjust = 0.5)) +
-  xlab("Site Dominance") +
-  ylab("Count") +
-  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-  facet_grid(rows='trt_type', scales='free_y')
-
-# ggsave(file='Fig4c_trtHistograms_byTrt_subset.png', width=10, height=30, units='in', dpi=300, bg='white')
-
-
-#faceted, only subset with higher replication across sites
-ggplot(modeTrt, aes(x = lump_mode_trt_cat, fill = lump_mode_trt_cat)) +
-  geom_bar(stat = "count", position='identity') +
-  # stat_count(geom = 'text', 
-  #            color = 'white', 
-  #            aes(label = after_stat(count)),
-  #            position = position_stack(vjust = 0.5)) +
   xlab("Treatment Dominance") +
   ylab("Count") +
-  scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-  theme(legend.position='none') +
-  facet_grid(rows=vars(trt_type), cols=vars(lump_mode_site_cat), scales='free_y') 
+  scale_fill_manual(values = autumnalPalette, name='Control Dominance') +
+  theme(legend.position=c(0.78,0.85))
 
-# ggsave(file='Fig4d_trtHistograms_byTrt_facet.png', width=30, height=30, units='in', dpi=300, bg='white')
+# ggsave(file='Fig4a_trtHistograms_overall.png', width=6, height=6, units='in', dpi=300, bg='white')
+
+
+# #stacked by treatment (don't run factor of trts above to get them all)
+# ggplot(modeTrt, aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
+#   geom_bar(stat = "count", position='stack') +
+#   stat_count(geom = 'text', 
+#              color = 'white', 
+#              aes(label = after_stat(count)),
+#              position = position_stack(vjust = 0.5)) +
+#   xlab("Site Dominance") +
+#   ylab("Count") +
+#   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
+#   facet_grid(rows='trt_type', scales='free_y')
+# 
+# # ggsave(file='Fig4b_trtHistograms_byTrt_all.png', width=10, height=30, units='in', dpi=300, bg='white')
+
+
+# #stacked, only subset with higher replication across sites
+# ggplot(subset(modeTrt, !(trt_type %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone') & !(is.na(trt_type)))), 
+#        aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
+#   geom_bar(stat = "count", position='stack') +
+#   stat_count(geom = 'text', 
+#              color = 'white', 
+#              aes(label = after_stat(count)),
+#              position = position_stack(vjust = 0.5)) +
+#   xlab("Site Dominance") +
+#   ylab("Count") +
+#   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
+#   facet_grid(rows='trt_type', scales='free_y')
+# 
+# # ggsave(file='Fig4c_trtHistograms_byTrt_subset.png', width=10, height=30, units='in', dpi=300, bg='white')
+
+
+# #faceted, only subset with higher replication across sites
+# ggplot(modeTrt, aes(x = lump_mode_trt_cat, fill = lump_mode_trt_cat)) +
+#   geom_bar(stat = "count", position='identity') +
+#   # stat_count(geom = 'text', 
+#   #            color = 'white', 
+#   #            aes(label = after_stat(count)),
+#   #            position = position_stack(vjust = 0.5)) +
+#   xlab("Treatment Dominance") +
+#   ylab("Count") +
+#   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
+#   theme(legend.position='none') +
+#   facet_grid(rows=vars(trt_type), cols=vars(lump_mode_site_cat), scales='free_y') 
+# 
+# # ggsave(file='Fig4d_trtHistograms_byTrt_facet.png', width=30, height=30, units='in', dpi=300, bg='white')
