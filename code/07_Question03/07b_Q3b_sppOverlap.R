@@ -151,3 +151,22 @@ ggplot(summaryOverlapTable, aes(x=trt_type_nice , y=match_nice)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 # ggsave(file='Fig6_heatMapOverlapTrt.png', width=10, height=4, units='in', dpi=300, bg='white')
+
+overallOverlap <- summaryOverlapTable %>% 
+  group_by(match_nice) %>% 
+  summarize(count=sum(Freq), .groups='drop')
+
+ggplot(overallOverlap, aes(x="", y=count, fill=match_nice)) +
+  geom_col() +
+  coord_polar(theta="y") +
+  scale_fill_manual(values=c('#B0AAD1', '#F7695F', '#6EA1C9'))  +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank(),
+        plot.title = element_text(vjust = 0.5),
+        legend.position = 'none')  
+
+# ggsave(file='Fig6a_pieOverlapTrt.png', width=4, height=4, units='in', dpi=300, bg='white')
