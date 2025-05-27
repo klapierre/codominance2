@@ -18,7 +18,7 @@ theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)
 
 
 ###read in data
-GEx <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>%
+GEx <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>%
   mutate(drop=ifelse(genus_species_use=="#N/A"|genus_species_use=="Dead unidentified"|
                      genus_species_use=="Leaf.Litter"|genus_species_use=="cactus__dead_", 1, 0)) %>%
   filter(drop!=1) %>%
@@ -47,7 +47,7 @@ evenness <- relCover %>%
   community_structure(time.var = 'year', abundance.var = 'relcov',
                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 
-# write.csv(evenness, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\gex_richEven_20240213.csv', row.names=F)
+# write.csv(evenness, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\GEx\\gex_richEven_20240213.csv', row.names=F)
 
 #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
 rankOrder <- relCover %>%
@@ -115,7 +115,7 @@ codomSppList <- Cmax%>%
   filter(rank<=num_codominants)%>%
   ungroup()
 
-# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\GEx_codominants_list_20250312.csv', row.names=F)
+# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\GEx\\GEx_codominants_list_20250312.csv', row.names=F)
 
 
 ##### Plots -- gut check if number of codominants is correct #####
@@ -133,7 +133,7 @@ rankCodominance <- Cmax %>%
          site_code=site) %>% 
   mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_'))
 
-# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\GEx\\gex_codominantsRankAll_20250312.csv', row.names=F)
+# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\GEx\\gex_codominantsRankAll_20250312.csv', row.names=F)
 
 site_proj_comm_vector <- unique(rankCodominance$site_proj_comm)
 
@@ -148,7 +148,7 @@ for(PROJ in 1:length(site_proj_comm_vector)){
     ggtitle(site_proj_comm_vector[PROJ]) +
     theme_bw()
   
-  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\rank abundance curves\\",
+  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\rank abundance curves\\",
                          site_proj_comm_vector[PROJ], "_RAC.png"),
          width = 35, height = 35, dpi = 300, units = "in", device='png')
   
@@ -219,7 +219,7 @@ ggplot(data=codomSppList, aes(x=Cmax, y=num_codominants)) +
 #     ggtitle(site_proj_comm_vector_4[PROJ]) +
 #     theme_bw()
 #   
-#   ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\rank abundance curves\\4ormore\\",
+#   ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\rank abundance curves\\4ormore\\",
 #                          site_proj_comm_vector_4[PROJ], "_RAC.png"),
 #          width = 35, height = 35, dpi = 300, units = "in", device='png')
 #   

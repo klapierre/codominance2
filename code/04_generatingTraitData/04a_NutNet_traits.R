@@ -16,7 +16,7 @@ library(tidyverse)
 
 
 #kim's laptop
-setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\2024_codominance\\data\\nutnet')
+setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\nutnet')
 
 
 ###read in data
