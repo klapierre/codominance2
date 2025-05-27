@@ -290,24 +290,34 @@ df_combined <- df_predicted %>%
 prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_anpp", "Prob_Human", "Prob_N")
 named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Disturbance", "N Deposition")
 
+axis_limits <- list(
+  "MAP" = list(limits = c(0, 2500), breaks = seq(0, 2500, by = 500)),
+  "MAT" = list(limits = c(-10, 30), breaks = seq(-10, 30, by = 10)),
+  "Gamma Diversity" = list(limits = c(0, 250), breaks = seq(0, 250, by = 50)),
+  "ANPP" = list(limits = c(0, 1500), breaks = seq(0, 1500, by = 500)),
+  "Human Disturbance" = list(limits = c(0, 50), breaks = seq(0, 50, by = 10)),
+  "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500))
+)
+
 # Pre-allocate list
 output <- list()
 
 # Generate figures using loop across variables and their probabilities 
-output <- foreach(v = named_var, p = prob, 
-                  .combine = 'c') %do% {
-    
- # Select respective variable and its probability 
-  df_combo <- df_combined %>% 
-    select(Codom, v, p) %>% 
-    rename(v1 = v, p1 = p)
+output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
+  v <- named_var[i]
+  p <- prob[i]
   
- # Generate figure 
+  df_combo <- df_combined %>% 
+    select(Codom, !!sym(v), !!sym(p)) %>% 
+    rename(v1 = !!sym(v), p1 = !!sym(p))
+  
+  lims <- axis_limits[[v]]$limits
+  brks <- axis_limits[[v]]$breaks
+  
   fig <- ggplot(df_combo, aes(x = v1, y = p1, color = Codom)) +
-    geom_point(size = 2) + # ggMarginal must use geom_point
-    labs(y = "Probability",
-         x = v) +
-    #scale_x_continuous(breaks = pretty(df_combo$v1, n = 5)) +
+    geom_point(size = 2) +
+    labs(y = "Probability", x = v) +
+    scale_x_continuous(limits = lims, breaks = brks) +
     ylim(0.0, 0.8) +
     theme_bw() +
     theme(panel.grid.major = element_blank(), 
@@ -322,20 +332,17 @@ output <- foreach(v = named_var, p = prob,
           legend.key = element_rect(fill = "transparent", color = NA)) +
     scale_color_manual(name = "",
                        labels = c("Monodominated", "Codominated", "Even"),
-                       values = c("#007BA7", "#A63922", "#D8B573"))
+                       values = c("#007BA7", "#A63922", "#D8B573"))+
+    guides(color = guide_legend(override.aes = list(size = 7)))
   
-  # Extract legend
-  legend <- get_legend(fig) 
-  
-  # Remove legend so density can be added 
+  legend <- get_legend(fig)
   fig2 <- fig + theme(legend.position = "none")
-  
- # Add density plot on y-axis
   fig_q1 <- ggExtra::ggMarginal(fig2, type = 'density', margins = 'y',
-                     size = 5, groupColour = TRUE, groupFill = TRUE)
- 
-  list(fig_q1)  # Return plot as list item 
-} 
+                                size = 5, groupColour = TRUE, groupFill = TRUE)
+  
+  list(fig_q1)
+}
+
 
 # Overlay the legend on the top-right of the first plot
 plot_with_legend <- grobTree(
@@ -344,6 +351,34 @@ plot_with_legend <- grobTree(
 
 # Replace only the first plot with overlaid legend
 output[[1]] <- plot_with_legend
+
+
+out_hist <- foreach(h = named_var) %do% {
+  df_o <- df_hist %>%
+    filter(variable1 == h) %>% 
+    select(variable1, mode.levels, value) %>% 
+    na.omit()
+  
+  lims <- axis_limits[[h]]$limits
+  brks <- axis_limits[[h]]$breaks
+  
+  fig_h <- ggplot(df_o, aes(value)) +
+    geom_histogram(aes(fill = mode.levels), bins = 50, position = "identity", alpha = 0.7) +
+    scale_x_continuous(limits = lims, breaks = brks) + 
+    theme_bw() +
+    theme(legend.position = "none",
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          text = element_text(size = 35),
+          axis.text.x = element_text(size = 30),
+          axis.text.y = element_text(size = 30),
+          plot.margin = unit(c(2, 3.4, 0, 0.5), "cm"),
+          plot.background = element_rect(fill = "white", colour = "white")) +
+    scale_fill_manual(name = "",
+                      labels = c("Monodominated", "Codominated", "Even"),
+                      values = c("#007BA7", "#A63922", "#D8B573")) +
+    labs(x = "", y = "")
+}
 
 # Show all plots
 grid.arrange(grobs = output, nrow = 2, ncol = 3)
@@ -358,10 +393,12 @@ out_hist <- foreach(h = named_var) %do% {
     filter(variable1 == h) %>% 
     na.omit()
   
-  # Generate histogram
+  lims <- axis_limits[[h]]$limits
+  brks <- axis_limits[[h]]$breaks
+  
   fig_h <- ggplot(df_o, aes(value)) +
-    geom_histogram(aes(fill = mode.levels), bins = 50) +
-    #scale_x_continuous(breaks = pretty(df_o$value, n = 5)) + 
+    geom_histogram(aes(fill = mode.levels), bins = 50, position = "identity", alpha = 0.7) +
+    scale_x_continuous(limits = lims, breaks = brks) + 
     theme_bw() +
     theme(legend.position = "none",
           panel.grid.major = element_blank(), 
@@ -369,7 +406,7 @@ out_hist <- foreach(h = named_var) %do% {
           text = element_text(size = 35),
           axis.text.x = element_text(size = 30),
           axis.text.y = element_text(size = 30),
-          plot.margin = unit(c(2, 3.4, 0, 0.5), "cm"), #adjust alignment of white space (top, right, bottom, left)
+          plot.margin = unit(c(2, 3.4, 0, 0.5), "cm"),
           plot.background = element_rect(fill = "white", colour = "white")) +
     scale_fill_manual(name = "",
                       labels = c("Monodominated", "Codominated", "Even"),
@@ -377,12 +414,13 @@ out_hist <- foreach(h = named_var) %do% {
     labs(x = "", y = "")
 }
 
-# save as 2500 by 2000
-print(grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
-                   output[[1]], output[[2]], output[[3]], 
-                   out_hist[[4]], out_hist[[5]], out_hist[[6]], 
-                   output[[4]], output[[5]], output[[6]], 
-                   nrow = 4, ncol = 3, heights = c(2, 3, 2, 3)))
+# Arrange all plots
+final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
+                           output[[1]], output[[2]], output[[3]], 
+                           out_hist[[4]], out_hist[[5]], out_hist[[6]], 
+                           output[[4]], output[[5]], output[[6]], 
+                           nrow = 4, ncol = 3, heights = c(2, 3, 2, 3))
+
 
 
 
@@ -413,3 +451,4 @@ ggplot(mapData, aes(x = codom_category, fill = codom_category)) +
   ylab("Count")+
   scale_fill_manual(values = autumnalPalette) +
   theme(legend.position = "none")
+
