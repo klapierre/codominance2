@@ -173,8 +173,8 @@ df_p <- foreach(k = usite,
 
 df_p %>% 
   ggplot(aes(x = p)) +
-  geom_histogram()
-
+  # geom_histogram() +
+  geom_density()
 # linking p to environmental factors --------------------------------------
 
 ## p value and environmental factors in sf
