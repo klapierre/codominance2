@@ -253,14 +253,12 @@ p.gather.anpp %>%
 
 mapData <- modeSite %>% 
   mutate(codom_category = ifelse(mode_site == 1, "Monodominated", 
-                          ifelse(mode_site == 2, "Codominated", 
-                          ifelse(mode_site == 3, "Tridominated", 
-                                 "Even")))) %>% 
+                          ifelse(mode_site == 2, "Codominated", "Even"))) %>% 
   filter(!is.na(N_Deposition))
 
 mapData$codom_category <- factor(mapData$codom_category, levels = c("Monodominated", "Codominated", "Tridominated", "Even"))
 
-autumnalPalette <- c("#02385A", "#A63922", "#D8B573", 'grey')
+autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
 
 mapData %>% 
   ggplot(aes(x="", y=mode_site, fill = codom_category)) +
