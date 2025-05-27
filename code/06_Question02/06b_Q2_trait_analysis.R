@@ -172,13 +172,14 @@ df_p <- foreach(k = usite,
                 }
 
 df_p %>% 
-  filter(p_na < 0.20) %>% 
   ggplot(aes(x = p)) +
   geom_histogram()
 
 # linking p to environmental factors --------------------------------------
 
 ## p value and environmental factors in sf
+spr_aridity <- terra::rast("data/aridity_index.tif")
+
 sf_m <- readRDS("data/envData.rds") %>% 
   mutate(site_proj_comm = paste0(site_code, "_", 
                                  project_name, "_",
@@ -187,6 +188,11 @@ sf_m <- readRDS("data/envData.rds") %>%
             by = "site_proj_comm") %>% 
   st_as_sf(coords = c("Longitude", "Latitude"),
            crs= 4326)
+
+v_arid <- terra::extract(spr_aridity, sf_m)
+
+sf_m <- sf_m %>% 
+  mutate(aridity = v_arid)
 
 ## sf continent data
 sf_countries <- rnaturalearth::ne_countries(scale = "medium", 
@@ -199,6 +205,22 @@ df_m <- st_join(sf_m,
                 join = st_nearest_feature) %>% 
   as_tibble() %>% 
   dplyr::select(-geometry)
+
+saveRDS(df_m, file = "data/traitp_ctr.rds")
+
+# analysis ----------------------------------------------------------------
+
+glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
+                   scale(MAP) + 
+                   scale(MAT) + 
+                   scale(gamma_rich) +
+                   scale(HumanDisturbance) +
+                   scale(N_Deposition) +
+                   (1 | site_proj_comm),
+                 family = glmmTMB::betabinomial,
+                 data = df_m, 
+                 weights = 1 - p_na) %>% 
+  summary()
 
 df_m %>% 
   pivot_longer(cols = MAP:N_Deposition,
@@ -215,30 +237,3 @@ df_m %>%
   theme(strip.background = element_blank(),
         strip.placement = "outside",
         axis.title.x = element_blank())
-
-## quick analysis
-## next step
-## - try linear and non-linear (GAM or quadratic terms) models
-## - nested random effect of continent/eco-region
-## - include weight factor in analysis
-glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
-                   scale(MAP) + 
-                   scale(MAT) + 
-                   scale(gamma_rich) +
-                   scale(HumanDisturbance) +
-                   scale(N_Deposition) +
-                   (1 | site_proj_comm),
-                 family = glmmTMB::betabinomial,
-                 data = df_m, 
-                 weights = 1 - p_na) %>% 
-  summary()
-
-# mgcv::gam(cbind(n_obs, n_pool - n_obs) ~ 
-#             s(MAP) +
-#             s(MAT) +
-#             s(gamma_rich) +
-#             s(HumanDisturbance) +
-#             s(N_Deposition) +
-#             s(site_proj_comm, bs = "re"), 
-#           data = df_m,
-#           family = "binomial")
