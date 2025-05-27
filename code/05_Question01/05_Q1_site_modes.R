@@ -315,7 +315,7 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
   brks <- axis_limits[[v]]$breaks
   
   fig <- ggplot(df_combo, aes(x = v1, y = p1, color = Codom)) +
-    geom_point(size = 2) +
+    geom_point(size = 4) +
     labs(y = "Probability", x = v) +
     scale_x_continuous(limits = lims, breaks = brks) +
     ylim(0.0, 0.8) +
@@ -377,42 +377,10 @@ out_hist <- foreach(h = named_var) %do% {
     scale_fill_manual(name = "",
                       labels = c("Monodominated", "Codominated", "Even"),
                       values = c("#007BA7", "#A63922", "#D8B573")) +
-    labs(x = "", y = "")
+    labs(x = "", y = "Count")
 }
 
-# Show all plots
-grid.arrange(grobs = output, nrow = 2, ncol = 3)
 
-
-# Generate for loop for variable value distribution
-out_hist <- foreach(h = named_var) %do% {
-  
-  # Prepare dataframe
-  df_o <- df_hist %>%
-    select(variable1, mode.levels, value) %>% 
-    filter(variable1 == h) %>% 
-    na.omit()
-  
-  lims <- axis_limits[[h]]$limits
-  brks <- axis_limits[[h]]$breaks
-  
-  fig_h <- ggplot(df_o, aes(value)) +
-    geom_histogram(aes(fill = mode.levels), bins = 50, position = "identity", alpha = 0.7) +
-    scale_x_continuous(limits = lims, breaks = brks) + 
-    theme_bw() +
-    theme(legend.position = "none",
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(),
-          text = element_text(size = 35),
-          axis.text.x = element_text(size = 30),
-          axis.text.y = element_text(size = 30),
-          plot.margin = unit(c(2, 3.4, 0, 0.5), "cm"),
-          plot.background = element_rect(fill = "white", colour = "white")) +
-    scale_fill_manual(name = "",
-                      labels = c("Monodominated", "Codominated", "Even"),
-                      values = c("#007BA7", "#A63922", "#D8B573")) +
-    labs(x = "", y = "")
-}
 
 # Arrange all plots
 final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
