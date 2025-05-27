@@ -17,4 +17,11 @@ pacman::p_load(here,
                foreign, # Q1 analysis
                Hmisc, # Q1 analysis
                nnet, # Q1 analysis
-               tidyverse) 
+               tidyverse,
+               gridExtra,
+               foreach, # Q1 for each loop creation
+               ggExtra,
+               grid, # Q1 legend
+               gridExtra, # Q1 legend
+               patchwork, # Q1 combining plots 
+               sf)

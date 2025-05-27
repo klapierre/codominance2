@@ -2,7 +2,7 @@
 ################################################################################
 ##  06a_Q2_formatCodominants.R: Get codominating species from codom list.
 ##
-##  Authors: Akira Terui, Jordan Winter (modified K. Komatsu)
+##  Authors: Akira Terui, Jordan Winter, K. Komatsu
 ##  Date created: January 29, 2025
 ################################################################################
 
@@ -12,9 +12,11 @@ source("code/02_functions.R")
 
 # Read Data --------------------------------------------------------------------
 
-codomSppList <- readRDS("data/codomSppList.rds") %>% 
-  left_join(readRDS("data/expInfo.rds"))
-
+codomSppList <- readRDS("data/allSppList.rds") %>% 
+  left_join(readRDS("data/expInfo.rds")) %>% 
+  filter(num_group!=4, # remove even communities
+         rank<(num_group+1)) # filter to codominating species only
+  
 
 # Most common species combinations for each plot through time ------------------
 
@@ -23,11 +25,6 @@ codomControl <- codomSppList %>%
   filter(trt_type=='control')
 
 Q2ctlGroupsSite <- codomControl %>%  
-  # group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-  # reframe(plot_codom = DescTools::Mode(num_group)) %>% # mode function must be capital here 
-  # ungroup() %>% 
-  # left_join(codomControl) %>% 
-  # filter(num_group==plot_codom) %>% # remove years where number of codominants in a plot was not the mode
   arrange(exp_unit, genus_species) %>% # arrange species within plots alphabetically
   group_by(exp_unit) %>%
   mutate(alphabetical_rank=paste('alpha', rank(genus_species), sep='')) %>%  # generate an alphabetical rank for each species group
