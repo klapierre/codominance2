@@ -5,9 +5,11 @@
 ##  Date created: October 30, 2024
 ################################################################################
 
-library(readxl)
-library(PerformanceAnalytics)
-library(tidyverse)
+# setup -------------------------------------------------------------------
+
+rm(list = ls())
+source("code/01_library.R")
+source("code/02_functions.R")
 
 
 ##### CoRRE and GEx Traits from EDI #####
@@ -19,17 +21,17 @@ correGExTraitsCategorical <- read.csv('https://pasta.lternet.edu/package/data/em
 
 
 ##### NutNet Traits - imputed/gathered for this project #####
-nutnetTraitsContinuous <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet/NutNet_continuousTraitData_imputed_20240711.csv') %>% 
+nutnetTraitsContinuous <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet/NutNet_continuousTraitData_imputed_20240711.csv') %>% 
   select(species, trait, trait_value) %>% 
   filter(!species %in% correGExTraitsContinuous$species)
 
 ## NutNet N-fixers ##
-nutnetNfixer <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet/NutNet_species_list_N-fixers.csv') %>% 
+nutnetNfixer <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet/NutNet_species_list_N-fixers.csv') %>% 
   select(species_matched, n_fixer) %>% 
   rename(species=species_matched,
          n_fixation_type=n_fixer)
 
-nutnetTraitsCategorical <- read_xlsx('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet/NutNet_categorical_traits_2024.xlsx') %>% 
+nutnetTraitsCategorical <- read_xlsx('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet/NutNet_categorical_traits_2024.xlsx') %>% 
   select(species_matched, leaf_type, leaf_compoundness, growth_form, photosynthetic_pathway,
          lifespan, stem_support, clonal) %>% 
   rename(species=species_matched) %>% 
@@ -65,25 +67,25 @@ allTraits <- continuousTraits %>%
 
 
 ##### Figuring out what proportion of cover and species we have all traits for #####
-correNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>% 
+correNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>% 
   select(genus_species, species_matched) %>% 
   unique()
 
-correAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>% 
+correAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>% 
   left_join(correNames) %>% 
   rename(species2=species_matched) %>% 
   mutate(species=ifelse(is.na(species2), genus_species, species2)) %>% 
   select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance) 
 
-GExAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>% 
+GExAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>% 
   rename(site_code=site, plot_id=plot, treatment=trt, abundance=relcov, calendar_year=year) %>% 
   mutate(project_name=NA, community_type=NA) %>% 
   mutate(species=ifelse(is.na(genus_species_clean), genus_species, genus_species_clean)) %>% 
   select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance)
 
 ###START HERE: a few experiments have multiple data points within each plot (comped multiple subplots). Need to get one value for each plot per species in some way (pick one or average)
-NutNetAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet\\full-cover_2023-11-07.csv') %>% 
-  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710 - Copy.csv')) %>% 
+NutNetAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\full-cover_2023-11-07.csv') %>% 
+  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv')) %>% 
   filter(!(functional_group %in% c('BRYOPHYTE', 'NON-LIVE', 'LIVERWORT', 'LICHEN')),
          live==1) %>% 
   mutate(species2=paste(New.Genus, New.Species, sep=' ')) %>% 

@@ -268,7 +268,7 @@ df_plotLevel <- df_grouped %>%
 
 saveRDS(df_plotLevel, file = "data/numCodomPlotYear.rds") # saving derived data for analyses
 
-summary(as.factor(df_plotLevel$group)) #36,211 plots monodominated, 8741 plots even
+summary(as.factor(df_plotLevel$group)) #35,991 plots monodominated, 8728 plots even
 
 # visualize groups
 ggplot(df_plotLevel,

@@ -13,7 +13,8 @@ source('code\\02_functions.R')
 ###read in data
 nutnetSp <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv', fileEncoding="latin1") %>% 
   filter(!is.na(New.Species), New.Species!='sp.') %>% 
-  mutate(database='NutNet', species_matched=paste(New.Genus, New.Species, sep=' ')) %>% 
+  mutate(New.Species=ifelse(New.Species=='bellardi', 'bellardii', New.Species)) %>% 
+  mutate(database='NutNet', species_matched=paste(New.Genus, New.Species, sep=' ')) %>%
   select(Taxon, species_matched) %>% 
   unique() %>% 
   mutate(species_matched=str_to_sentence(species_matched))
@@ -48,7 +49,7 @@ evennessPlot <- relCover %>%
   community_structure(time.var = 'calendar_year', abundance.var = 'relcov',
                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
 
-# write.csv(evennessPlot, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet\\nutnet_plot_richEven_20240213.csv', row.names=F)
+# write.csv(evennessPlot, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\nutnet_plot_richEven_20240213.csv', row.names=F)
 
 #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
 rankOrder <- relCover %>%
@@ -117,7 +118,7 @@ codomSppList <- Cmax %>%
   filter(rank<=num_codominants) %>%
   ungroup()
 
-# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet\\NutNet_codominants_list_plot_20250312.csv', row.names=F)
+# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_codominants_list_plot_20250312.csv', row.names=F)
 
 
 
@@ -131,7 +132,7 @@ rankCodominance <- Cmax %>%
   select(exp_unit, num_codominants) %>%
   left_join(rankOrder)
 
-# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\NutNet\\NutNet_codominantsRankAll_20250312.csv', row.names=F)
+# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_codominantsRankAll_20250312.csv', row.names=F)
 
 site_proj_comm_vector <- unique(rankCodominance$site_code)
 
@@ -146,7 +147,7 @@ for(PROJ in 1:length(site_proj_comm_vector)){
     ggtitle(site_proj_comm_vector[PROJ]) +
     theme_bw()
 
-  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\rank abundance curves\\",
+  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\rank abundance curves\\",
                          site_proj_comm_vector[PROJ], "_RAC.png"),
          width = 35, height = 35, dpi = 300, units = "in", device='png')
 
@@ -346,18 +347,19 @@ WFO.file<-read.delim("Data/CompiledData/Species_lists/WFO_Backbone/classificatio
 
 nutnetSp <- TPL(unique(nutnet$genus_species))
 
-nutnetSpClean <- nutnetSp %>% 
+nutnetSpClean <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv', fileEncoding="latin1") %>% 
   filter(!is.na(New.Species), New.Species!='sp.') %>% 
-  mutate(database='NutNet', species_matched=paste(New.Genus, New.Species, sep=' ')) %>% 
+  mutate(New.Species=ifelse(New.Species=='bellardi', 'bellardii', New.Species)) %>% 
+  mutate(database='NutNet', species_matched=paste(New.Genus, New.Species, sep=' ')) %>%
   select(database, species_matched) %>% 
   unique() %>% 
   mutate(species_matched=str_to_sentence(species_matched))
 
-GExSp <- read.csv('C:\\Users\\kjkomatsu\\Dropbox (Smithsonian)\\working groups\\CoRRE\\CoRRE_database\\Data\\OriginalData\\Traits\\GEx_species_family_May2023.csv') %>% 
+GExSp <- read.csv('C:\\Users\\kjkomatsu\\Smithsonian Dropbox\\Kimberly Komatsu\\working groups\\CoRRE\\CoRRE_database\\Data\\OriginalData\\Traits\\GEx_species_family_May2023.csv') %>% 
   select(database, species_matched) %>% 
   unique()
 
-CoRREsp <- read.csv('C:\\Users\\kjkomatsu\\Dropbox (Smithsonian)\\working groups\\CoRRE\\CoRRE_database\\Data\\OriginalData\\Traits\\TRY\\corre2trykey_2021.csv') %>% 
+CoRREsp <- read.csv('C:\\Users\\kjkomatsu\\Smithsonian Dropbox\\Kimberly Komatsu\\working groups\\CoRRE\\CoRRE_database\\Data\\OriginalData\\Traits\\TRY\\corre2trykey_2021.csv') %>% 
   select(species_matched) %>% 
   mutate(database='CoRRE') %>% 
   unique()
@@ -366,8 +368,9 @@ allSpp <- rbind(nutnetSpClean, GExSp, CoRREsp) %>%
   pivot_wider(names_from=database, values_from=database, values_fill='not') %>% 
   mutate(nutnet_only=ifelse(GEx=='not' & CoRRE=='not', 'needs traits', 'has traits'))
 
-nutnetFamilies <- nutnetSp %>% 
+nutnetFamilies <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv', fileEncoding="latin1") %>% 
   filter(!is.na(New.Species), New.Species!='sp.') %>% 
+  mutate(New.Species=ifelse(New.Species=='bellardi', 'bellardii', New.Species)) %>% 
   mutate(database='NutNet', species_matched=paste(New.Genus, New.Species, sep=' ')) %>% 
   select(database, species_matched, Family) %>% 
   unique() %>% 
