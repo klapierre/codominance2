@@ -70,7 +70,10 @@ df_pool0 <- readRDS("data/allSppList.rds") %>%
 
 # how many plants are identified to species level
 completeSpp <- df_pool0 %>% 
-  separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2', 'other3', 'other4', 'other5', 'other6', 'other7', 'other10'), sep=' ', remove=F)
+  select(genus_species) %>% 
+  unique() %>% #start with 7185 unique species identifiers
+  separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2', 'other3', 'other4', 'other5', 'other6', 'other7', 'other10'), sep=' ', remove=F) %>% 
+  filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.', '1', '2', '3')), !is.na(species), !(genus %in% c('unknown', 'unk', 'ZZZZ', 'Unknown')), is.na(other1))
 
 # select unique combo of site, project, community-type --------------------
 
