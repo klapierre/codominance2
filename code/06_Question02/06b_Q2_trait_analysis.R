@@ -68,6 +68,10 @@ df_pool0 <- readRDS("data/allSppList.rds") %>%
   distinct(site_proj_comm,
            genus_species)
 
+# how many plants are identified to species level
+completeSpp <- df_pool0 %>% 
+  separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2', 'other3', 'other4', 'other5', 'other6', 'other7', 'other10'), sep=' ', remove=F)
+
 # select unique combo of site, project, community-type --------------------
 
 # codominance dataframe ####
