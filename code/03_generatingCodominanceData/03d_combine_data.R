@@ -261,8 +261,8 @@ df_grouped <- filterComplete %>%
                            # num_codominants == 3 ~ "tridominated",
                            num_codominants >= 4 ~ "even"),
          num_group = case_when(num_codominants == 1 ~ 1,
-                               num_codominants %in% c(2,3) ~ 2,
-                               # num_codominants == 3 ~ 3,
+                               num_codominants ==2 ~ 2,
+                               num_codominants == 3 ~ 3,
                                num_codominants >= 4 ~ 4))
 
 df_plotLevel <- df_grouped %>% 
