@@ -191,29 +191,30 @@ ggplot(overallOverlap, aes(x="", y=count, fill=match_nice)) +
 # ggsave(file='Fig6a_pieOverlapTrt.png', width=4, height=4, units='in', dpi=300, bg='white')
 
 
-# Two-level Sankey diagram with trt
-
-longModeTrt <- allGroupsSite %>% 
-  left_join(read_rds('data/modeTrt.rds')) %>% 
-  mutate(match2=ifelse(lump_mode_site_cat=='Even' | lump_mode_trt_cat=='Even', 'NA', match)) %>% 
-  select(lump_mode_site_cat, lump_mode_trt_cat, match2) %>%
-  na.omit() %>%
-  count(lump_mode_trt_cat, lump_mode_site_cat) %>%
-  group_by(lump_mode_trt_cat, lump_mode_site_cat) %>%
-  mutate(group = cur_group_id()) %>%
-  ungroup() %>%
-  pivot_longer(cols = c(lump_mode_trt_cat, lump_mode_site_cat),
-               names_to = "ctl_trt",
-               values_to = "category") %>%
-  mutate(ctl_trt = factor(ctl_trt,
-                          levels = c("lump_mode_site_cat", "lump_mode_trt_cat"),
-                          labels = c("Ambient", "Treatment")))
-
-ggplot(longModeTrt, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = category)) +
-  geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
-  geom_stratum(width = 1/3) +
-  scale_fill_manual(values=autumnalPalette) +
-  labs(x=NULL, y='Count', fill=NULL) +
-  coord_cartesian(xlim=c(1.3, 1.7))
-
-# ggsave(file='Fig4_trtSankey_overall.png', width=8, height=6, units='in', dpi=300, bg='white')
+# # Two-level Sankey diagram with trt
+# 
+# autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
+# 
+# longModeTrt <- allGroupsSite %>% 
+#   full_join(read_rds('data/modeTrt.rds')) %>% 
+#   mutate(match2=ifelse(lump_mode_site_cat=='Even' | lump_mode_trt_cat=='Even', 'N/A', match)) %>% 
+#   select(lump_mode_site_cat, lump_mode_trt_cat, match2) %>%
+#   # na.omit() %>%
+#   count(lump_mode_trt_cat, lump_mode_site_cat, match2) %>%
+#   group_by(lump_mode_trt_cat, lump_mode_site_cat, match2) %>%
+#   mutate(group = cur_group_id(),
+#          fill_cat = lump_mode_trt_cat) %>%
+#   ungroup() %>%
+#   pivot_longer(cols = c(lump_mode_trt_cat, lump_mode_site_cat, match2),
+#                names_to = "ctl_trt",
+#                values_to = "category") %>%
+#   mutate(ctl_trt = factor(ctl_trt,
+#                           levels = c("lump_mode_site_cat", "lump_mode_trt_cat", "match2"),
+#                           labels = c("Ambient", "Treatment", "Species Match")))
+# 
+# ggplot(longModeTrt, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = fill_cat)) +
+#   geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
+#   geom_stratum(width = 1/3) +
+#   scale_fill_manual(values=autumnalPalette) +
+#   labs(x=NULL, y='Count', fill=NULL) +
+#   coord_cartesian(xlim=c(1.3, 2.7))
