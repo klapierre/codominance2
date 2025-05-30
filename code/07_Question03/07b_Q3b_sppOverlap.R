@@ -92,11 +92,26 @@ allGroupsSite <- Q3trtGroupsSite %>%
   mutate(trt_codom = sum(!is.na(c_across(starts_with("trtm_")))),
          ctl_codom = sum(!is.na(c_across(starts_with("ctlm_"))))) %>% 
   ungroup() %>% 
-  mutate(match2=ifelse(num_match==0, 'none',
-                ifelse(ctl_codom==1 & trt_codom==1 & num_match==1, 'full',
+  mutate(match2=ifelse(ctl_codom==1 & trt_codom==1 & num_match==1, 'full',
+                ifelse(ctl_codom==1 & trt_codom==1 & num_match==0, 'none',
+                ifelse(ctl_codom==1 & trt_codom %in% c(2,3) & num_match %in% c(1,2), 'full+',
+                ifelse(ctl_codom==1 & trt_codom %in% c(2,3) & num_match==0, 'none+',
+                ifelse(ctl_codom %in% c(2,3) & trt_codom==1 & num_match==0, 'none-',
+                ifelse(ctl_codom %in% c(2,3) & trt_codom==1 & num_match==1, 'full-',
+                ifelse(ctl_codom==2 & trt_codom==2 & num_match==0, 'none',
+                ifelse(ctl_codom==2 & trt_codom==2 & num_match==1, 'partial',
                 ifelse(ctl_codom==2 & trt_codom==2 & num_match==2, 'full',
-                ifelse(ctl_codom==3 & trt_codom==3 & num_match==3, 'full',     
-                      'partial'))))) %>% 
+                ifelse(ctl_codom==3 & trt_codom==3 & num_match==0, 'none',
+                ifelse(ctl_codom==3 & trt_codom==3 & num_match %in% c(1,2), 'partial',
+                ifelse(ctl_codom==3 & trt_codom==3 & num_match==3, 'full',
+                ifelse(ctl_codom==3 & trt_codom==2 & num_match==0, 'none-',
+                ifelse(ctl_codom==3 & trt_codom==2 & num_match==1, 'partial-',
+                ifelse(ctl_codom==3 & trt_codom==2 & num_match==2, 'full-',
+                ifelse(ctl_codom==2 & trt_codom==3 & num_match==0, 'none+',
+                ifelse(ctl_codom==2 & trt_codom==3 & num_match==2, 'full+',
+                ifelse(ctl_codom==2 & trt_codom==3 & num_match==1, 'partial+',
+                       'CHECK'))))))))))))))))))) %>% 
+  filter(match2!='CHECK') %>% #filters out 115 trts that have an NA for either trt or ctl spp (check if this is fixed when spp names fixed)
   mutate(match=ifelse(is.na(ctlm_alpha1), 'NA',
                ifelse(is.na(trtm_alpha1), 'NA', 
                       match2))) %>% 
@@ -114,7 +129,7 @@ allGroupsSite <- Q3trtGroupsSite %>%
 overlapTable <- xtabs(~ match + trt_type, data = allGroupsSite)
 
 print(chisq <- chisq.test(overlapTable))
-# X-squared = 95.146, df = 24, p-value = 1.995e-10
+# X-squared = 330.66, df = 96, p-value < 2.2e-16
 
 mosaicplot(overlapTable, shade = TRUE, las=2,
            main = "overlapTable")
@@ -139,7 +154,9 @@ summaryOverlapTable$trt_type_nice <- factor(summaryOverlapTable$trt_type_nice,
                                                        'CO2','Irrigation','Drought','Warming','Other',
                                                        'Mult. Trts'))
 
-summaryOverlapTable$match_nice <- factor(summaryOverlapTable$match_nice, levels = c('Full', 'Partial', 'None'))
+summaryOverlapTable$match_nice <- factor(summaryOverlapTable$match_nice, levels = c('Full+','Full','Full-',
+                                                                                    'Partial+','Partial','Partial-',
+                                                                                    'None+','None','None-'))
 
 ggplot(summaryOverlapTable, aes(x=trt_type_nice , y=match_nice)) +
   geom_tile(aes(fill=percent)) +
@@ -150,7 +167,7 @@ ggplot(summaryOverlapTable, aes(x=trt_type_nice , y=match_nice)) +
   xlab('') + ylab('Species Overlap') + labs(fill='Column\nPercentage') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-# ggsave(file='Fig6_heatMapOverlapTrt.png', width=10, height=4, units='in', dpi=300, bg='white')
+# ggsave(file='Fig6_heatMapOverlapTrt.png', width=10, height=5, units='in', dpi=300, bg='white')
 
 overallOverlap <- summaryOverlapTable %>% 
   group_by(match_nice) %>% 
@@ -159,7 +176,7 @@ overallOverlap <- summaryOverlapTable %>%
 ggplot(overallOverlap, aes(x="", y=count, fill=match_nice)) +
   geom_col() +
   coord_polar(theta="y") +
-  scale_fill_manual(values=c('#B0AAD1', '#F7695F', '#6EA1C9'))  +
+  # scale_fill_manual(values=c('#B0AAD1', '#F7695F', '#6EA1C9'))  +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.title.x = element_blank(),
