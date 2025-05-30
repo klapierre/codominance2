@@ -169,13 +169,14 @@ individualExperiments <- rbind(corre, gex, nutnet) %>%
                                            'irr','drought','temp','multiple_trts', 'control'), trt_type3, 'other')) %>%
   filter(!grepl("plant_mani", trt_type)) %>%  #filter out any treatment that directly manipulates plant species
   dplyr::select(-trt_type, -trt_type3) %>% 
-  rename(trt_type=trt_type2)
+  rename(trt_type=trt_type2) %>% 
+  select(-plot_size_m2, -plot_number, -plot_permenant) %>% 
+  unique()
 
 unique(individualExperiments$trt_type) # identify treatments
 
 expInfo <- individualExperiments %>%
-  dplyr::select(database, site_code, project_name, community_type, plot_id, treatment, trt_type,
-                plot_size_m2, plot_number, plot_permenant) %>%
+  dplyr::select(database, site_code, project_name, community_type, plot_id, treatment, trt_type) %>%
   unique()
 
 saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
