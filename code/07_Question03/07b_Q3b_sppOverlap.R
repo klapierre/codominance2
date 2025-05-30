@@ -131,7 +131,7 @@ allGroupsSite <- Q3trtGroupsSite %>%
 overlapTable <- xtabs(~ match + trt_type, data = allGroupsSite)
 
 print(chisq <- chisq.test(overlapTable))
-# X-squared = 330.66, df = 96, p-value < 2.2e-16
+# X-squared = 222.02, df = 96, p-value = 5.531e-12
 
 mosaicplot(overlapTable, shade = TRUE, las=2,
            main = "overlapTable")
