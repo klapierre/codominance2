@@ -22,9 +22,11 @@ codomSppList <- readRDS("data/allSppList.rds") %>%
 
 #filter to control plots only
 codomControl <- codomSppList %>% 
-  filter(trt_type=='control')
+  filter(trt_type=='control') %>% 
+  left_join(read_rds('data/modeSite.rds'))
 
-Q2ctlGroupsSite <- codomControl %>%  
+Q2ctlGroupsSite <- codomControl %>%
+  filter(num_group==mode_site) %>% #filter to only plots where the number of codominanting species matches the site pairings
   arrange(exp_unit, genus_species) %>% # arrange species within plots alphabetically
   group_by(exp_unit) %>%
   mutate(alphabetical_rank=paste('alpha', rank(genus_species), sep='')) %>%  # generate an alphabetical rank for each species group

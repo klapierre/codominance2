@@ -198,8 +198,8 @@ df_p %>%
   geom_density(size=2) +
   xlab('Proportion Species Pairs with\nGreater Trait Similarity') +
   ylab('Density') +
-  coord_cartesian(ylim=c(0,1.15))
-# ggsave('Fig3_traitDensityCtl.png', width=10, height=10, units='in', dpi=300, bg='white')
+  coord_cartesian(ylim=c(0,1.2))
+# ggsave('Fig3_traitDensityCtl.png', width=8, height=8, units='in', dpi=300, bg='white')
 
 
 
