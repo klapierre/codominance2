@@ -259,7 +259,7 @@ ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=lump_mode_trt_cat)) +
 
 # Histogram- count of codom level per treatment and site codom number ----------------------------
 
-autumnalPalette <- c("#02385A", "#A63922", "#D8B573", 'grey')
+autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
 
 #overall by trt codom category
 ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat) & !is.na(lump_mode_site_cat)), aes(x = lump_mode_trt_cat, fill = lump_mode_site_cat)) +
@@ -278,8 +278,28 @@ ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat) & !is.na(lump_mode_site_cat)), 
 
 # Sankey diagram with trt
 
+longModeTrt <- modeTrt %>%
+  select(lump_mode_trt_cat, lump_mode_site_cat) %>%
+  na.omit() %>%
+  count(lump_mode_trt_cat, lump_mode_site_cat) %>%
+  group_by(lump_mode_trt_cat, lump_mode_site_cat) %>%
+  mutate(group = cur_group_id()) %>%
+  ungroup() %>%
+  pivot_longer(cols = c(lump_mode_trt_cat, lump_mode_site_cat),
+               names_to = "ctl_trt",
+               values_to = "category") %>%
+  mutate(ctl_trt = factor(ctl_trt,
+                          levels = c("lump_mode_site_cat", "lump_mode_trt_cat"),
+                          labels = c("Ambient", "Treatment")))
 
+ggplot(longModeTrt, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = category)) +
+  geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
+  geom_stratum(width = 1/3) +
+  scale_fill_manual(values=autumnalPalette) +
+  labs(x=NULL, y='Count', fill=NULL) +
+  coord_cartesian(xlim=c(1.3, 1.7))
 
+# ggsave(file='Fig4_trtSankey_overall.png', width=8, height=6, units='in', dpi=300, bg='white')
 
 
 
