@@ -51,6 +51,8 @@ Q3trtGroupsSite <- allSppList %>%
   unique() %>% 
   filter(num_group!=4, # remove even communities
          rank<(num_group+1)) %>% # filter to codominating species only
+  left_join(modeTrt) %>% 
+  filter(num_group==mode_trt) %>% 
   arrange(exp_unit, genus_species) %>% # arrange species within plots alphabetically
   group_by(exp_unit) %>%
   mutate(alphabetical_rank=paste('alpha', rank(genus_species), sep='')) %>%  # generate an alphabetical rank for each species group
@@ -187,3 +189,31 @@ ggplot(overallOverlap, aes(x="", y=count, fill=match_nice)) +
         legend.position = 'none')  
 
 # ggsave(file='Fig6a_pieOverlapTrt.png', width=4, height=4, units='in', dpi=300, bg='white')
+
+
+# Two-level Sankey diagram with trt
+
+longModeTrt <- allGroupsSite %>% 
+  left_join(read_rds('data/modeTrt.rds')) %>% 
+  mutate(match2=ifelse(lump_mode_site_cat=='Even' | lump_mode_trt_cat=='Even', 'NA', match)) %>% 
+  select(lump_mode_site_cat, lump_mode_trt_cat, match2) %>%
+  na.omit() %>%
+  count(lump_mode_trt_cat, lump_mode_site_cat) %>%
+  group_by(lump_mode_trt_cat, lump_mode_site_cat) %>%
+  mutate(group = cur_group_id()) %>%
+  ungroup() %>%
+  pivot_longer(cols = c(lump_mode_trt_cat, lump_mode_site_cat),
+               names_to = "ctl_trt",
+               values_to = "category") %>%
+  mutate(ctl_trt = factor(ctl_trt,
+                          levels = c("lump_mode_site_cat", "lump_mode_trt_cat"),
+                          labels = c("Ambient", "Treatment")))
+
+ggplot(longModeTrt, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = category)) +
+  geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
+  geom_stratum(width = 1/3) +
+  scale_fill_manual(values=autumnalPalette) +
+  labs(x=NULL, y='Count', fill=NULL) +
+  coord_cartesian(xlim=c(1.3, 1.7))
+
+# ggsave(file='Fig4_trtSankey_overall.png', width=8, height=6, units='in', dpi=300, bg='white')
