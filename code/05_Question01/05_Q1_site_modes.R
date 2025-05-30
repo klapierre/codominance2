@@ -380,7 +380,7 @@ out_hist <- foreach(h = named_var) %do% {
     labs(x = "", y = "Count")
 }
 
-
+# Save figure as png
 png("Fig2_model.png", width = 2600, height = 2000)
 
 # Arrange all plots
