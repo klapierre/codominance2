@@ -282,7 +282,7 @@ ggplot(df_plotLevel,
 # Generate species lists -----------------------------------------
 
 allSppList <- df_grouped %>% 
-  dplyr::select(database, site_proj_comm, exp_unit, site_code, project_name, community_type, calendar_year, treatment_year, 
+  dplyr::select(database, site_proj_comm, exp_unit, site_code, project_name, community_type, plot_id, calendar_year, treatment_year, 
                 group, num_group, genus_species, rank)
 
 saveRDS(allSppList, file = "data/allSppList.rds") # saving derived data for analyses
@@ -292,7 +292,7 @@ codomSppList <- df_grouped %>%
   filter(rank<num_group+1) %>% # only keep species that were top dominants
   filter(group=='codominated') %>% # only keep plots where the are codominanting spp (not even communities or monodominated communties)
   ungroup() %>% 
-  dplyr::select(database, site_proj_comm, exp_unit, site_code, project_name, community_type, calendar_year, treatment_year, 
+  dplyr::select(database, site_proj_comm, exp_unit, site_code, project_name, community_type, plot_id, calendar_year, treatment_year, 
                 group, num_group, genus_species, rank)
 
 saveRDS(codomSppList, file = "data/codomSppList.rds") # saving derived data for analyses
