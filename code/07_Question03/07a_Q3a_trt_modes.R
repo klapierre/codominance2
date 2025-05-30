@@ -156,7 +156,7 @@ modeAll <- modeTrt %>%
 summaryTableAll <- xtabs(~ trt_ctl + lump_mode_cat, data = modeAll)
 
 print(chisq <- chisq.test(summaryTableAll))
-# X-squared = 9.6499, df = 2, p-value = 0.008027
+# X-squared = 9.661, df = 2, p-value = 0.007983
 
 mosaicplot(summaryTableAll, shade = TRUE, las=2,
            main = "summaryTableAll")
@@ -189,14 +189,14 @@ m6 <- loglm(~lump_mode_trt_cat*trt_type, data=summaryTableTrt) #only trt_type
 m7 <- loglm(~trt_type*lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt) #fully saturated
 
 anova(m1,m2,m3,m4,m5,m6,m7)
-#model 4 (conditional independence - trt codom number depends on both trt type and site codom)
+#model 2 (conditional independence - trt codom number depends on both trt type and site codom)
 
 
 # effect of site codominance
 modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
 
 print(chisq <- chisq.test(modeSiteCodom))
-# X-squared = 193.79, df = 4, p-value < 2.2e-16
+# X-squared = 193.44, df = 4, p-value < 2.2e-16
 
 mosaicplot(modeSiteCodom, shade = TRUE, las=2,
            main = "modeSiteCodom")
@@ -221,7 +221,7 @@ ggplot(summaryModeSiteCodom, aes(x=lump_mode_site_cat , y=lump_mode_trt_cat)) +
 modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type, data = modeTrt)
 
 print(chisq <- chisq.test(modeTrtCodom))
-# X-squared = 56.43, df = 24, p-value = 0.0002002
+# X-squared = 57.796, df = 24, p-value = 0.0001299
 
 mosaicplot(modeTrtCodom, shade = TRUE, las=2,
            main = "modeTrtCodom")
@@ -262,7 +262,7 @@ ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=lump_mode_trt_cat)) +
 autumnalPalette <- c("#02385A", "#A63922", "#D8B573", 'grey')
 
 #overall by trt codom category
-ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat)), aes(x = lump_mode_trt_cat, fill = lump_mode_site_cat)) +
+ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat) & !is.na(lump_mode_site_cat)), aes(x = lump_mode_trt_cat, fill = lump_mode_site_cat)) +
   geom_bar(stat = "count", position='stack') +
   stat_count(geom = 'text',
              color = 'white',
@@ -274,6 +274,14 @@ ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat)), aes(x = lump_mode_trt_cat, fi
   theme(legend.position=c(0.78,0.85))
 
 # ggsave(file='Fig4a_trtHistograms_overall.png', width=6, height=6, units='in', dpi=300, bg='white')
+
+
+# Sankey diagram with trt
+
+
+
+
+
 
 
 # #stacked by treatment (don't run factor of trts above to get them all)
