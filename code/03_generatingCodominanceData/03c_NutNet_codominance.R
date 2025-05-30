@@ -103,6 +103,9 @@ Cmax <- differenceData %>%
   left_join(differenceData) %>%
   filter(Cmax==difference) %>%
   rename(num_codominants=num_ranks) %>%
+  group_by(exp_unit) %>% 
+  filter(num_codominants==max(num_codominants)) %>% #fix the 72 instances where Cmax=difference at two separate breakpoints (selected max because of highly even relative covers for most cases)
+  ungroup() %>% 
   select(exp_unit, Cmax, num_codominants) %>%
   mutate(exp_unit2=exp_unit) %>%
   separate(exp_unit2, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::') %>%
