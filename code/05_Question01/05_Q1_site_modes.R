@@ -380,16 +380,17 @@ out_hist <- foreach(h = named_var) %do% {
     labs(x = "", y = "Count")
 }
 
-# Save figure as png
-png("Fig2_model.png", width = 2600, height = 2000)
 
 # Arrange all plots
-grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
+final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
              output[[1]], output[[2]], output[[3]], 
              out_hist[[4]], out_hist[[5]], out_hist[[6]], 
              output[[4]], output[[5]], output[[6]], 
              nrow = 4, ncol = 3, heights = c(2, 3, 2, 3))
 
+
+# save figure as png
+ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 300)
 
 
 
