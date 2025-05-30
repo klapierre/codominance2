@@ -25,4 +25,5 @@ pacman::p_load(here,
                gridExtra, # Q1 legend
                patchwork, # Q1 combining plots 
                sf,
+               ggalluvial, # Q3 sankey diagram
                tidyverse)
