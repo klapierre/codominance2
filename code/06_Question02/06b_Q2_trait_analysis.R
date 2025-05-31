@@ -72,7 +72,7 @@ df_pool0 <- readRDS("data/allSppList.rds") %>%
 completeSpp <- df_pool0 %>% 
   select(genus_species) %>% 
   unique() %>% #start with 7062 unique species identifiers
-  separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2', 'other3', 'other4', 'other5', 'other6', 'other7', 'other10'), sep=' ', remove=F) %>% 
+  separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2', 'other3', 'other4', 'other5', 'other6', 'other7', 'other10'), sep=' ', remove=F) %>%
   filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.', '1', '2', '3', 'seedling')), 
          !is.na(species), 
          !(genus %in% c('unknown', 'unk', 'ZZZZ', 'Unknown')), 
@@ -133,6 +133,7 @@ df_pool <- df_pool0 %>%
   mutate(flag = if_any(everything(),
                        .fns = is.na))
 
+## 3816 species have complete trait information
 df_pool_cl <- df_pool %>% 
   group_by(site_proj_comm) %>% 
   summarize(n = n_distinct(species),
@@ -140,7 +141,7 @@ df_pool_cl <- df_pool %>%
             p_na = n_na / n) %>% 
   right_join(df_pool,
              by = "site_proj_comm") %>% 
-  drop_na(LDMC:n_fixation_type) %>% 
+  drop_na(LDMC:n_fixation_type) %>% # remove species with any missing traits
   select(c(site_proj_comm:species, 
            LDMC:n_fixation_type)) %>% 
   mutate(across(.cols = where(is.character),
@@ -194,14 +195,18 @@ df_p <- foreach(k = usite,
 
 df_p %>% 
   ggplot(aes(x = p)) +
-  # geom_histogram() +
-  geom_density(size=2) +
+  geom_density(size = 1) +
   xlab('Proportion Species Pairs with\nGreater Trait Similarity') +
   ylab('Density') +
-  coord_cartesian(ylim=c(0,1.2))
-# ggsave('Fig3_traitDensityCtl.png', width=8, height=8, units='in', dpi=300, bg='white')
+  theme_bw() +
+  theme(panel.grid = element_blank())
 
-
+ggsave('Fig3_traitDensityCtl.png',
+       width=8,
+       height=8,
+       units='in',
+       dpi=300,
+       bg='white')
 
 # linking p to environmental factors --------------------------------------
 
@@ -220,7 +225,7 @@ sf_m <- readRDS("data/envData.rds") %>%
 v_arid <- terra::extract(spr_aridity, sf_m)
 
 sf_m <- sf_m %>% 
-  mutate(aridity = v_arid)
+  mutate(aridity = v_arid[, 2])
 
 ## sf continent data
 sf_countries <- rnaturalearth::ne_countries(scale = "medium", 
@@ -238,6 +243,19 @@ saveRDS(df_m, file = "data/traitp_ctr.rds")
 
 # analysis ----------------------------------------------------------------
 
+## model with aridity
+glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
+                   scale(aridity) + 
+                   scale(gamma_rich) +
+                   scale(HumanDisturbance) +
+                   scale(N_Deposition) +
+                   (1 | site_proj_comm),
+                 family = glmmTMB::betabinomial,
+                 data = df_m, 
+                 weights = 1 - p_na) %>% 
+  summary()
+
+## model with MAP & MAT
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
                    scale(MAP) + 
                    scale(MAT) + 
