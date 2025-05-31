@@ -34,7 +34,8 @@ df_codom0 <- readRDS("data/Q3trtGroupsSite.rds") %>%
                            "disturbance", 
                            "drought", 
                            "irr", 
-                           "temp"))) %>% 
+                           "temp",
+                           "other"))) %>% 
   group_by(site_code,
            project_name,
            community_type) %>% 
@@ -145,11 +146,6 @@ usite <- unique(df_codom_cl$site_proj_comm)
 df_p_trt <- foreach(k = usite,
                     .combine = bind_rows) %do% {
                       
-                      ## select one site
-                      df_codom_i <- df_codom_cl %>% 
-                        filter(site_proj_comm == k) %>% 
-                        mutate(pair_id = as.numeric(factor(pair_id)))
-                      
                       ## define species pool of the site
                       df_pool_i <- df_pool_cl %>% 
                         filter(site_proj_comm == k) %>% 
@@ -166,26 +162,49 @@ df_p_trt <- foreach(k = usite,
                       pool <- df_pool_i %>% 
                         pull(species)
                       
-                      ## get trait distance of the co-dominants
-                      ## use `distinct()` to remove duplicates - duplicates appear when tri-dominants and co-dominants share species
-                      df_dist <- get_dist(data = df_codom_i,
-                                          pool = pool,
-                                          md = md) %>% 
-                        mutate(p_na = unique(df_pool_i$p_na),
-                               trt_type = unique(df_codom_i$trt_type)) %>% 
-                        distinct()
+                      ## select one site
+                      df_codom_i <- df_codom_cl %>% 
+                        filter(site_proj_comm == k) %>% 
+                        mutate(pair_id = as.numeric(factor(pair_id)))
+                      
+                      utrt <- unique(df_codom_i$trt_type)
+                      
+                      df_dist <- foreach(l = utrt,
+                                         .combine = bind_rows) %do% {
+                                           ## subset by treatment type
+                                           df_codom_il <- df_codom_i %>% 
+                                             filter(trt_type == l)
+                                           
+                                           ## get trait distance of the co-dominants
+                                           ## use `distinct()` to remove duplicates - duplicates appear when tri-dominants and co-dominants share species
+                                           df_dist_l <- get_dist(data = df_codom_i,
+                                                                 pool = pool,
+                                                                 md = md) %>% 
+                                             mutate(p_na = unique(df_pool_i$p_na),
+                                                    trt_type = unique(df_codom_il$trt_type)) %>% 
+                                             distinct()  
+                                           
+                                           return(df_dist_l)
+                                         }
                       
                       return(df_dist)
                     }
 
+# comparison, control vs. treatment ---------------------------------------
 
-# pair with control -------------------------------------------------------
-
-# readRDS("data/traitp_ctr.rds") %>% 
-#   left_join(df_p,
-#             by = "site_proj_comm") %>% 
-#   view()
+df_p_ctl <- readRDS("data/traitp_ctr.rds")
 
 df_p_trt %>% 
   ggplot(aes(x = p)) +
-  geom_density()
+  geom_density(data = df_p_ctl,
+               fill = "lightgrey",
+               color = NA,
+               alpha = 0.75) +
+  geom_density(color = "salmon") +
+  facet_wrap(~trt_type,
+             scales = "free_y") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank()) +
+  labs(y = "Density",
+       x = "Pr(Obs > Null)")
