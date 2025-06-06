@@ -210,7 +210,7 @@ g <- df_p_trt %>%
                fill = "lightgrey",
                color = NA,
                alpha = 0.75) +
-  geom_density(color = "salmon") +
+  geom_density(color = "#007BA7") +
   facet_wrap(~trt_type2, nrow=2,
              scales = "free_y") +
   theme_bw() +
