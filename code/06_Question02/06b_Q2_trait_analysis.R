@@ -196,14 +196,14 @@ df_p <- foreach(k = usite,
 df_p %>% 
   ggplot(aes(x = p)) +
   geom_density(size = 1) +
-  xlab('Proportion Species Pairs with\nGreater Trait Similarity') +
+  xlab('Relative Deviation\nof Functional Distance') +
   ylab('Density') +
   theme_bw() +
   theme(panel.grid = element_blank())
 
 ggsave('Fig3_traitDensityCtl.png',
-       width=8,
-       height=8,
+       width=3,
+       height=3,
        units='in',
        dpi=300,
        bg='white')
@@ -283,3 +283,4 @@ df_m %>%
   theme(strip.background = element_blank(),
         strip.placement = "outside",
         axis.title.x = element_blank())
+
