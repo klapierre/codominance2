@@ -194,6 +194,16 @@ df_p_trt <- foreach(k = usite,
 
 df_p_ctl <- readRDS("data/traitp_ctr.rds")
 
+df_p_trt$trt_type2 <- factor(df_p_trt$trt_type,
+       levels=c('CO2','N','P','K','N*P','mult_nutrient',
+                'herb_removal','disturbance',
+                'irr','drought','temp',
+                'other','multiple_trts'),
+       labels=c('Control','N','P','K','N*P','Mult. Nutrients',
+                'Herbivore Rem.','Disturbance',
+                'Irrigation','Drought','Warming',
+                'Other','Mult. Trts'))
+
 g <- df_p_trt %>% 
   ggplot(aes(x = p)) +
   geom_density(data = df_p_ctl,
@@ -201,12 +211,13 @@ g <- df_p_trt %>%
                color = NA,
                alpha = 0.75) +
   geom_density(color = "salmon") +
-  facet_wrap(~trt_type,
+  facet_wrap(~trt_type2, nrow=2,
              scales = "free_y") +
   theme_bw() +
   theme(panel.grid = element_blank(),
         strip.background = element_blank()) +
   labs(y = "Density",
-       x = "Pr(Obs > Null)")
+       x = "Relative Deviation of Functional Distance")
 
 ggsave(g, file = "figure_ctr_trt_compariton.pdf")
+ggsave(g, file='figure_ctr_trt_compariton.png', width=10, height=5, units='in', dpi=300, bg='white')
