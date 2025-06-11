@@ -90,6 +90,13 @@ modeSite <- rbind(modeSiteTrue, multipleModeProj) %>%
   left_join(readRDS("data/envData.rds")) %>% 
   mutate(lumpMode = ifelse(mode_site == 3, 2, mode_site)) 
 
+# how many sites?
+siteCount <- modeSite %>%
+  mutate(lat = round(Latitude, 1),
+         long = round(Longitude, 1)) %>% 
+  select(lat, long) %>% 
+  unique()
+
 
 # Histogram- count of codom level per variable ----------------------------
 
