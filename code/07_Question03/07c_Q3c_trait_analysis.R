@@ -195,29 +195,89 @@ df_p_trt <- foreach(k = usite,
 df_p_ctl <- readRDS("data/traitp_ctr.rds")
 
 df_p_trt$trt_type2 <- factor(df_p_trt$trt_type,
-       levels=c('CO2','N','P','K','N*P','mult_nutrient',
-                'herb_removal','disturbance',
-                'irr','drought','temp',
-                'other','multiple_trts'),
-       labels=c('Control','N','P','K','N*P','Mult. Nutrients',
-                'Herbivore Rem.','Disturbance',
-                'Irrigation','Drought','Warming',
-                'Other','Mult. Trts'))
+       levels=c('CO2','drought','temp','herb_removal',
+                'multiple_trts',
+                'N','P','N*P','mult_nutrient','irr'),
+       labels=c('Control','Drought','Warming','Herbivore Rem.',
+                'Mult. Trts',
+                'N','P','N*P','Mult. Nutrients','Irrigation'))
 
-g <- df_p_trt %>% 
-  ggplot(aes(x = p)) +
+
+
+
+# figures  ---------------------------------------
+
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=22, vjust=-0.35, margin=margin(t=15)),
+             axis.text.x=element_text(size=12),
+             axis.title.y=element_text(size=22, angle=90, vjust=0.5, margin=margin(r=15)), 
+             axis.text.y=element_text(size=12),
+             plot.title = element_text(size=20, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             strip.text=element_text(size=18),
+             legend.title=element_text(size=20), legend.text=element_text(size=20))
+
+
+
+# figure for control
+
+dens_ctl <- df_p_ctl %>%
+  group_map(~ {
+    dens <- density(.x$p, n = 500000, bw = "nrd0",
+                    from = 0,
+                    to = 1)  
+    tibble(x = dens$x, y = dens$y)
+  }) %>%
+  bind_rows()
+
+dens_ctl <- dens_ctl %>%
+  mutate(width = lead(x) - x,
+         width = ifelse(is.na(width), lag(width), width))  # handle last NA
+
+png("figure_ctl_gradient.png", width = 12, height = 10, units='in', res = 300)
+ggplot(df_p_trt) +
+  geom_tile(data = dens_ctl,
+            aes(x = x, y = y / 2, height = y, width = width, fill = x),
+            inherit.aes = FALSE) +
+  scale_fill_gradient(low="#FC9F32", high="#1A2766") +
+  facet_wrap(~trt_type2, ncol = 5, scales = "free_y") +
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank(),
+        legend.position = 'none') +
+  labs(y = "Density",
+       x = "Relative Deviation of Functional Distance")
+dev.off()
+
+
+# figure for treatments
+dens_df <- df_p_trt %>%
+  group_by(trt_type2) %>%
+  filter(n() >= 2) %>%  # Remove tiny groups
+  filter(!(trt_type2 %in% c('K', 'Other'))) %>%
+  group_map(~ {
+    dens <- density(.x$p, n = 500000, bw = "nrd0",
+                    from = 0,
+                    to = 1)  
+    tibble(x = dens$x, y = dens$y, trt_type2 = .y$trt_type2)
+  }) %>%
+  bind_rows()
+
+png("figure_3_traits_bytrt.png", width = 12, height = 10, units='in', res = 300)
+ggplot(df_p_trt) +
   geom_density(data = df_p_ctl,
-               fill = "lightgrey",
-               color = NA,
-               alpha = 0.75) +
-  geom_density(color = "#007BA7") +
-  facet_wrap(~trt_type2, nrow=2,
+               aes(x = p),
+               fill = "lightgrey", color = NA, alpha = 0.75) +
+  geom_line(data = subset(dens_df, !(trt_type2 %in% c('K','Other','NA'))), 
+            aes(x = x, y = y, color = x, group = trt_type2), 
+            size = 1.2) +
+  scale_color_gradient(low="#FC9F32", high="#1A2766") +
+  facet_wrap(~trt_type2, ncol=5,
              scales = "free_y") +
-  theme_bw() +
   theme(panel.grid = element_blank(),
         strip.background = element_blank()) +
   labs(y = "Density",
-       x = "Relative Deviation of Functional Distance")
+       x = "Relative Deviation of Functional Distance") +
+  theme(legend.position='none')
+dev.off()
 
-ggsave(g, file = "figure_ctr_trt_compariton.pdf")
-ggsave(g, file='figure_ctr_trt_compariton.png', width=10, height=5, units='in', dpi=300, bg='white')
+### edit in photoshop to overlap control gradient panel with the grey background for all trts ###
