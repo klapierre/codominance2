@@ -26,4 +26,7 @@ pacman::p_load(here,
                patchwork, # Q1 combining plots 
                sf,
                ggalluvial, # Q3 sankey diagram
-               tidyverse)
+               tidyverse,
+               pscl, # Q1 McFadden R2libra
+               broom #table cleaning
+               )

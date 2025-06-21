@@ -181,31 +181,40 @@ chart.Correlation(factors, method = "spearman")
 
 
 # Multinomial Analysis ----------------------------------------------------------
+#multinom function comes from nnet
 
+#mutinomial model using monodominance as the reference state
 multinom.baseline1 <- multinom(factor(modeSite$lumpMode,
                      levels = c(1,2,4)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
-              data=modeSite)
-a <- multinom(factor(modeSite$lumpMode,
-                        levels = c(1,2,4)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
-                 data=modeSite)
-stepAIC(a, direction = "backward")
+                    data=modeSite)
 
-coef <- summary(a)$coefficients
+#checking p-value manually
+coef <- summary(multinom.baseline1)$coefficients
 coef
-
-stderr <- summary(a)$standard.errors
+stderr <- summary(multinom.baseline1)$standard.errors
 stderr
+z <- expcoef/stderr
 
-z <- coef/stderr
 p_values <- 2 * (1 - pnorm(abs(z)))
 p_values
 
-exp(coef(a))
 
-head(round(fitted(a),2))
+#PR2() from 'pscl' package provides many R2 estimates
+pR2(multinom.baseline1) #McFaddenR2 = 0.45
+
+#Putting into more convenient table format, P-values and OR's match model output 
+results <- tidy(multinom.baseline1, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+results_table <- results %>%
+  mutate(OR_CI = sprintf("%.2f (%.2f, %.2f)", estimate, conf.low, conf.high),
+    p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+  select(y.level, term, OR_CI,p_value) %>%
+  rename( "Outcome Category" = y.level,
+    "Predictor" = term,
+    "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+    "P-value" = p_value)
 
 
-# Code to generate figure of multinomial model----------------------------------------------------------
+# Code to generate figure of multinomial model predictions----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
 df_om <- modeSite %>% 
@@ -404,28 +413,27 @@ ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 300)
 # Visualizing distribution of codominance across sites ----------------------------------------------------------
 
 mapData <- modeSite %>% 
-  mutate(codom_category = ifelse(mode_site == 1, "Monodominated", 
-                          ifelse(mode_site == 2, "Codominated", "Even"))) %>% 
+  mutate(codom_category = ifelse(lumpMode == 1, "Mono", 
+                          ifelse(lumpMode == 2, "Codom", "Even"))) %>% 
   filter(!is.na(N_Deposition))
 
-mapData$codom_category <- factor(mapData$codom_category, levels = c("Monodominated", "Codominated", "Tridominated", "Even"))
+mapData$codom_category <- factor(mapData$codom_category, levels = c("Mono", "Codom", "Even"))
 
-autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
+autumnalPalette <- c("#007BA7", "#A63922", "#D8B573")
 
-mapData %>% 
-  ggplot(aes(x="", y=mode_site, fill = codom_category)) +
-  geom_bar(stat = "identity", width=1) +
-  coord_polar("y",start=0)
+cc_bins <- mapData %>% 
+  group_by(codom_category) %>% 
+  summarise(count = n()) 
+cc_binsdf <- as.data.frame(cc_bins)  
 
-ggplot(mapData, aes(x = codom_category, fill = codom_category)) +
-  geom_histogram(stat = "count") +
-  stat_count(binwidth = 1, 
-             geom = 'text', 
-             color = 'white', 
-             aes(label = after_stat(count)),
-             position = position_stack(vjust = 0.5))+
-  xlab("Site Dominance")+
-  ylab("Count")+
-  scale_fill_manual(values = autumnalPalette) +
-  theme(legend.position = "none")
-
+Fig1Bars <- cc_binsdf %>% 
+  ggplot(aes(x = factor(codom_category, levels = c("Mono", "Codom", "Even"))))+
+  geom_bar(aes(y=count),stat = "identity", fill = autumnalPalette)+
+  geom_text(aes(y=count,label = count),vjust = -0.1, size = 20)+
+  labs(x="",y= "Count")+
+  theme_classic2()+
+  theme(element_text(size = 20),
+        axis.text.x = element_text(size = 40, angle = 0, vjust = 0.5, hjust =0.5),
+        axis.title.y = element_text(size = 40),
+        axis.text.y  = element_text(size = 40),
+        plot.margin = margin(1,.4,.4,.4,"cm"))
