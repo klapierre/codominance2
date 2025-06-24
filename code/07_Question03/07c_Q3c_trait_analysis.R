@@ -2,7 +2,7 @@
 ################################################################################
 ##  06b_Q2_trait_analysis.R: link codominants to trait data
 ##
-##  Authors: Akira Terui
+##  Authors: Akira Terui (modified K. Komatsu)
 ##  Date created: 5/30/2025
 ################################################################################
 

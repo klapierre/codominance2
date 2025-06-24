@@ -131,7 +131,7 @@ allGroupsSite <- Q3trtGroupsSite %>%
 overlapTable <- xtabs(~ match + trt_type, data = allGroupsSite)
 
 print(chisq <- chisq.test(overlapTable))
-# X-squared = 222.02, df = 96, p-value = 5.531e-12
+# X-squared = 246.93, df = 96, p-value = 2.981e-15
 
 mosaicplot(overlapTable, shade = TRUE, las=2,
            main = "overlapTable")
@@ -160,7 +160,7 @@ summaryOverlapTable$match_nice <- factor(summaryOverlapTable$match_nice, levels 
                                                                                     'Partial+','Partial','Partial-',
                                                                                     'None+','None','None-'))
 
-ggplot(summaryOverlapTable, aes(x=trt_type_nice , y=match_nice)) +
+ggplot(summaryOverlapTable, aes(x=1 , y=match_nice)) +
   geom_tile(aes(fill=percent)) +
   geom_text(aes(label=Freq), size=6, color='grey40') +
   # geom_text(aes(label=round(100*percent, digits=0))) +
@@ -172,21 +172,40 @@ ggplot(summaryOverlapTable, aes(x=trt_type_nice , y=match_nice)) +
 # ggsave(file='Fig6_heatMapOverlapTrt.png', width=10, height=5, units='in', dpi=300, bg='white')
 
 overallOverlap <- summaryOverlapTable %>% 
-  group_by(match_nice) %>% 
-  summarize(count=sum(Freq), .groups='drop')
+  mutate(match_condensed=ifelse(grepl('full', match), 'Full', 
+                         ifelse(grepl('partial', match), 'Partial',
+                                'None'))) %>% 
+  group_by(match_condensed) %>% 
+  summarize(count=sum(Freq)) %>% 
+  mutate(percent=count/sum(count)) %>% 
+  ungroup()
 
-ggplot(overallOverlap, aes(x="", y=count, fill=match_nice)) +
-  geom_col() +
-  coord_polar(theta="y") +
-  # scale_fill_manual(values=c('#B0AAD1', '#F7695F', '#6EA1C9'))  +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        axis.ticks = element_blank(),
-        panel.grid  = element_blank(),
-        plot.title = element_text(vjust = 0.5),
-        legend.position = 'none')  
+
+overallOverlap$match_condensed <- factor(overallOverlap$match_condensed, levels = c('Full','Partial','None'))
+
+ggplot(overallOverlap, aes(x=1 , y=match_condensed)) +
+  geom_tile(aes(fill=percent)) +
+  geom_text(aes(label=count), size=6, color='grey40') +
+  # geom_text(aes(label=round(100*percent, digits=0))) +
+  scale_fill_gradient(low='#F8FBF8', high='#A63922') +
+  scale_y_discrete(limits=rev) +
+  xlab('') + ylab('Species Overlap') + labs(fill='Column\nPercentage') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+# ggsave(file='Fig6_overlapTrt_heatMap.png', width=4, height=4, units='in', dpi=300, bg='white')
+
+# ggplot(overallOverlap, aes(x="", y=count, fill=match_nice)) +
+#   geom_col() +
+#   coord_polar(theta="y") +
+#   # scale_fill_manual(values=c('#B0AAD1', '#F7695F', '#6EA1C9'))  +
+#   theme(axis.text.x = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         axis.ticks = element_blank(),
+#         panel.grid  = element_blank(),
+#         plot.title = element_text(vjust = 0.5),
+#         legend.position = 'none')  
 
 # ggsave(file='Fig6a_pieOverlapTrt.png', width=4, height=4, units='in', dpi=300, bg='white')
 

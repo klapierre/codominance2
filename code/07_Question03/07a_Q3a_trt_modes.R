@@ -156,7 +156,7 @@ modeAll <- modeTrt %>%
 summaryTableAll <- xtabs(~ trt_ctl + lump_mode_cat, data = modeAll)
 
 print(chisq <- chisq.test(summaryTableAll))
-# X-squared = 9.661, df = 2, p-value = 0.007983
+# X-squared = 10.173, df = 2, p-value = 0.00618
 
 mosaicplot(summaryTableAll, shade = TRUE, las=2,
            main = "summaryTableAll")
@@ -186,9 +186,8 @@ m3 <- loglm(~trt_type+lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt
 m4 <- loglm(~lump_mode_site_cat+trt_type*lump_mode_trt_cat, data=summaryTableTrt) #joint independence (lump_mode_site_cat)
 m5 <- loglm(~lump_mode_trt_cat*lump_mode_site_cat, data=summaryTableTrt) #only lump_mode_site_cat
 m6 <- loglm(~lump_mode_trt_cat*trt_type, data=summaryTableTrt) #only trt_type
-m7 <- loglm(~trt_type*lump_mode_site_cat*lump_mode_trt_cat, data=summaryTableTrt) #fully saturated
 
-anova(m1,m2,m3,m4,m5,m6,m7)
+anova(m1,m2,m3,m4,m5,m6)
 #model 2 (conditional independence - trt codom number depends on both trt type and site codom)
 
 
@@ -196,7 +195,7 @@ anova(m1,m2,m3,m4,m5,m6,m7)
 modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
 
 print(chisq <- chisq.test(modeSiteCodom))
-# X-squared = 193.44, df = 4, p-value < 2.2e-16
+# X-squared = 197.14, df = 4, p-value < 2.2e-16
 
 mosaicplot(modeSiteCodom, shade = TRUE, las=2,
            main = "modeSiteCodom")
@@ -300,52 +299,3 @@ ggplot(longModeTrt, aes(x = ctl_trt, stratum = category, alluvium = group, y = n
   coord_cartesian(xlim=c(1.3, 1.7))
 
 # ggsave(file='Fig4_trtSankey_overall.png', width=8, height=6, units='in', dpi=300, bg='white')
-
-
-
-
-# #stacked by treatment (don't run factor of trts above to get them all)
-# ggplot(modeTrt, aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
-#   geom_bar(stat = "count", position='stack') +
-#   stat_count(geom = 'text', 
-#              color = 'white', 
-#              aes(label = after_stat(count)),
-#              position = position_stack(vjust = 0.5)) +
-#   xlab("Site Dominance") +
-#   ylab("Count") +
-#   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-#   facet_grid(rows='trt_type', scales='free_y')
-# 
-# # ggsave(file='Fig4b_trtHistograms_byTrt_all.png', width=10, height=30, units='in', dpi=300, bg='white')
-
-
-# #stacked, only subset with higher replication across sites
-# ggplot(subset(modeTrt, !(trt_type %in% c('C','fungicide','light','lime','plant_mani','precip_vari','stone') & !(is.na(trt_type)))), 
-#        aes(x = lump_mode_site_cat, fill = lump_mode_trt_cat)) +
-#   geom_bar(stat = "count", position='stack') +
-#   stat_count(geom = 'text', 
-#              color = 'white', 
-#              aes(label = after_stat(count)),
-#              position = position_stack(vjust = 0.5)) +
-#   xlab("Site Dominance") +
-#   ylab("Count") +
-#   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-#   facet_grid(rows='trt_type', scales='free_y')
-# 
-# # ggsave(file='Fig4c_trtHistograms_byTrt_subset.png', width=10, height=30, units='in', dpi=300, bg='white')
-
-
-# #faceted, only subset with higher replication across sites
-# ggplot(modeTrt, aes(x = lump_mode_trt_cat, fill = lump_mode_trt_cat)) +
-#   geom_bar(stat = "count", position='identity') +
-#   # stat_count(geom = 'text', 
-#   #            color = 'white', 
-#   #            aes(label = after_stat(count)),
-#   #            position = position_stack(vjust = 0.5)) +
-#   xlab("Treatment Dominance") +
-#   ylab("Count") +
-#   scale_fill_manual(values = autumnalPalette, name='Treatment Dominance') +
-#   theme(legend.position='none') +
-#   facet_grid(rows=vars(trt_type), cols=vars(lump_mode_site_cat), scales='free_y') 
-# 
-# # ggsave(file='Fig4d_trtHistograms_byTrt_facet.png', width=30, height=30, units='in', dpi=300, bg='white')
