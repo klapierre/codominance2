@@ -145,6 +145,7 @@ ggplot(df_hist, aes(value)) + # df_hist comes from formatted df above
        y = "Count")
 
 # saveRDS(modeSite, file = "data/modeSite.rds")
+# write.csv(modeSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\modeSite_20250624.csv', row.names=F)
 
 
 # Visualizing each predictor with boxplots ----------------------------------------------------------
@@ -240,6 +241,7 @@ df_seq <- foreach(v = var, .combine = bind_cols) %do% {
              length.out = 100))
   
 }
+
 # Set column names 
 colnames(df_seq) <- var
 
