@@ -71,20 +71,29 @@ df_pool0 <- readRDS("data/allSppList.rds") %>%
 # how many plants are identified to species level
 completeSpp <- df_pool0 %>% 
   select(genus_species) %>% 
-  unique() %>% #start with 7062 unique species identifiers
-  separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2', 'other3', 'other4', 'other5', 'other6', 'other7', 'other10'), sep=' ', remove=F) %>%
-  filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.', '1', '2', '3', 'seedling')), 
+  unique() %>% #start with 7725 unique species identifiers
+  separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2',
+                                     'other3', 'other4', 'other5', 'other6',
+                                     'other7', 'other10'), sep=' ', remove=F) %>%
+  filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.', 
+                          '1', '2', '3', 'seedling')), 
          !is.na(species), 
          !(genus %in% c('unknown', 'unk', 'ZZZZ', 'Unknown')), 
-         !(genus_species %in% c('forb, unidentified', 'geranium pot', 'rosa spec', 'pycnan vir', 'annual forb', 'fleshy forb', 'forb hibiscus',
-                                'cottony forb', 'forb six', 'grass, unidentified', 'un lily', 'unidentified dicot', 'poaceae family', 
-                                'cyperaceae family', 'ericaceae family', 'cryptantha blue', 'Stiff leathery', 'Dangle flower', 'Aster opposite',
+         !(genus_species %in% c('forb, unidentified', 'geranium pot', 
+                                'rosa spec', 'pycnan vir', 'annual forb', 
+                                'fleshy forb', 'forb hibiscus',
+                                'cottony forb', 'forb six', 
+                                'grass, unidentified', 'un lily', 
+                                'unidentified dicot', 'poaceae family', 
+                                'cyperaceae family', 'ericaceae family', 
+                                'cryptantha blue', 'Stiff leathery', 
+                                'Dangle flower', 'Aster opposite',
                                 'Long thin', '')),
-         is.na(other1)) %>%  #6179 species identified to species level
+         is.na(other1)) %>%  #6211 species identified to species level
   select(genus_species) %>% 
   rename(species=genus_species) %>% 
   left_join(df_trait) %>% 
-  na.omit() #3816 species have all traits
+  na.omit() #3817 species have all traits
 
 ####### NOTE: fix this here, some species probably should have traits, but are missing for some reason. Complete traits for species in the spreadsheet in onedrive, redo trait imputation, and rerun all trait-based code #########
 
