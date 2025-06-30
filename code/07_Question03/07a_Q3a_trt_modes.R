@@ -28,6 +28,10 @@ modeSite <- readRDS("data/modeSite.rds") %>%
 numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>% 
   separate(exp_unit, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::', remove=F) %>% 
   left_join(readRDS("data/expInfo.rds")) %>% 
+  filter(!(site_code %in% c('AUS_Ag_Biod','AUS_Berry','AUS_Arumpo','AUS_CYP','AUS_Buronga',
+                            'AUS_FowlersGap','AUS_Kimberley','AUS_Savernake','AUS_Yathong_large',
+                            'AUS_Yathong_small','AUS_Mallee','AUS_Paradise','AUS_Savernake',
+                            'AUS_Wapweelah','AUS_Werrai'))) %>% 
   filter(site_code!='ufrec.us', #filter out this site, which has no control plots
          !grepl("plant_mani", trt_type)) #filter out any treatment that directly manipulates plant species 
          
@@ -156,7 +160,7 @@ modeAll <- modeTrt %>%
 summaryTableAll <- xtabs(~ trt_ctl + lump_mode_cat, data = modeAll)
 
 print(chisq <- chisq.test(summaryTableAll))
-# X-squared = 10.173, df = 2, p-value = 0.00618
+# X-squared = 9.3228, df = 2, p-value = 0.009453
 
 mosaicplot(summaryTableAll, shade = TRUE, las=2,
            main = "summaryTableAll")
@@ -195,7 +199,7 @@ anova(m1,m2,m3,m4,m5,m6)
 modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
 
 print(chisq <- chisq.test(modeSiteCodom))
-# X-squared = 197.14, df = 4, p-value < 2.2e-16
+# X-squared = 190.19, df = 4, p-value < 2.2e-16
 
 mosaicplot(modeSiteCodom, shade = TRUE, las=2,
            main = "modeSiteCodom")
@@ -220,7 +224,7 @@ ggplot(summaryModeSiteCodom, aes(x=lump_mode_site_cat , y=lump_mode_trt_cat)) +
 modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type, data = modeTrt)
 
 print(chisq <- chisq.test(modeTrtCodom))
-# X-squared = 57.796, df = 24, p-value = 0.0001299
+# X-squared = 57.59, df = 24, p-value = 0.0001387
 
 mosaicplot(modeTrtCodom, shade = TRUE, las=2,
            main = "modeTrtCodom")

@@ -28,6 +28,10 @@ source("code/02_functions.R")
 
 ## data for codominant species
 df_codom0 <- readRDS("data/Q2ctlGroupsSite.rds") %>% 
+  filter(!(site_code %in% c('AUS_Ag_Biod','AUS_Berry','AUS_Arumpo','AUS_CYP','AUS_Buronga',
+                            'AUS_FowlersGap','AUS_Kimberley','AUS_Savernake','AUS_Yathong_large',
+                            'AUS_Yathong_small','AUS_Mallee','AUS_Paradise','AUS_Savernake',
+                            'AUS_Wapweelah','AUS_Werrai'))) %>% 
   filter(!is.na(alpha2)) %>% 
   group_by(site_code,
            project_name,
