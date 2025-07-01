@@ -1,8 +1,7 @@
-
 ################################################################################
 ##  06b_Q2_trait_analysis.R: link codominants to trait data
 ##
-##  Authors: Akira Terui
+##  Authors: Akira Terui (modified K. Komatsu)
 ##  Date created: 3/26/2025
 ################################################################################
 
@@ -99,10 +98,10 @@ completeSpp <- df_pool0 %>%
   left_join(df_trait) %>% 
   na.omit() #3817 species have all traits
 
-# test <- completeSpp %>% 
+# test <- completeSpp %>%
 #   filter(is.na(LDMC))
 # 
-# write.csv(test, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_categorical and cont.csv')
+# write.csv(test, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv')
 
 ####### NOTE: fix this here, some species probably should have traits, but are missing for some reason. Complete traits for species in the spreadsheet in onedrive, redo trait imputation, and rerun all trait-based code #########
 

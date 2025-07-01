@@ -19,7 +19,6 @@ correGExTraitsContinuous <- read.csv('https://pasta.lternet.edu/package/data/eml
 correGExTraitsCategorical <- read.csv('https://pasta.lternet.edu/package/data/eml/edi/1533/3/5ebbc389897a6a65dd0865094a8d0ffd') %>% 
   select(-family, -source, -error_risk_overall)
 
-
 ##### NutNet Traits - imputed/gathered for this project #####
 nutnetTraitsContinuous <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet/NutNet_continuousTraitData_imputed_20240711.csv') %>% 
   select(species, trait, trait_value) %>% 
@@ -50,9 +49,15 @@ categoricalTraits <- rbind(correGExTraitsCategorical, nutnetTraitsCategorical) %
   select(-mycorrhizal_type)
 
 allTraits <- continuousTraits %>% 
-  full_join(categoricalTraits)
+  full_join(categoricalTraits) %>% 
+  mutate(growth_form=ifelse(species %in% c('Opuntia fragilis','Cylindropuntia echinocarpa','Cylindropuntia leptocaulis',
+                                           'Cylindropuntia ramosissima','Opuntia maxima','Echinocereus coccineus',
+                                           'Sclerocactus whipplei'), 'cactus', growth_form),
+         leaf_compoundness=ifelse(growth_form %in% c('cactus'), 'none', leaf_compoundness))
 
 # saveRDS(allTraits, file = "data/allTraits.rds")
+
+# write.csv(allTraits, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\allTraits_CoRREGExNutNet_20250701.csv', row.names=F)
 
 
 
@@ -172,3 +177,21 @@ test <- coverWithTraits %>%
 #we have 550 experiments (site_proj_comm) and dropping any experiments that have at least one plot*year with <80% cover containing traits results in dropping 400 experiments
 
 hist(coverWithTraits$cover_remaining)
+
+
+
+#### Species with missing traits -- in the trait databases? ####
+missingData <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv') %>% 
+  left_join(read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_categorical and cont.csv')) %>% 
+  filter(!(reason %in% c('tree','lichen','moss','liverwort','lycophyte'))) %>% 
+  mutate(missing='missing')
+
+searchSpecies <- missingData %>% 
+  select(species)
+
+write.csv(searchSpecies, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\searchSpecies.csv', row.names=F)
+
+trySpp <- read.delim('C:\\Users\\kjkomatsu\\Desktop\\TryAccSpecies.txt') %>% 
+  rename(species=AccSpeciesName) %>% 
+  left_join(missingData) %>% 
+  filter(missing=='missing')

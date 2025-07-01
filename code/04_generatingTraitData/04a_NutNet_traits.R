@@ -16,7 +16,7 @@ library(tidyverse)
 
 
 #kim's laptop
-setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\nutnet')
+setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\nutnet')
 
 
 ###read in data
@@ -48,9 +48,14 @@ CoRREsp <- read.csv('C:\\Users\\kjkomatsu\\Smithsonian Dropbox\\Kimberly Komatsu
   mutate(database='CoRRE') %>% 
   unique()
 
-allSpp <- rbind(nutnetSpClean, GExSp, CoRREsp) %>% 
+extraSp <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\searchSpecies.csv') %>% 
+  rename(species_matched=species) %>% 
+  mutate(database='missing')
+
+allSpp <- rbind(nutnetSpClean, GExSp, CoRREsp, extraSp) %>% 
   pivot_wider(names_from=database, values_from=database, values_fill='not') %>% 
-  mutate(nutnet_only=ifelse(GEx=='not' & CoRRE=='not', 'needs traits', 'has traits'))
+  mutate(nutnet_only=ifelse(GEx=='not' & CoRRE=='not', 'needs traits', 
+                     ifelse(missing=='missing', 'needs traits', 'has traits')))
 
 nutnetFamilies <- nutnetSp %>% 
   filter(!is.na(New.Species), New.Species!='sp.') %>% 
@@ -230,7 +235,7 @@ TRYtraits <- cont_traits3a %>%
 #   ungroup() %>% 
 #   filter(n>2)
 
-# write.csv(TRYtraits, "NutNet_TRY traits_20240711.csv", row.names=F)
+# write.csv(TRYtraits, "NutNet_TRY traits_20250701.csv", row.names=F)
 
 
 ##### BIEN traits #####
