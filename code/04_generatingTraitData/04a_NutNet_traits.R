@@ -315,7 +315,7 @@ BIENtraits <- bienData %>%
   select(DatabaseID, DatasetID, ObservationID, Family, species_matched, genus, CleanTraitName, StdValue, Reference) %>% 
   filter(StdValue>0)
 
-# write.csv(BIENtraits, 'NutNet_BIEN traits_20240711.csv', row.names=F)
+# write.csv(BIENtraits, 'NutNet_BIEN traits_20250701.csv', row.names=F)
 
 
 ##### AusTraits #####
@@ -469,7 +469,7 @@ ntraits <- length(unique(allTraits$CleanTraitName))
 miss <- sum(is.na(allTraits_wide))
 total <- nrow(allTraits_wide)*ntraits
 miss/total*100
-#missing 89.03% of data
+#missing 89.17% of data
 
 spnum <- length(unique(allTraits_wide$species_matched))
 famnum <- length(unique(allTraits_wide$Family))
@@ -543,9 +543,9 @@ talltraits <- allTraits %>%
   pivot_wider(names_from=CleanTraitName, values_from=StdValue, values_fill=NA) %>% 
   ungroup()
 
-# write.csv(allTraits, 'nutnet_trait database_combo_continuous_20240710_long.csv', row.names = F)
+# write.csv(allTraits, 'nutnet_trait database_combo_continuous_20250701_long.csv', row.names = F)
 
-# write.csv(talltraits, 'nutnet_trait database_combo_continuous_20240710.csv', row.names = F)
+# write.csv(talltraits, 'nutnet_trait database_combo_continuous_20250701.csv', row.names = F)
 
 
 
