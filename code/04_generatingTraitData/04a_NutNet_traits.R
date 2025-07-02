@@ -5,7 +5,7 @@
 ##  Date created: April 17, 2024
 ################################################################################
 
-library(Taxonstand)
+# library(Taxonstand)
 library(WorldFlora)
 library(data.table)
 library(readxl)
@@ -95,7 +95,19 @@ traitsNeeded <- nutnet %>%
 #### Gather traits from databases (TRY, AusTraits, BIEN, CPTD2, TiP Leaf) ####
 
 ##### TRY data #####
-dat <- fread("C:\\Users\\kjkomatsu\\Smithsonian Dropbox\\Kimberly Komatsu\\working groups\\CoRRE\\CoRRE_database\\Data\\OriginalData\\Traits\\TRY\\TRY_Traits_Downloaded_April2023.txt",sep = "\t",data.table = FALSE,stringsAsFactors = FALSE,strip.white = TRUE)
+trySp <- read.delim('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\data\\TRY 2025\\TryAccSpecies.txt') %>% 
+  rename(species_matched=AccSpeciesName) %>% 
+  left_join(traitsNeeded) %>% 
+  filter(growth_form!='bryophyte', !(is.na(photosynthetic_pathway)))
+# write.csv(trySp, 'try_sp_list_needed.csv', row.names=F)
+
+dat_1 <- fread("C:\\Users\\kjkomatsu\\Smithsonian Dropbox\\Kimberly Komatsu\\working groups\\CoRRE\\CoRRE_database\\Data\\OriginalData\\Traits\\TRY\\TRY_Traits_Downloaded_April2023.txt",sep = "\t",data.table = FALSE,stringsAsFactors = FALSE,strip.white = TRUE)
+
+dat_2 <- fread("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\data\\TRY 2025\\42609_02072025181806\\42609.txt",sep = "\t",data.table = FALSE,stringsAsFactors = FALSE,strip.white = TRUE)
+
+dat_3 <- fread("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\data\\TRY 2025\\42608_02072025173546\\42608.txt",sep = "\t",data.table = FALSE,stringsAsFactors = FALSE,strip.white = TRUE)
+
+dat <- rbind(dat_1, dat_2, dat_3)
 
 # merge NutNet with TRY
 trysp <- dat %>% 
@@ -410,7 +422,7 @@ tipTraits <- tipTraits %>%
   select(DatabaseID, DatasetID, ObservationID, Family, genus, species_matched, CleanTraitName, StdValue, Reference) %>% 
   filter(StdValue>0)
 
-# write.csv(tipTraits, 'NutNet_TiP Leaf traits_20240711.csv', row.names=F)
+# write.csv(tipTraits, 'NutNet_TiP Leaf traits_20250701.csv', row.names=F)
 
 ##### China Plant Trait Database 2 #####
 spList <- read.csv('C:\\Users\\kjkomatsu\\Smithsonian Dropbox\\Kimberly Komatsu\\working groups\\CoRRE\\CoRRE_database\\Data\\OriginalData\\Traits\\ChinaPlant2\\Species translations.csv') %>% 
@@ -469,7 +481,7 @@ ntraits <- length(unique(allTraits$CleanTraitName))
 miss <- sum(is.na(allTraits_wide))
 total <- nrow(allTraits_wide)*ntraits
 miss/total*100
-#missing 89.17% of data
+#missing 89.05% of data
 
 spnum <- length(unique(allTraits_wide$species_matched))
 famnum <- length(unique(allTraits_wide$Family))
@@ -548,9 +560,10 @@ talltraits <- allTraits %>%
 # write.csv(talltraits, 'nutnet_trait database_combo_continuous_20250701.csv', row.names = F)
 
 
-
 ##### Impute Traits #####
 
+library(devtools)
+# install_github("fisw10/BHPMF")
 library(BHPMF)
 library(plyr)
 library(abind)
