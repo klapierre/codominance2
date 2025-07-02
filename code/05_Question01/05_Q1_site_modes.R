@@ -14,14 +14,8 @@ source("code/02_functions.R")
 # Read data ---------------------------------------------------------------
  
 numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>% 
-  separate(exp_unit, into=c('site_code', 'project_name', 'community_type', 
-                            'plot_id', 'treatment', 'calendar_year'), 
-           sep='::', remove=F) %>% 
-  left_join(readRDS("data/expInfo.rds")) %>% 
-  filter(!(site_code %in% c('AUS_Ag_Biod','AUS_Berry','AUS_Arumpo','AUS_CYP','AUS_Buronga',
-                            'AUS_FowlersGap','AUS_Kimberley','AUS_Savernake','AUS_Yathong_large',
-                            'AUS_Yathong_small','AUS_Mallee','AUS_Paradise','AUS_Savernake',
-                            'AUS_Wapweelah','AUS_Werrai')))
+   separate(exp_unit, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::', remove=F) %>% 
+   left_join(readRDS("data/expInfo.rds"))
  
 
  
