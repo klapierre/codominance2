@@ -113,7 +113,7 @@ df_hist <- modeSite %>%
                                variable == "MAT" ~ "MAT",
                                variable == "gamma_rich" ~ "Gamma Diversity",
                                variable == "anpp" ~ "ANPP",
-                               variable == "HumanDisturbance" ~ "Human Disturbance",
+                               variable == "HumanDisturbance" ~ "Human Footprint Index",
                                variable == "N_Deposition" ~ "N Deposition")) 
 
 mode.labs <- c("monodominated", "codominated", "even")
@@ -188,7 +188,8 @@ chart.Correlation(factors, method = "spearman")
 
 #mutinomial model using monodominance as the reference state
 multinom.baseline1 <- multinom(factor(modeSite$lumpMode,
-                     levels = c(1,2,4)) ~ MAP+gamma_rich+HumanDisturbance+N_Deposition+MAP*MAT*anpp+gamma_rich*N_Deposition*HumanDisturbance ,
+                     levels = c(1,2,4)) ~ MAP + gamma_rich + HumanDisturbance + 
+                       N_Deposition + MAP * MAT * anpp + gamma_rich * N_Deposition * HumanDisturbance ,
                     data=modeSite)
 
 #checking p-value manually
@@ -282,13 +283,22 @@ df_predicted <- foreach(v = var,
                  data.frame(predict(multinom.baseline1,
                                     newdata = df_s,
                                     type = "probs")))
+
+   
  # Format for figure interpretation   
    df_c <- df_p %>% 
      select(v, starts_with("X")) %>% 
      pivot_longer(cols = starts_with("X"), 
                   names_to = "Codom", 
                   values_to = "Probability")
-}
+                        }
+
+
+
+# figure out what is going on here and if it can be included in fig 2
+#ci <- as.data.frame(confint(multinom.baseline1, level = 0.95))
+
+
 
 # Clarify column names 
 df_combined <- df_predicted %>% 
@@ -296,7 +306,7 @@ df_combined <- df_predicted %>%
          starts_with("Probability")) %>% 
   rename(Codom = Codom...2,
          "Gamma Diversity" = gamma_rich,
-         "Human Disturbance" = HumanDisturbance, 
+         "Human Footprint Index" = HumanDisturbance, 
          "N Deposition" = N_Deposition,
          ANPP = anpp,
          Prob_MAP = Probability...3,
@@ -308,14 +318,14 @@ df_combined <- df_predicted %>%
 
 # Assign names
 prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_anpp", "Prob_Human", "Prob_N")
-named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Disturbance", "N Deposition")
+named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition")
 
 axis_limits <- list(
   "MAP" = list(limits = c(0, 2500), breaks = seq(0, 2500, by = 500)),
   "MAT" = list(limits = c(-10, 30), breaks = seq(-10, 30, by = 10)),
   "Gamma Diversity" = list(limits = c(0, 250), breaks = seq(0, 250, by = 50)),
   "ANPP" = list(limits = c(0, 1500), breaks = seq(0, 1500, by = 500)),
-  "Human Disturbance" = list(limits = c(0, 50), breaks = seq(0, 50, by = 10)),
+  "Human Footprint Index" = list(limits = c(0, 50), breaks = seq(0, 50, by = 10)),
   "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500))
 )
 
@@ -392,7 +402,7 @@ out_hist <- foreach(h = named_var) %do% {
           text = element_text(size = 35),
           axis.text.x = element_text(size = 30),
           axis.text.y = element_text(size = 30),
-          plot.margin = unit(c(2, 3.4, 0, 0.5), "cm"),
+          plot.margin = unit(c(4, 3.4, -0.5, 0.5), "cm"), #adjusts white space around histograms
           plot.background = element_rect(fill = "white", colour = "white")) +
     scale_fill_manual(name = "",
                       labels = c("Monodominated", "Codominated", "Even"),
@@ -406,11 +416,12 @@ final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],
              output[[1]], output[[2]], output[[3]], 
              out_hist[[4]], out_hist[[5]], out_hist[[6]], 
              output[[4]], output[[5]], output[[6]], 
-             nrow = 4, ncol = 3, heights = c(2, 3, 2, 3))
+             nrow = 4, ncol = 3, 
+             heights = c(2.5, 3, 2.5, 3)) # adjusts height of plots
 
 
 # save figure as png
-ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 300)
+ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 400)
 
 
 
