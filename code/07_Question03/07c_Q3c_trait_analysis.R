@@ -29,13 +29,13 @@ source("code/02_functions.R")
 ## data for codominant species for treatment plots
 ## - treatment, CO2, disturbance, drought, irr, temp have few replicates - removed
 df_codom0 <- readRDS("data/Q3trtGroupsSite.rds") %>% 
-  filter(!is.na(alpha2)) %>% #,
-         # !(trt_type %in% c("CO2", 
-         #                   "disturbance", 
-         #                   "drought", 
-         #                   "irr", 
-         #                   "temp",
-         #                   "other"))) %>% 
+  filter(!is.na(alpha2)) %>%
+  # !(trt_type %in% c("CO2", 
+  #                   "disturbance", 
+  #                   "drought", 
+  #                   "irr", 
+  #                   "temp",
+  #                   "other"))) %>% 
   group_by(site_code,
            project_name,
            community_type) %>% 
@@ -194,18 +194,44 @@ df_p_trt <- foreach(k = usite,
 
 df_p_ctl <- readRDS("data/traitp_ctr.rds")
 
+df_lm <- df_p_ctl %>% 
+  select(site_proj_comm,
+         p,
+         n_pool,
+         n_obs) %>% 
+  mutate(treatment = "control") %>% 
+  bind_rows(
+    select(df_p_trt,
+           c(site_proj_comm,
+             p,
+             n_pool,
+             n_obs,
+             treatment = trt_type))
+  ) %>% 
+  drop_na(treatment) %>% 
+  filter(treatment != "CO2") %>% 
+  mutate(treatment = fct_relevel(treatment,
+                                 "control"))
+# df_lm %>% 
+#   ggplot(aes(y = treatment,
+#              x = p)) +
+#   ggridges::geom_density_ridges(from = 0,
+#                                 to = 1)
+
+glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~ treatment,
+                 df_lm,
+                 family = glmmTMB::betabinomial()) %>% 
+  summary()
+
+# figures -----------------------------------------------------------------
+
 df_p_trt$trt_type2 <- factor(df_p_trt$trt_type,
-       levels=c('CO2','drought','temp','herb_removal',
-                'multiple_trts',
-                'N','P','N*P','mult_nutrient','irr'),
-       labels=c('Control','Drought','Warming','Herbivore Rem.',
-                'Mult. Trts',
-                'N','P','N*P','Mult. Nutrients','Irrigation'))
-
-
-
-
-# figures  ---------------------------------------
+                             levels=c('CO2','drought','temp','herb_removal',
+                                      'multiple_trts',
+                                      'N','P','N*P','mult_nutrient','irr'),
+                             labels=c('Control','Drought','Warming','Herbivore Rem.',
+                                      'Mult. Trts',
+                                      'N','P','N*P','Mult. Nutrients','Irrigation'))
 
 theme_set(theme_bw())
 theme_update(axis.title.x=element_text(size=22, vjust=-0.35, margin=margin(t=15)),
