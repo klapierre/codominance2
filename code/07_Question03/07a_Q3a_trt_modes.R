@@ -330,6 +330,3 @@ ggplot(longModeTrtCategory, aes(x = ctl_trt, stratum = category, alluvium = grou
 
 # ggsave(file='FigY_trtSankey_overall_category.png', width=8, height=6, units='in', dpi=300, bg='white')
 
-
-
-
