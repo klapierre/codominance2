@@ -164,8 +164,15 @@ siteModeFig <- ggplot(data=modeSite, aes(x=group, y=site_rich)) +
   xlab('') + ylab('Richness (site mode)') +
   coord_flip()
 
+blank <- grid.rect(gp = gpar(col = NA))  # an empty grob
+grid.arrange(allFig, blank, plotModeFig, blank, siteModeFig, 
+             ncol=1, nrow=5,
+             heights=c(3,1,3,1,3))
+#export at 1500x1000
 
-grid.arrange(allFig, plotModeFig, siteModeFig, ncol=3, nrow=1)
-#export at 4000x500
 
-
+ggplot(data=modeSite, aes(x=group, y=site_rich)) +
+  geom_boxplot() +
+  xlab('') + ylab('Richness (site mode)') +
+  coord_flip()
+#export at 1500x500
