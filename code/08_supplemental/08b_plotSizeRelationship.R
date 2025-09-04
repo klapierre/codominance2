@@ -66,4 +66,8 @@ ggplot(data=barGraphStats(data=plotSize, variable="plot_size", byFactorNames=c("
   coord_flip()
 #export at 1500x500
 
-
+ggplot(data=plotSize, aes(x=group, y=plot_size)) +
+  geom_boxplot() +
+  xlab('') + ylab('Plot Size') +
+  coord_flip()
+#export at 1500x500
