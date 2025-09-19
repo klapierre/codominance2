@@ -146,6 +146,8 @@ ggplot(df_hist, aes(value)) + # df_hist comes from formatted df above
   labs(x = "Value",
        y = "Count")
 
+
+# saveRDS(modePlot, file = "data/modePlot.rds")
 # saveRDS(modeSite, file = "data/modeSite.rds")
 # write.csv(modeSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\modeSite_20250624.csv', row.names=F)
 

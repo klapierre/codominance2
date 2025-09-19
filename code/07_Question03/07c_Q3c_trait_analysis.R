@@ -29,13 +29,13 @@ source("code/02_functions.R")
 ## data for codominant species for treatment plots
 ## - treatment, CO2, disturbance, drought, irr, temp have few replicates - removed
 df_codom0 <- readRDS("data/Q3trtGroupsSite.rds") %>% 
-  filter(!is.na(alpha2)) %>% #,
-         # !(trt_type %in% c("CO2", 
-         #                   "disturbance", 
-         #                   "drought", 
-         #                   "irr", 
-         #                   "temp",
-         #                   "other"))) %>% 
+  filter(!is.na(alpha2)) %>%
+  # !(trt_type %in% c("CO2", 
+  #                   "disturbance", 
+  #                   "drought", 
+  #                   "irr", 
+  #                   "temp",
+  #                   "other"))) %>% 
   group_by(site_code,
            project_name,
            community_type) %>% 
@@ -194,18 +194,54 @@ df_p_trt <- foreach(k = usite,
 
 df_p_ctl <- readRDS("data/traitp_ctr.rds")
 
+df_lm <- df_p_ctl %>% 
+  select(site_proj_comm,
+         p,
+         n_pool,
+         n_obs) %>% 
+  mutate(treatment = "control") %>% 
+  bind_rows(
+    select(df_p_trt,
+           c(site_proj_comm,
+             p,
+             n_pool,
+             n_obs,
+             treatment = trt_type))
+  ) %>% 
+  drop_na(treatment) %>% 
+  filter(treatment != "CO2") %>% 
+  mutate(treatment = fct_relevel(treatment,
+                                 "control"))
+# df_lm %>% 
+#   ggplot(aes(y = treatment,
+#              x = p)) +
+#   ggridges::geom_density_ridges(from = 0,
+#                                 to = 1)
+
+glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~ treatment,
+                 df_lm,
+                 family = glmmTMB::betabinomial()) %>% 
+  summary()
+
+# figures -----------------------------------------------------------------
+
+
 df_p_trt$trt_type2 <- factor(df_p_trt$trt_type,
-       levels=c('CO2','drought','temp','herb_removal',
-                'multiple_trts',
-                'N','P','N*P','mult_nutrient','irr'),
-       labels=c('Control','Drought','Warming','Herbivore Rem.',
-                'Mult. Trts',
-                'N','P','N*P','Mult. Nutrients','Irrigation'))
+                             levels=c('CO2','drought','temp','herb_removal',
+                                      'multiple_trts',
+                                      'N','P','N*P','mult_nutrient','irr'),
+                             labels=c('Control','Drought','Warming','Herbivore Rem.',
+                                      'Mult. Trts',
+                                      'N','P','N*P','Mult. Nutrients','Irrigation'))
 
 
+df_p_trt <- df_p_trt %>% 
+  mutate(trt_category=ifelse(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K'), 'Resource',
+                      ifelse(trt_type %in% c('drought','temp','herb_removal'), 'Stress',
+                      ifelse(trt_type=='multiple_trts', 'Mult. Trts', 'Other'))))
 
+df_p_trt$trt_category <- factor(df_p_trt$trt_category, levels=c('Stress', 'Resource', 'Other', 'Mult. Trts'))
 
-# figures  ---------------------------------------
 
 theme_set(theme_bw())
 theme_update(axis.title.x=element_text(size=22, vjust=-0.35, margin=margin(t=15)),
@@ -267,7 +303,7 @@ ggplot(df_p_trt) +
   geom_density(data = df_p_ctl,
                aes(x = p),
                fill = "lightgrey", color = NA, alpha = 0.75) +
-  geom_line(data = subset(dens_df, !(trt_type2 %in% c('K','Other','NA'))), 
+  geom_line(data = subset(dens_df, !(trt_type2 %in% c('K', 'other', 'NA'))), 
             aes(x = x, y = y, color = x, group = trt_type2), 
             size = 1.2) +
   scale_color_gradient(low="#FC9F32", high="#1A2766") +
@@ -281,3 +317,66 @@ ggplot(df_p_trt) +
 dev.off()
 
 ### edit in photoshop to overlap control gradient panel with the grey background for all trts ###
+
+
+# figure for treatment categories (stress vs resource)
+dens_df <- df_p_trt %>%
+  group_by(trt_category) %>%
+  filter(n() >= 2) %>%  # Remove tiny groups
+  # filter(!(trt_category %in% c('K', 'Other'))) %>%
+  group_map(~ {
+    dens <- density(.x$p, n = 500000, bw = "nrd0",
+                    from = 0,
+                    to = 1)  
+    tibble(x = dens$x, y = dens$y, trt_category = .y$trt_category)
+  }) %>%
+  bind_rows()
+
+png("figure_3_traits_byCategory.png", width = 10, height = 5, units='in', res = 300)
+ggplot(df_p_trt) +
+  geom_density(data = df_p_ctl,
+               aes(x = p),
+               fill = "lightgrey", color = NA, alpha = 0.75) +
+  geom_line(data = subset(dens_df, !(trt_category %in% c('NA'))), 
+            aes(x = x, y = y, color = x, group = trt_category), 
+            size = 1.2) +
+  scale_color_gradient(low="#FC9F32", high="#1A2766") +
+  facet_wrap(~trt_category, ncol=5) +
+  ylim(0,1.4) +
+  scale_y_continuous(breaks=seq(0,1.4, by=0.2)) +
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank()) +
+  labs(y = "Density",
+       x = "Relative Deviation of Functional Distance") +
+  theme(legend.position='none')
+dev.off()
+
+#figure for ctl
+dens_ctl <- df_p_ctl %>%
+  group_map(~ {
+    dens <- density(.x$p, n = 500000, bw = "nrd0",
+                    from = 0,
+                    to = 1)  
+    tibble(x = dens$x, y = dens$y)
+  }) %>%
+  bind_rows()
+
+dens_ctl <- dens_ctl %>%
+  mutate(width = lead(x) - x,
+         width = ifelse(is.na(width), lag(width), width))  # handle last NA
+
+png("figure_ctl_gradient_category.png", width = 10, height = 5, units='in', res = 300)
+ggplot(df_p_trt) +
+  geom_tile(data = dens_ctl,
+            aes(x = x, y = y / 2, height = y, width = width, fill = x),
+            inherit.aes = FALSE) +
+  scale_fill_gradient(low="#FC9F32", high="#1A2766") +
+  facet_wrap(~trt_category, ncol = 5) +
+  ylim(0,1.4) +
+  scale_y_continuous(breaks=seq(0,1.4, by=0.2)) +
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank(),
+        legend.position = 'none') +
+  labs(y = "Density",
+       x = "Relative Deviation of Functional Distance")
+dev.off()

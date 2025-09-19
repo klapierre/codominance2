@@ -299,3 +299,34 @@ ggplot(longModeTrt, aes(x = ctl_trt, stratum = category, alluvium = group, y = n
   coord_cartesian(xlim=c(1.3, 1.7))
 
 # ggsave(file='Fig4_trtSankey_overall.png', width=8, height=6, units='in', dpi=300, bg='white')
+
+
+
+# Group into treatments categories for Sankey
+
+longModeTrtCategory <- modeTrt  %>% 
+  mutate(trt_category=ifelse(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K'), 'Resource',
+                      ifelse(trt_type %in% c('drought','temp','herb_removal'), 'Stress',
+                      ifelse(trt_type=='multiple_trts', 'Mult. Trts', 'Other')))) %>%
+  select(lump_mode_trt_cat, lump_mode_site_cat, trt_category) %>%
+  na.omit() %>%
+  count(lump_mode_trt_cat, lump_mode_site_cat, trt_category) %>%
+  group_by(lump_mode_trt_cat, lump_mode_site_cat, trt_category) %>%
+  mutate(group = cur_group_id()) %>%
+  ungroup() %>%
+  pivot_longer(cols = c(lump_mode_trt_cat, trt_category, lump_mode_site_cat),
+               names_to = "ctl_trt",
+               values_to = "category") %>%
+  mutate(ctl_trt = factor(ctl_trt,
+                          levels = c("lump_mode_site_cat", "trt_category", "lump_mode_trt_cat"),
+                          labels = c("Ambient", "Treatment Category", "Treatment")))
+
+ggplot(longModeTrtCategory, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = category)) +
+  geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
+  geom_stratum(width = 1/3) 
+  # scale_fill_manual(values=autumnalPalette) +
+  # labs(x=NULL, y='Count', fill=NULL) +
+  # coord_cartesian(xlim=c(1.3, 1.7))
+
+# ggsave(file='FigY_trtSankey_overall_category.png', width=8, height=6, units='in', dpi=300, bg='white')
+
