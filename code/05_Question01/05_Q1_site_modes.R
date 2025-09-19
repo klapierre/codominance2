@@ -362,7 +362,7 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
           legend.key = element_rect(fill = "transparent", color = NA)) +
     scale_color_manual(name = "",
                        labels = c("Monodominated", "Codominated", "Even"),
-                       values = c("#007BA7", "#A63922", "#D8B573"))+
+                       values = c("#007BA7", "#A63922", "#D8B573")) +
     guides(color = guide_legend(override.aes = list(size = 7)))
   
   legend <- get_legend(fig)
@@ -372,7 +372,7 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
   
   list(fig_q1)
 }
-
+fig
 
 # Overlay the legend on the top-right of the first plot
 plot_with_legend <- grobTree(
