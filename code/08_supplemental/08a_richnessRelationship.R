@@ -111,6 +111,7 @@ modeSite <- rbind(modeSiteTrue, multipleModeProj) %>%
   mutate(group=ifelse(mode_site %in% c(2,3), 'codominated', 
                       ifelse(mode_site==1, 'monodominated', 'even')))
 
+# saveRDS(modeSite, file = "data/modeSiteRichness.rds")
 
 
 # ordinal logistic regressions ------------------
@@ -176,3 +177,21 @@ ggplot(data=modeSite, aes(x=group, y=site_rich)) +
   xlab('') + ylab('Richness (site mode)') +
   coord_flip()
 #export at 1500x500
+
+
+# compare to RDFD ------------------
+
+df_p_ctl <- readRDS("data/traitp_ctr.rds") %>% 
+  left_join(modeSite)
+
+cor.test(df_p_ctl$p, df_p_ctl$site_rich) 
+
+ggplot(data=df_p_ctl, aes(x=site_rich, y=p)) +
+  geom_point(size=3) +
+  xlab('Richness (site mode)') + ylab('RDFD') +
+  annotate("text", 
+           x=Inf, y=Inf, 
+           label="r = 0.031\nt = 0.350\np = 0.728", 
+           hjust=1.1, vjust=1.1,
+           size=9)
+#export at 1500x1500

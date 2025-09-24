@@ -1,8 +1,7 @@
-
 ################################################################################
 ##  06b_Q2_trait_analysis.R: link codominants to trait data
 ##
-##  Authors: Akira Terui (modified K. Komatsu)
+##  Authors: Akira Terui, Kim Komatsu
 ##  Date created: 5/30/2025
 ################################################################################
 
@@ -224,8 +223,9 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~ treatment,
                  family = glmmTMB::betabinomial()) %>% 
   summary()
 
-# figures -----------------------------------------------------------------
 
+
+# figures -----------------------------------------------------------------
 
 df_p_trt$trt_type2 <- factor(df_p_trt$trt_type,
                              levels=c('CO2','drought','temp','herb_removal',
@@ -397,3 +397,4 @@ ggplot(df_p_trt) +
   labs(y = "Density",
        x = "Relative Deviation of Functional Distance")
 dev.off()
+
