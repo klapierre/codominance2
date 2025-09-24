@@ -296,16 +296,24 @@ dens_df <- df_p_trt %>%
                     to = 1)  
     tibble(x = dens$x, y = dens$y, trt_type2 = .y$trt_type2)
   }) %>%
-  bind_rows()
+  bind_rows() %>%
+  arrange(trt_type2, x) %>%
+  group_by(trt_type2) %>%
+  mutate(
+    xend = lead(x),
+    yend = lead(y)
+  ) %>%
+  drop_na()
 
 png("figure_3_traits_bytrt.png", width = 12, height = 10, units='in', res = 300)
 ggplot(df_p_trt) +
   geom_density(data = df_p_ctl,
                aes(x = p),
                fill = "lightgrey", color = NA, alpha = 0.75) +
-  geom_line(data = subset(dens_df, !(trt_type2 %in% c('K', 'other', 'NA'))), 
-            aes(x = x, y = y, color = x, group = trt_type2), 
-            size = 1.2) +
+  geom_segment(data = subset(dens_df, !(trt_type2 %in% c('K', 'other', 'NA'))), 
+            aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_type2), 
+            linewidth = 3,
+            lineend='round') +
   scale_color_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_type2, ncol=5,
              scales = "free_y") +
@@ -330,20 +338,28 @@ dens_df <- df_p_trt %>%
                     to = 1)  
     tibble(x = dens$x, y = dens$y, trt_category = .y$trt_category)
   }) %>%
-  bind_rows()
+  bind_rows() %>%
+  arrange(trt_category, x) %>%
+  group_by(trt_category) %>%
+  mutate(
+    xend = lead(x),
+    yend = lead(y)
+  ) %>%
+  drop_na()
 
 png("figure_3_traits_byCategory.png", width = 10, height = 5, units='in', res = 300)
 ggplot(df_p_trt) +
   geom_density(data = df_p_ctl,
                aes(x = p),
                fill = "lightgrey", color = NA, alpha = 0.75) +
-  geom_line(data = subset(dens_df, !(trt_category %in% c('NA'))), 
-            aes(x = x, y = y, color = x, group = trt_category), 
-            size = 1.2) +
+  geom_segment(data = subset(dens_df, !(trt_category %in% c('NA'))), 
+            aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_category), 
+            linewidth=3,
+            lineend='round') +
   scale_color_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_category, ncol=5) +
   ylim(0,1.4) +
-  scale_y_continuous(breaks=seq(0,1.4, by=0.2)) +
+  scale_y_continuous(breaks=seq(0,1.4, by=0.2), limits = c(0, 1.4) ) +
   theme(panel.grid = element_blank(),
         strip.background = element_blank()) +
   labs(y = "Density",
@@ -372,8 +388,8 @@ ggplot(df_p_trt) +
             inherit.aes = FALSE) +
   scale_fill_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_category, ncol = 5) +
-  ylim(0,1.4) +
-  scale_y_continuous(breaks=seq(0,1.4, by=0.2)) +
+  # ylim(0,1.4) +
+  scale_y_continuous(breaks=seq(0,1.4, by=0.2), limits = c(0, 1.4)) +
   theme(panel.grid = element_blank(),
         strip.background = element_blank(),
         legend.position = 'none') +
