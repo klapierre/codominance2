@@ -103,6 +103,7 @@ nutnetANPP <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_fi
   summarise(anpp=mean((vascular_live_mass+nonvascular_live_mass), na.rm=T)) %>%
   ungroup() %>%
   filter(!is.nan(anpp), anpp>0) %>% #drops the data from some sites in years they didn't collect, and two years at one site that reported 0 growth
+  filter(site_code!='glacphr.us') %>% #drop site because it is a seeded restoration
   group_by(site_code) %>%
   summarise(anpp=mean(anpp, na.rm=T)) %>%
   ungroup()
@@ -134,6 +135,7 @@ nutnet <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first 
                   ifelse(treatment=='K', 'K', 
                   ifelse(treatment=='NP', 'N*P', 
                          'mult_nutrient'))))))))) %>%
+  filter(site_code!='glacphr.us') %>% #drop site because it is a seeded restoration
   rename(treatment_year=year_trt) %>%
   dplyr::select(database, exp_unit, site_code, project_name, community_type, plot_id,
                 calendar_year, treatment_year, treatment, trt_type, plot_size_m2, plot_number,
@@ -243,10 +245,10 @@ allAbund <- rbind(correAbund, gexAbund, nutnetAbund) %>%
   unique() %>% 
   filter(!is.na(num_codominants)) #remove plots that were excluded from codominance calculation due to plant abundance manipulations
 
-replicatesAll <- allAbund %>% dplyr::select(exp_unit) %>% unique() #62,981 individual data points (plot*year combinations)
-replicatesSpatial <- allAbund %>% dplyr::select(site_code, project_name, community_type, plot_id) %>% unique() #10,616 individual plots
-replicatesExperiment <- allAbund %>% dplyr::select(site_code, project_name, community_type) %>% unique() #528 experiments
-replicatesSite <- allAbund %>% dplyr::select(site_code) %>% unique() #471 sites (but this needs further work, because some sites are named multiple things)
+replicatesAll <- allAbund %>% dplyr::select(exp_unit) %>% unique() #62,971 individual data points (plot*year combinations)
+replicatesSpatial <- allAbund %>% dplyr::select(site_code, project_name, community_type, plot_id) %>% unique() #10,606 individual plots
+replicatesExperiment <- allAbund %>% dplyr::select(site_code, project_name, community_type) %>% unique() #527 experiments
+replicatesSite <- allAbund %>% dplyr::select(site_code) %>% unique() #470 sites (but this needs further work, because some sites are named multiple things)
 
 
 #cutoff at 20% abundance for mean of all codominant species (only applied to plots with fewer than 4 codominant species, otherwise they will be set to "even" communities below); for monodominated plots, the single monodominant species cover must be greater than 20%
