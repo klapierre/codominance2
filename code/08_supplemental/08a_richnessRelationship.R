@@ -178,6 +178,16 @@ ggplot(data=modeSite, aes(x=group, y=site_rich)) +
   coord_flip()
 #export at 1500x500
 
+ggplot(data=barGraphStats(data=modeSite, variable="site_rich", byFactorNames=c("group")), aes(x=group, y=mean)) +
+  geom_jitter(data=modeSite, aes(x=group, y=site_rich), size=4, color='grey',
+              width = 0.3, height = 0 ) +
+  geom_point(size=9) +
+  # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, size=6) +
+  geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2, size=3) +
+  xlab('') + ylab('Richness (site mode)') +
+  coord_flip()
+#export at 1500x500
+
 
 # compare to RDFD ------------------
 
