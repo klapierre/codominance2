@@ -256,6 +256,17 @@ ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=lump_mode_trt_cat)) +
 # ggsave(file='Fig5b_heatMapTrtTrt.png', width=10, height=4, units='in', dpi=300, bg='white')
 
 
+ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=100*percent, fill=lump_mode_trt_cat)) +
+  geom_bar(stat='identity') +
+  geom_text(aes(label = Freq, group=lump_mode_trt_cat), position=position_stack(vjust=0.5), size=6, color='grey20') +
+  # geom_text(aes(label=round(100*percent, digits=0))) +
+  scale_fill_manual(values=autumnalPalette, name='Dominance Structure') +
+  xlab('') + ylab('Percent of Communities') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+# ggsave(file='Fig5b_barGraphTrtTrt.png', width=10, height=8, units='in', dpi=300, bg='white')
+
+
 # Histogram- count of codom level per treatment and site codom number ----------------------------
 
 autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
