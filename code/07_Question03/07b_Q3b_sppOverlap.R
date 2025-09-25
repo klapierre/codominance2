@@ -184,8 +184,8 @@ overallOverlap <- summaryOverlapTable %>%
 overallOverlap$match_condensed <- factor(overallOverlap$match_condensed, levels = c('Full','Partial','None'))
 
 ggplot(overallOverlap, aes(x=1 , y=match_condensed)) +
-  geom_tile(aes(fill=percent)) +
-  geom_text(aes(label=count), size=6, color='grey40') +
+  geom_tile(aes(fill=100*percent)) +
+  geom_text(aes(label=count), size=6, color='grey20') +
   # geom_text(aes(label=round(100*percent, digits=0))) +
   scale_fill_gradient(low='#F8FBF8', high='#A63922') +
   scale_y_discrete(limits=rev) +
