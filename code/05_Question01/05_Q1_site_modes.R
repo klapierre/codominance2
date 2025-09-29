@@ -458,30 +458,30 @@ Fig1Bars <- cc_binsdf %>%
 
 
 
-# Determining differences in codominance across ecoregions ----------------------------------------------------------
-
-modeSiteEcoregion <- modeSite %>% 
-  mutate(lump_mode_cat=ifelse(lumpMode==1, 'Monodominated',
-                       ifelse(lumpMode==2, 'Codominated', 'Even'))) 
-
-
-ecoregionModel <- xtabs(~ Formation + lump_mode_cat, data = modeSiteEcoregion)
-
-print(chisq <- chisq.test(ecoregionModel))
-# X-squared = 36.811, df = 28, p-value = 0.1231
-
-mosaicplot(ecoregionModel, shade = TRUE, las=2,
-           main = "modeSiteCodom")
-
-summaryModeSiteCodom <- as.data.frame(ecoregionModel) %>% 
-  group_by(lump_mode_cat ) %>%
-  mutate(percent=Freq/sum(Freq)) %>% 
-  ungroup()
-
-ggplot(summaryModeSiteCodom, aes(x=lump_mode_cat , y=Formation)) +
-  geom_tile(aes(fill=percent)) +
-  geom_text(aes(label=Freq), size=6, color='grey40') +
-  # geom_text(aes(label=round(100*percent, digits=0))) +
-  scale_fill_gradient(low='#F8FBF8', high='#031B88') +
-  scale_y_discrete(limits=rev) +
-  xlab('Control') + ylab('Treatment') + labs(fill='Column\nPercentage')
+# # Determining differences in codominance across ecoregions ----------------------------------------------------------
+# 
+# modeSiteEcoregion <- modeSite %>% 
+#   mutate(lump_mode_cat=ifelse(lumpMode==1, 'Monodominated',
+#                        ifelse(lumpMode==2, 'Codominated', 'Even'))) 
+# 
+# 
+# ecoregionModel <- xtabs(~ Formation + lump_mode_cat, data = modeSiteEcoregion)
+# 
+# print(chisq <- chisq.test(ecoregionModel))
+# # X-squared = 36.811, df = 28, p-value = 0.1231
+# 
+# mosaicplot(ecoregionModel, shade = TRUE, las=2,
+#            main = "modeSiteCodom")
+# 
+# summaryModeSiteCodom <- as.data.frame(ecoregionModel) %>% 
+#   group_by(lump_mode_cat ) %>%
+#   mutate(percent=Freq/sum(Freq)) %>% 
+#   ungroup()
+# 
+# ggplot(summaryModeSiteCodom, aes(x=lump_mode_cat , y=Formation)) +
+#   geom_tile(aes(fill=percent)) +
+#   geom_text(aes(label=Freq), size=6, color='grey40') +
+#   # geom_text(aes(label=round(100*percent, digits=0))) +
+#   scale_fill_gradient(low='#F8FBF8', high='#031B88') +
+#   scale_y_discrete(limits=rev) +
+#   xlab('Control') + ylab('Treatment') + labs(fill='Column\nPercentage')
