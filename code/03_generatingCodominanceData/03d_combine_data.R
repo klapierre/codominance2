@@ -12,16 +12,16 @@ source("code/02_functions.R")
 # experiment information, including treatments and environmental characteristics: details on line 181
 # expInfo <- readRDS("data/expInfo.rds")
 
-# environmental data for each project: details on line 198
+# environmental data for each project: details on line 226
 # envData <- readRDS("data/envData.rds")
 
-# categorical groups of codoms: details on line 269
+# categorical groups of codoms: details on line 299
 # numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds")
 
-# list of all spp and ranks: details on line 286
+# list of all spp and ranks: details on line 317
 # allSppList <- readRDS("data/allSppList.rds")
 
-# list of codominant spp and ranks: details on line 296
+# list of codominant spp and ranks: details on line 327
 # codomSppList <- readRDS("data/codomSppList.rds")
 
 
@@ -207,6 +207,9 @@ GISlayers <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_fir
   dplyr::select(site_code, Latitude, Longitude, HumanDisturbance, N_Deposition) %>% 
   unique()
 
+ecoregions <- read_xlsx('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GrasslandEcotypewCont_filled.xlsx') %>% 
+  mutate(site_proj_comm=ifelse(site_proj_comm=='NA', NA, site_proj_comm))
+
 envData <- individualExperiments %>%
   dplyr::select(database, site_code, project_name, community_type, MAP, MAT, gamma_rich, anpp) %>%
   unique() %>% 
@@ -215,7 +218,10 @@ envData <- individualExperiments %>%
   left_join(GISlayers, relationship='many-to-many') %>% 
   group_by(database, site_code, project_name, community_type) %>% 
   summarise_at(vars(MAP:N_Deposition), .funs=mean, na.rm=T) %>% 
-  ungroup()
+  ungroup() %>%
+  mutate(site_proj_comm=ifelse(database=='corre', paste(site_code, project_name, community_type, sep='_'), NA)) %>% 
+  left_join(ecoregions) %>% 
+  select(-OID_, -lat_1, -long_1, -site_proj_comm, -ECO_NAME, -Division, -designation_criteria)
 
 saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
 
