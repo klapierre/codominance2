@@ -1,8 +1,7 @@
-
 ################################################################################
 ##  06b_Q2_trait_analysis.R: link codominants to trait data
 ##
-##  Authors: Akira Terui (modified K. Komatsu)
+##  Authors: Akira Terui, Kim Komatsu
 ##  Date created: 5/30/2025
 ################################################################################
 
@@ -30,12 +29,6 @@ source("code/02_functions.R")
 ## - treatment, CO2, disturbance, drought, irr, temp have few replicates - removed
 df_codom0 <- readRDS("data/Q3trtGroupsSite.rds") %>% 
   filter(!is.na(alpha2)) %>%
-  # !(trt_type %in% c("CO2", 
-  #                   "disturbance", 
-  #                   "drought", 
-  #                   "irr", 
-  #                   "temp",
-  #                   "other"))) %>% 
   group_by(site_code,
            project_name,
            community_type) %>% 
@@ -190,6 +183,14 @@ df_p_trt <- foreach(k = usite,
                       return(df_dist)
                     }
 
+df_p_trt <- df_p_trt %>% 
+  mutate(trt_category = case_when(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K') ~ 'Resource',
+                                  trt_type %in% c('drought','temp','herb_removal') ~ 'Stress',
+                                  trt_type == 'multiple_trts' ~ 'Mult. Trts',
+                                  .default = 'Other'),
+         trt_category = factor(trt_category,
+                               levels=c('Stress', 'Resource', 'Other', 'Mult. Trts')))
+
 # comparison, control vs. treatment ---------------------------------------
 
 df_p_ctl <- readRDS("data/traitp_ctr.rds")
@@ -206,13 +207,13 @@ df_lm <- df_p_ctl %>%
              p,
              n_pool,
              n_obs,
-             treatment = trt_type))
+             treatment = trt_category))
   ) %>% 
   drop_na(treatment) %>% 
   filter(treatment != "CO2") %>% 
   mutate(treatment = fct_relevel(treatment,
                                  "control"))
-# df_lm %>% 
+# df_lm %>%
 #   ggplot(aes(y = treatment,
 #              x = p)) +
 #   ggridges::geom_density_ridges(from = 0,
@@ -225,7 +226,6 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~ treatment,
 
 # figures -----------------------------------------------------------------
 
-
 df_p_trt$trt_type2 <- factor(df_p_trt$trt_type,
                              levels=c('CO2','drought','temp','herb_removal',
                                       'multiple_trts',
@@ -233,15 +233,6 @@ df_p_trt$trt_type2 <- factor(df_p_trt$trt_type,
                              labels=c('Control','Drought','Warming','Herbivore Rem.',
                                       'Mult. Trts',
                                       'N','P','N*P','Mult. Nutrients','Irrigation'))
-
-
-df_p_trt <- df_p_trt %>% 
-  mutate(trt_category=ifelse(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K'), 'Resource',
-                      ifelse(trt_type %in% c('drought','temp','herb_removal'), 'Stress',
-                      ifelse(trt_type=='multiple_trts', 'Mult. Trts', 'Other'))))
-
-df_p_trt$trt_category <- factor(df_p_trt$trt_category, levels=c('Stress', 'Resource', 'Other', 'Mult. Trts'))
-
 
 theme_set(theme_bw())
 theme_update(axis.title.x=element_text(size=22, vjust=-0.35, margin=margin(t=15)),
@@ -296,16 +287,24 @@ dens_df <- df_p_trt %>%
                     to = 1)  
     tibble(x = dens$x, y = dens$y, trt_type2 = .y$trt_type2)
   }) %>%
-  bind_rows()
+  bind_rows() %>%
+  arrange(trt_type2, x) %>%
+  group_by(trt_type2) %>%
+  mutate(
+    xend = lead(x),
+    yend = lead(y)
+  ) %>%
+  drop_na()
 
 png("figure_3_traits_bytrt.png", width = 12, height = 10, units='in', res = 300)
 ggplot(df_p_trt) +
   geom_density(data = df_p_ctl,
                aes(x = p),
                fill = "lightgrey", color = NA, alpha = 0.75) +
-  geom_line(data = subset(dens_df, !(trt_type2 %in% c('K', 'other', 'NA'))), 
-            aes(x = x, y = y, color = x, group = trt_type2), 
-            size = 1.2) +
+  geom_segment(data = subset(dens_df, !(trt_type2 %in% c('K', 'other', 'NA'))), 
+            aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_type2), 
+            linewidth = 3,
+            lineend='round') +
   scale_color_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_type2, ncol=5,
              scales = "free_y") +
@@ -330,20 +329,28 @@ dens_df <- df_p_trt %>%
                     to = 1)  
     tibble(x = dens$x, y = dens$y, trt_category = .y$trt_category)
   }) %>%
-  bind_rows()
+  bind_rows() %>%
+  arrange(trt_category, x) %>%
+  group_by(trt_category) %>%
+  mutate(
+    xend = lead(x),
+    yend = lead(y)
+  ) %>%
+  drop_na()
 
 png("figure_3_traits_byCategory.png", width = 10, height = 5, units='in', res = 300)
 ggplot(df_p_trt) +
   geom_density(data = df_p_ctl,
                aes(x = p),
                fill = "lightgrey", color = NA, alpha = 0.75) +
-  geom_line(data = subset(dens_df, !(trt_category %in% c('NA'))), 
-            aes(x = x, y = y, color = x, group = trt_category), 
-            size = 1.2) +
+  geom_segment(data = subset(dens_df, !(trt_category %in% c('NA'))), 
+            aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_category), 
+            linewidth=3,
+            lineend='round') +
   scale_color_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_category, ncol=5) +
   ylim(0,1.4) +
-  scale_y_continuous(breaks=seq(0,1.4, by=0.2)) +
+  scale_y_continuous(breaks=seq(0,1.4, by=0.2), limits = c(0, 1.4) ) +
   theme(panel.grid = element_blank(),
         strip.background = element_blank()) +
   labs(y = "Density",
@@ -372,11 +379,12 @@ ggplot(df_p_trt) +
             inherit.aes = FALSE) +
   scale_fill_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_category, ncol = 5) +
-  ylim(0,1.4) +
-  scale_y_continuous(breaks=seq(0,1.4, by=0.2)) +
+  # ylim(0,1.4) +
+  scale_y_continuous(breaks=seq(0,1.4, by=0.2), limits = c(0, 1.4)) +
   theme(panel.grid = element_blank(),
         strip.background = element_blank(),
         legend.position = 'none') +
   labs(y = "Density",
        x = "Relative Deviation of Functional Distance")
 dev.off()
+

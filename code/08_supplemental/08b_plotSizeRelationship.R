@@ -58,10 +58,11 @@ TukeyHSD(siteBackwardModel)
 plotSize$group <- factor(plotSize$group, levels=c('even', 'codominated', 'monodominated'))
 
 ggplot(data=barGraphStats(data=plotSize, variable="plot_size", byFactorNames=c("group")), aes(x=group, y=mean)) +
+  geom_jitter(data=plotSize, aes(x=group, y=plot_size), size=4, color='grey',
+              width = 0.3, height = 0 ) +
   geom_point(size=9) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, size=6) +
+  # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, size=6) +
   geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2, size=3) +
-  geom_point(data=plotSize, aes(x=group, y=plot_size), size=4, color='grey') +
   xlab('') + ylab('Plot Size') +
   coord_flip()
 #export at 1500x500

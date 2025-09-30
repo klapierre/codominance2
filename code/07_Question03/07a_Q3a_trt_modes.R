@@ -156,7 +156,7 @@ modeAll <- modeTrt %>%
 summaryTableAll <- xtabs(~ trt_ctl + lump_mode_cat, data = modeAll)
 
 print(chisq <- chisq.test(summaryTableAll))
-# X-squared = 9.3228, df = 2, p-value = 0.009453
+# X-squared = 10.195, df = 2, p-value = 0.006112
 
 mosaicplot(summaryTableAll, shade = TRUE, las=2,
            main = "summaryTableAll")
@@ -195,7 +195,7 @@ anova(m1,m2,m3,m4,m5,m6)
 modeSiteCodom <- xtabs(~ lump_mode_site_cat + lump_mode_trt_cat, data = modeTrt)
 
 print(chisq <- chisq.test(modeSiteCodom))
-# X-squared = 190.19, df = 4, p-value < 2.2e-16
+# X-squared = 197.14, df = 4, p-value < 2.2e-16
 
 mosaicplot(modeSiteCodom, shade = TRUE, las=2,
            main = "modeSiteCodom")
@@ -220,7 +220,7 @@ ggplot(summaryModeSiteCodom, aes(x=lump_mode_site_cat , y=lump_mode_trt_cat)) +
 modeTrtCodom <- xtabs(~ lump_mode_trt_cat + trt_type, data = modeTrt)
 
 print(chisq <- chisq.test(modeTrtCodom))
-# X-squared = 57.59, df = 24, p-value = 0.0001387
+# X-squared = 57.796, df = 24, p-value = 0.0001299
 
 mosaicplot(modeTrtCodom, shade = TRUE, las=2,
            main = "modeTrtCodom")
@@ -254,6 +254,17 @@ ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=lump_mode_trt_cat)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 # ggsave(file='Fig5b_heatMapTrtTrt.png', width=10, height=4, units='in', dpi=300, bg='white')
+
+
+ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=100*percent, fill=lump_mode_trt_cat)) +
+  geom_bar(stat='identity') +
+  geom_text(aes(label = Freq, group=lump_mode_trt_cat), position=position_stack(vjust=0.5), size=6, color='grey20') +
+  # geom_text(aes(label=round(100*percent, digits=0))) +
+  scale_fill_manual(values=autumnalPalette, name='Dominance Structure') +
+  xlab('') + ylab('Percent of Communities') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+# ggsave(file='Fig5b_barGraphTrtTrt.png', width=10, height=8, units='in', dpi=300, bg='white')
 
 
 # Histogram- count of codom level per treatment and site codom number ----------------------------
@@ -321,12 +332,127 @@ longModeTrtCategory <- modeTrt  %>%
                           levels = c("lump_mode_site_cat", "trt_category", "lump_mode_trt_cat"),
                           labels = c("Ambient", "Treatment Category", "Treatment")))
 
-ggplot(longModeTrtCategory, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = category)) +
-  geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
-  geom_stratum(width = 1/3) 
-  # scale_fill_manual(values=autumnalPalette) +
-  # labs(x=NULL, y='Count', fill=NULL) +
-  # coord_cartesian(xlim=c(1.3, 1.7))
+# ggplot(longModeTrtCategory, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = category)) +
+#   geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
+#   geom_stratum(width = 1/3) 
+#   # scale_fill_manual(values=autumnalPalette) +
+#   # labs(x=NULL, y='Count', fill=NULL) +
+#   # coord_cartesian(xlim=c(1.3, 1.7))
 
 # ggsave(file='FigY_trtSankey_overall_category.png', width=8, height=6, units='in', dpi=300, bg='white')
 
+
+
+# Pie charts by treatment category
+  
+stressWide <- modeTrt  %>% 
+  mutate(trt_category=ifelse(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K'), 'Resource',
+                      ifelse(trt_type %in% c('drought','temp','herb_removal'), 'Stress',
+                      ifelse(trt_type=='multiple_trts', 'Mult. Trts', 'Other')))) %>%
+  filter(trt_category=='Stress') %>% 
+  select(lump_mode_trt_cat) %>%
+  na.omit() %>%
+  count(lump_mode_trt_cat) %>% 
+  mutate(proportion = round((n/sum(n)), digits=3)) %>% 
+  arrange(proportion) %>%
+  mutate(labels=scales::percent(proportion))
+
+stressFig <- ggplot(stressWide, aes(x="", y=proportion, fill=lump_mode_trt_cat)) +
+  geom_col() +
+  coord_polar(theta="y") +
+  scale_fill_manual(values=autumnalPalette)  +
+  ggtitle('Stress') +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = 'none')
+
+
+resourceWide <- modeTrt  %>% 
+  mutate(trt_category=ifelse(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K'), 'Resource',
+                             ifelse(trt_type %in% c('drought','temp','herb_removal'), 'Stress',
+                                    ifelse(trt_type=='multiple_trts', 'Mult. Trts', 'Other')))) %>%
+  filter(trt_category=='Resource') %>% 
+  select(lump_mode_trt_cat) %>%
+  na.omit() %>%
+  count(lump_mode_trt_cat) %>% 
+  mutate(proportion = round((n/sum(n)), digits=3)) %>% 
+  arrange(proportion) %>%
+  mutate(labels=scales::percent(proportion))
+
+resourceFig <- ggplot(resourceWide, aes(x="", y=proportion, fill=lump_mode_trt_cat)) +
+  geom_col() +
+  coord_polar(theta="y") +
+  scale_fill_manual(values=autumnalPalette)  +
+  ggtitle('Resource Addition') +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = 'none')
+
+
+otherWide <- modeTrt  %>% 
+  mutate(trt_category=ifelse(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K'), 'Resource',
+                             ifelse(trt_type %in% c('drought','temp','herb_removal'), 'Stress',
+                                    ifelse(trt_type=='multiple_trts', 'Mult. Trts', 'Other')))) %>%
+  filter(trt_category=='Other') %>% 
+  select(lump_mode_trt_cat) %>%
+  na.omit() %>%
+  count(lump_mode_trt_cat) %>% 
+  mutate(proportion = round((n/sum(n)), digits=3)) %>% 
+  arrange(proportion) %>%
+  mutate(labels=scales::percent(proportion))
+
+otherFig <- ggplot(otherWide, aes(x="", y=proportion, fill=lump_mode_trt_cat)) +
+  geom_col() +
+  coord_polar(theta="y") +
+  scale_fill_manual(values=autumnalPalette)  +
+  ggtitle('Other') +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = 'none')
+
+
+multWide <- modeTrt  %>% 
+  mutate(trt_category=ifelse(trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K'), 'Resource',
+                             ifelse(trt_type %in% c('drought','temp','herb_removal'), 'Stress',
+                                    ifelse(trt_type=='multiple_trts', 'Mult. Trts', 'Other')))) %>%
+  filter(trt_category=='Mult. Trts') %>% 
+  select(lump_mode_trt_cat) %>%
+  na.omit() %>%
+  count(lump_mode_trt_cat) %>% 
+  mutate(proportion = round((n/sum(n)), digits=3)) %>% 
+  arrange(proportion) %>%
+  mutate(labels=scales::percent(proportion))
+
+multFig <- ggplot(multWide, aes(x="", y=proportion, fill=lump_mode_trt_cat)) +
+  geom_col() +
+  coord_polar(theta="y") +
+  scale_fill_manual(values=autumnalPalette)  +
+  ggtitle('Mult. Trts') +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = 'none')
+
+
+#grouped figure
+ggarrange(stressFig, resourceFig, otherFig, multFig,
+          ncol = 2, nrow = 2)

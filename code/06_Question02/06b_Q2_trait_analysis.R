@@ -256,6 +256,8 @@ saveRDS(df_m, file = "data/traitp_ctr.rds")
 
 # analysis ----------------------------------------------------------------
 
+df_m <- readRDS("data/traitp_ctr.rds")
+
 ## model with aridity
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
                    scale(aridity) + 
