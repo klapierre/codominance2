@@ -136,7 +136,6 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
   theme_bw() +
   theme(legend.position = "top") +
   scale_fill_manual(name = "",
-                    labels = c("Monodominated", "Codominated", "Even"),
                     values = c("#007BA7", "#A63922", "#D8B573")) +
   labs(x = "Value",
        y = "Count")
@@ -343,10 +342,10 @@ named_var <- c("Aridity", "Gamma Diversity", "ANPP", "Human Footprint Index", "N
 # Fig: Multinomial model predictions --------------------------------------
 
 axis_limits <- list(
-  "Aridity" = list(limits = c(0, 45000), breaks = seq(0, 45000, by = 5000)),
-  "Gamma Diversity" = list(limits = c(0, 250), breaks = seq(0, 250, by = 50)),
-  "ANPP" = list(limits = c(0, 1500), breaks = seq(0, 1500, by = 500)),
-  "Human Footprint Index" = list(limits = c(0, 50), breaks = seq(0, 50, by = 10)),
+  "Aridity" = list(limits = c(0, 40000), breaks = seq(0, 40000, by = 10000)),
+  "Gamma Diversity" = list(limits = c(0, 160), breaks = seq(0, 160, by = 50)),
+  "ANPP" = list(limits = c(0, 1100), breaks = seq(0, 1100, by = 500)),
+  "Human Footprint Index" = list(limits = c(0, 45), breaks = seq(0, 45, by = 10)),
   "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)))
 
 # Pre-allocate list
@@ -359,7 +358,11 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
   
   df_combo <- df_combined %>% 
     dplyr::select(Codom, !!sym(v), !!sym(p)) %>% 
-    rename(v1 = !!sym(v), p1 = !!sym(p))
+    rename(v1 = !!sym(v), p1 = !!sym(p)) %>% 
+    mutate(Codom = case_when(Codom == "X1" ~ "Monodominated",
+                             Codom == "X2" ~ "Codominated",
+                             Codom == "X4" ~ "Even"),
+           Codom = factor(Codom, levels = c("Monodominated", "Codominated", "Even")))
   
   lims <- axis_limits[[v]]$limits
   brks <- axis_limits[[v]]$breaks
@@ -381,7 +384,7 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
           legend.box.background = element_rect(fill = "transparent", color = NA),
           legend.key = element_rect(fill = "transparent", color = NA)) +
     scale_color_manual(name = "",
-                       labels = c("Monodominated", "Codominated", "Even"),
+                       #labels = c("Monodominated", "Codominated", "Even"),
                        values = c("#007BA7", "#A63922", "#D8B573")) +
     guides(color = guide_legend(override.aes = list(size = 7)))
   
@@ -425,7 +428,6 @@ out_hist <- foreach(h = named_var) %do% {
           plot.margin = unit(c(4, 3.4, -0.5, 0.5), "cm"), #adjusts white space around histograms
           plot.background = element_rect(fill = "white", colour = "white")) +
     scale_fill_manual(name = "",
-                      labels = c("Monodominated", "Codominated", "Even"),
                       values = c("#007BA7", "#A63922", "#D8B573")) +
     labs(x = "", y = "Count")
 }
