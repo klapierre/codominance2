@@ -1,16 +1,122 @@
-# figures for multinomial model with aridity and precip
+# figure code to plot MAP & MAT from multinomial model 
 
-# Fig: Distribution of values ---------------------------------------------
+# Format: for figure of multinomial model predictions----------------------------------------------------------
 
-# Ashley's upload of new data: already with mode (mono, co, tri, even) and lumped mode (mono, co, even)
-## must mutate and factor levels so each group is treated as such 
+# Generate mean (later used in model predicted data)
+df_om <- df_iap %>% 
+  na.omit() %>% 
+  mutate(#Aridity_mean = mean(Aridity),
+    GDiv_mean = mean(GDiv),
+    HumanFootprint_mean = mean(HumanFootprint),
+    NDep_mean = mean(NDep),
+    ANPP_mean = mean(ANPP),
+    #cv_Precip_mean = mean(cv_Precip),
+    MAP_mean = mean(MAP),
+    MAT_mean = mean(MAT)) 
+
+# Variables of interest
+var <- c("GDiv", "HumanFootprint", "NDep", "ANPP", "MAP", "MAT") 
+
+# Generate sequence of values looped for each variable 
+df_seq <- foreach(v = var, .combine = bind_cols) %do% {
+  
+  df_v <- df_om %>% 
+    dplyr::select(v)
+  
+  out <- as_tibble(seq(from = min(df_v), 
+                       to = max(df_v), 
+                       length.out = 100))
+  
+}
+
+# Set column names 
+colnames(df_seq) <- var
+
+# Add identifier column to link dataframes 
+df_seq <- df_seq %>% 
+  add_column(seq = seq(from = 1, to = 100, length.out = 100))
+
+# Combine dataframes- variable means and sequence 
+df_r <- df_om %>% 
+  dplyr::select(ends_with("_mean")) %>% 
+  slice(1:100) %>% 
+  add_column(seq = seq(from = 1, to = 100, length.out = 100)) %>% 
+  full_join(df_seq, by = "seq") 
+
+# Mean of variables of interest
+var2 <- c( "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean", "MAP_mean", "MAT_mean") 
+
+# Predict data using model, sequence, and mean
+df_predicted <- foreach(v = var, 
+                        v2 = var2,
+                        .combine = bind_cols) %do% {
+                          # Select variable sequence
+                          df_v <- df_r %>% 
+                            dplyr::select(v, seq)
+                          # Select means for all other variables   
+                          df_m <- df_r %>% 
+                            dplyr::select(ends_with("_mean"), seq) %>% 
+                            dplyr::select(!v2)
+                          # Combine data sets to predict from   
+                          df_s <- df_v %>% 
+                            full_join(df_m, by = "seq") %>% 
+                            dplyr::select(!seq) %>% 
+                            rename_with(~str_remove(., '_mean'))
+                          # Predict data
+                          df_p <- cbind(df_s,
+                                        data.frame(predict(multinom.baseline1,
+                                                           newdata = df_s,
+                                                           type = "probs")))
+                          
+                          
+                          # Format for figure interpretation   
+                          df_c <- df_p %>% 
+                            dplyr::select(v, starts_with("X")) %>% 
+                            pivot_longer(cols = starts_with("X"), 
+                                         names_to = "Codom", 
+                                         values_to = "Probability")
+                        }
+
+
+
+# figure out what is going on here and if it can be included in fig 2
+#ci <- as.data.frame(confint(multinom.baseline1, level = 0.95))
+
+
+
+# Clarify column names 
+df_combined <- df_predicted %>% 
+  select(Codom...2, GDiv, HumanFootprint, NDep, ANPP, MAP, MAT,
+         starts_with("Probability")) %>% 
+  rename(Codom = Codom...2,
+         "Gamma Diversity" = GDiv,
+         "Human Footprint Index" = HumanFootprint, 
+         "N Deposition" = NDep,
+         ANPP = ANPP,
+         MAP = MAP,
+         MAT = MAT,
+         Prob_gamma = Probability...3,
+         Prob_Human = Probability...6,
+         Prob_N = Probability...9,
+         Prob_ANPP = Probability...12,
+         Prob_MAP = Probability...15,
+         Prob_MAT = Probability...18)
+
+# Assign names
+prob <- c( "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N", "Prob_MAP", "Prob_MAT")
+named_var <- c( "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition", "MAP", "MAT")
+
+
+
+
+# Fig: Multinomial model predictions --------------------------------------
 df_iap <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Grad School/Terui Lab/Codominance/IAP.csv") %>% 
   mutate(LumpNames = factor(LumpNames, c("Monodominated", "Codominated", "Even")))
 
-df_arid <- df_iap %>% 
+df_sel <- df_iap %>% 
   dplyr::select(lumpMode, LumpNames, lumpMode, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity, cv_Precip)
 
-df_h <- df_arid %>% 
+df_h <- df_sel %>% 
   pivot_longer(cols = c("MAP", "MAT", "GDiv", "ANPP", "HumanFootprint", "NDep", "Aridity", "cv_Precip"), 
                names_to = "variable", values_to = "value") %>% 
   mutate(variable1 = case_when(variable == "MAP" ~ "MAP",
@@ -22,36 +128,6 @@ df_h <- df_arid %>%
                                variable == "Aridity" ~ "Aridity",
                                variable == "cv_Precip" ~ "Precip")) 
 
-# plot histogram 
-ggplot(df_h, aes(value)) + # df_hist comes from formatted df above 
-  geom_histogram(aes(fill = LumpNames), bins = 50) +
-  facet_wrap(~ variable1,
-             scales = "free") +
-  theme_bw() +
-  theme(legend.position = "top") +
-  scale_fill_manual(name = "",
-                    values = c("#007BA7", "#A63922", "#D8B573")) +
-  labs(x = "Value",
-       y = "Count")
-
-
-# Fig: Correlation matrix of all the response variables ------------------------
-
-# shows that correlations are statistically significant but weak-moderately correlated with one another
-(fig_corr <- chart.Correlation(df_iap[, c("MAP", 
-                                          "MAT", 
-                                          "GDiv", 
-                                          "ANPP", 
-                                          "HumanFootprint", 
-                                          "NDep", 
-                                          "Aridity",
-                                          "cv_Precip")],
-                               method = "pearson",
-                               histogram = TRUE,
-                               cex = 10))
-
-
-# Fig: Multinomial model predictions --------------------------------------
 
 axis_limits <- list(
   "Aridity" = list(limits = c(0, 40000), breaks = seq(0, 40000, by = 10000)),
@@ -59,7 +135,9 @@ axis_limits <- list(
   "ANPP" = list(limits = c(0, 1100), breaks = seq(0, 1100, by = 500)),
   "Human Footprint Index" = list(limits = c(0, 45), breaks = seq(0, 45, by = 10)),
   "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)),
-  "Precip" = list(limits = c(0, 0.6), breaks = seq(0, 0.6, by = 0.1)))
+  "Precip" = list(limits = c(0, 0.6), breaks = seq(0, 0.6, by = 0.1)),
+  "MAP" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)),
+  "MAT" = list(limits = c(-15, 25), breaks = seq(-15, 25, by = 10)))
 
 # Pre-allocate list
 output <- list()
@@ -157,37 +235,3 @@ final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],
 #ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 400)
 # save figure as png
 ggsave("Fig2_model_2.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
-
-
-
-# Fig: Distribution of codominance across sites ----------------------------------------------------------
-
-mapData <- modeSite %>% 
-  mutate(codom_category = ifelse(lumpMode == 1, "Mono", 
-                                 ifelse(lumpMode == 2, "Codom", "Even"))) %>% 
-  filter(!is.na(N_Deposition))
-
-mapData$codom_category <- factor(mapData$codom_category, levels = c("Mono", "Codom", "Even"))
-
-autumnalPalette <- c("#007BA7", "#A63922", "#D8B573")
-
-cc_bins <- mapData %>% 
-  group_by(codom_category) %>% 
-  summarise(count = n()) 
-cc_binsdf <- as.data.frame(cc_bins)  
-
-Fig1Bars <- cc_binsdf %>% 
-  ggplot(aes(x = factor(codom_category, levels = c("Mono", "Codom", "Even"))))+
-  geom_bar(aes(y=count),stat = "identity", fill = autumnalPalette)+
-  geom_text(aes(y=count,label = count),vjust = -0.1, size = 20)+
-  labs(x="",y= "Count")+
-  theme_classic2()+
-  theme(element_text(size = 20),
-        axis.text.x = element_text(size = 40, angle = 0, vjust = 0.5, hjust =0.5),
-        axis.title.y = element_text(size = 40),
-        axis.text.y  = element_text(size = 40),
-        plot.margin = margin(1,.4,.4,.4,"cm"))
-
-
-
-
