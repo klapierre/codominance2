@@ -18,7 +18,6 @@ numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>%
                             'plot_id', 'treatment', 'calendar_year'), 
            sep='::', remove=F) %>% 
   left_join(readRDS("data/expInfo.rds"))
- 
 
  
 # Calculate mode across years for all plots ----------------------------------------------------------
@@ -39,7 +38,7 @@ modePlotTrue <- numCodomPlotYear %>%
    ungroup() %>% 
    filter(!is.na(plot_codom)) %>%
    group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-   summarise(plot_codom=round(mean(plot_codom), digits=0), .groups='drop') %>% # calculate mean for ties
+   summarise(plot_codom = round(mean(plot_codom), digits=0), .groups='drop') %>% # calculate mean for ties
    rbind(singletonCodomPlotYear)
 
 # for plots with singleton ties for modes, calculate mean and round to nearest integer
@@ -49,7 +48,7 @@ multipleMode <- numCodomPlotYear %>%
    full_join(modePlotTrue) %>% 
    filter(is.na(plot_codom)) %>%
    group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-   summarise(plot_codom=round(mean(num_group), digits=0), .groups='drop')
+   summarise(plot_codom = round(mean(num_group), digits=0), .groups='drop')
  
 # bind dataframes for averaged ties and true modes at plot level
 modePlot <- rbind(modePlotTrue, multipleMode)
@@ -59,34 +58,36 @@ modePlot <- rbind(modePlotTrue, multipleMode)
 
 # create a dataframe of codominant group for experiments with a single plot (because can't calculate mode of singleton)
 singletonCodomPlot <- modePlot %>% 
-  filter(trt_type=='control') %>% 
+  filter(trt_type == 'control') %>% 
   group_by(database, site_code, project_name, community_type) %>% 
-  mutate(length=length(community_type)) %>% 
+  mutate(length = length(community_type)) %>% 
   ungroup() %>% 
-  filter(length==1) %>% 
-  rename(mode_site=plot_codom) %>% 
+  filter(length == 1) %>% 
+  rename(mode_site = plot_codom) %>% 
   dplyr::select(database, site_code, project_name, community_type, mode_site) 
 
 # calculate mode across plots for each experiment, dropping those with ties
 modeSiteTrue <- modePlot %>%
-   filter(trt_type=='control') %>%
+   filter(trt_type == 'control') %>%
    group_by(database, site_code, project_name, community_type) %>% # mode generated from these
    reframe(mode_site = DescTools::Mode(plot_codom)) %>%  
    ungroup() %>% 
    group_by(database, site_code, project_name, community_type) %>% 
-   summarise(mode_site=round(mean(mode_site), digits=0), .groups='drop') %>% # calculate mean for ties
+   summarise(mode_site = round(mean(mode_site), digits=0), .groups='drop') %>% # calculate mean for ties
    filter(!is.na(mode_site)) %>% 
    rbind(singletonCodomPlot)
 
 # for plots with ties for modes, calculate mean and round to nearest integer
 multipleModeProj <- modePlot %>% 
-  filter(trt_type=='control') %>% 
+  filter(trt_type == 'control') %>% 
   select(database, site_code, project_name, community_type, plot_id, plot_codom) %>% 
   full_join(modeSiteTrue) %>% 
   filter(is.na(mode_site)) %>%
   group_by(database, site_code, project_name, community_type) %>% 
-  summarise(mode_site=round(mean(plot_codom), digits=0), .groups='drop')
+  summarise(mode_site = round(mean(plot_codom), digits=0), .groups='drop')
 
+#############################################
+## envData either needs to be changed or removed 
 # bind dataframes for average ties and true modes at site level
 modeSite <- rbind(modeSiteTrue, multipleModeProj) %>% 
   left_join(readRDS("data/envData.rds")) %>% 
@@ -100,42 +101,36 @@ siteCount <- modeSite %>%
   unique()
 
 
-# Histogram- count of codom level per variable ----------------------------
 
-df_hist <- modeSite %>% 
-  select(mode_site, lumpMode, MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition) %>% 
-  pivot_longer(cols = c("MAP", "MAT", "gamma_rich", "anpp", "HumanDisturbance", "N_Deposition"), 
+# Fig: Distribution of values ---------------------------------------------
+
+
+######################################################################
+# within this chunk of '#', uses the df_aridity csv file 
+## compared to the histogram made with 'df_hist', this hist has a much higher count of even
+
+# Ashley's upload of aridity data: already with mode (mono, co, tri, even) and lumped mode (mono, co, even)
+df_aridity <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Grad School/Terui Lab/Codominance/FinalAridity.csv") %>% 
+  mutate(LumpNames = factor(LumpNames, c("Monodominated", "Codominated", "Even")))
+
+
+df_arid <- df_aridity %>% 
+  dplyr::select(lumpMode, LumpNames, lumpMode, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity)
+
+df_h <- df_arid %>% 
+  pivot_longer(cols = c("MAP", "MAT", "GDiv", "ANPP", "HumanFootprint", "NDep", "Aridity"), 
                names_to = "variable", values_to = "value") %>% 
-  mutate(lumpMode = ifelse(lumpMode == 1, "Monodominated", 
-                           ifelse(lumpMode == 2, "Codominated", "Even")),
-         mode.levels = factor(lumpMode, levels = c("Monodominated", "Codominated", "Even")),
-         variable1 = case_when(variable == "MAP" ~ "MAP",
+  mutate(variable1 = case_when(variable == "MAP" ~ "MAP",
                                variable == "MAT" ~ "MAT",
-                               variable == "gamma_rich" ~ "Gamma Diversity",
-                               variable == "anpp" ~ "ANPP",
-                               variable == "HumanDisturbance" ~ "Human Footprint Index",
-                               variable == "N_Deposition" ~ "N Deposition")) 
+                               variable == "GDiv" ~ "Gamma Diversity",
+                               variable == "ANPP" ~ "ANPP",
+                               variable == "HumanFootprint" ~ "Human Footprint Index",
+                               variable == "NDep" ~ "N Deposition",
+                               variable == "Aridity" ~ "Aridity")) 
 
-mode.labs <- c("monodominated", "codominated", "even")
-names(mode.labs) <- c("Monodominated", "Codominated", "Even")
-
-# bar counts are all the same per variable ...?
-# this is at the site level 
-ggplot(df_hist, aes(mode.levels)) +
-  geom_bar(aes(fill = mode.levels)) +
-  facet_wrap(~ variable1,
-             labeller = labeller(mode.levels = mode.labs)) +
-  theme_bw() +
-  theme(legend.position = "none") +
-  scale_fill_manual(name = "",
-                    labels = c("Monodominated", "Codominated", "Even"),
-                    values = c("#007BA7", "#A63922", "#D8B573")) +
-  labs(x = "Codominance Level",
-       y = "Count")
-
-# histogram of variable values
-ggplot(df_hist, aes(value)) + # df_hist comes from formatted df above 
-  geom_histogram(aes(fill = mode.levels), bins = 50) +
+# plot histogram 
+ggplot(df_h, aes(value)) + # df_hist comes from formatted df above 
+  geom_histogram(aes(fill = LumpNames), bins = 50) +
   facet_wrap(~ variable1,
              scales = "free") +
   theme_bw() +
@@ -147,62 +142,83 @@ ggplot(df_hist, aes(value)) + # df_hist comes from formatted df above
        y = "Count")
 
 
+###################################################################
+
+## format data
+# df_wide <- modeSite %>% 
+#   dplyr::select(mode_site, lumpMode, MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition)
+# 
+# df_hist <- df_wide %>% 
+#   pivot_longer(cols = c("MAP", "MAT", "gamma_rich", "anpp", "HumanDisturbance", "N_Deposition"), 
+#                names_to = "variable", values_to = "value") %>% 
+#   mutate(lumpMode = ifelse(lumpMode == 1, "Monodominated", 
+#                            ifelse(lumpMode == 2, "Codominated", "Even")),
+#          mode.levels = factor(lumpMode, levels = c("Monodominated", "Codominated", "Even")),
+#          variable1 = case_when(variable == "MAP" ~ "MAP",
+#                                variable == "MAT" ~ "MAT",
+#                                variable == "gamma_rich" ~ "Gamma Diversity",
+#                                variable == "anpp" ~ "ANPP",
+#                                variable == "HumanDisturbance" ~ "Human Footprint Index",
+#                                variable == "N_Deposition" ~ "N Deposition")) 
+# 
+# mode.labs <- c("monodominated", "codominated", "even")
+# names(mode.labs) <- c("Monodominated", "Codominated", "Even")
+# 
+# # plot histogram 
+# ggplot(df_hist, aes(value)) + # df_hist comes from formatted df above
+#   geom_histogram(aes(fill = mode.levels), bins = 50) +
+#   facet_wrap(~ variable1,
+#              scales = "free") +
+#   theme_bw() +
+#   theme(legend.position = "top") +
+#   scale_fill_manual(name = "",
+#                     labels = c("Monodominated", "Codominated", "Even"),
+#                     values = c("#007BA7", "#A63922", "#D8B573")) +
+#   labs(x = "Value",
+#        y = "Count")
+
+
 # saveRDS(modePlot, file = "data/modePlot.rds")
 # saveRDS(modeSite, file = "data/modeSite.rds")
 # write.csv(modeSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\modeSite_20250624.csv', row.names=F)
 
+# Fig: Correlation matrix of all the response variables ------------------------
 
-# Visualizing each predictor with boxplots ----------------------------------------------------------
-ggplot(modeSite, aes(x=as.factor(mode_site), y=abs(Latitude)))+
-  geom_boxplot()+
-  coord_flip()
-
-ggplot(modeSite, aes(x=as.factor(mode_site), y=MAP))+
-  geom_boxplot()+
-  coord_flip()
-
-ggplot(modeSite, aes(x=as.factor(mode_site), y=MAT))+
-  geom_boxplot()+
-  coord_flip()
-
-ggplot(modeSite, aes(x=as.factor(mode_site), y=gamma_rich))+
-  geom_boxplot()+
-  coord_flip()
-
-ggplot(modeSite, aes(x=as.factor(mode_site), y=anpp))+
-  geom_boxplot()+
-  coord_flip()
-
-ggplot(modeSite, aes(x=as.factor(mode_site), y=HumanDisturbance))+
-  geom_boxplot()+
-  coord_flip()
-
-ggplot(modeSite, aes(x=as.factor(mode_site), y=N_Deposition))+
-  geom_boxplot()+
-  coord_flip()
-
-factors <-modeSite[,c(6:13)]
-chart.Correlation(factors, method = "spearman")
-
+# shows that correlations are statistically significant but weak-moderately correlated with one another
+chart.Correlation(df_arid[, c("MAP", 
+                              "MAT", 
+                              "GDiv", 
+                              "ANPP", 
+                              "HumanFootprint", 
+                              "NDep", 
+                              "Aridity")],
+                  method = "pearson",
+                  histogram = TRUE,
+                  cex = 10)
 
 # Multinomial Analysis ----------------------------------------------------------
-#multinom function comes from nnet
 
+#multinom function comes from nnet
 #mutinomial model using monodominance as the reference state
-multinom.baseline1 <- multinom(factor(modeSite$lumpMode,
-                     levels = c(1,2,4)) ~ MAP + gamma_rich + HumanDisturbance + 
-                       N_Deposition + MAP * MAT * anpp + gamma_rich * N_Deposition * HumanDisturbance ,
-                    data=modeSite)
+multinom.baseline1 <- multinom(factor(df_aridity$lumpMode,
+                               levels = c(1,2,4)) ~ Aridity +
+                                                    GDiv + 
+                                                    HumanFootprint + 
+                                                    NDep +
+                                                    ANPP + 
+                                                    GDiv * 
+                                                    NDep * 
+                                                    HumanFootprint ,
+                              data = df_aridity)
 
 #checking p-value manually
-coef <- summary(multinom.baseline1)$coefficients
-coef
-stderr <- summary(multinom.baseline1)$standard.errors
-stderr
-z <- expcoef/stderr
+(coef <- summary(multinom.baseline1)$coefficients)
 
-p_values <- 2 * (1 - pnorm(abs(z)))
-p_values
+(stderr <- summary(multinom.baseline1)$standard.errors)
+
+z <- coef/stderr
+(p_values <- 2 * (1 - pnorm(abs(z))))
+
 
 
 #PR2() from 'pscl' package provides many R2 estimates
@@ -210,6 +226,7 @@ pR2(multinom.baseline1) #McFaddenR2 = 0.45
 
 #Putting into more convenient table format, P-values and OR's match model output 
 results <- tidy(multinom.baseline1, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+
 results_table <- results %>%
   mutate(OR_CI = sprintf("%.2f (%.2f, %.2f)", estimate, conf.low, conf.high),
     p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
@@ -220,26 +237,25 @@ results_table <- results %>%
     "P-value" = p_value)
 
 
-# Code to generate figure of multinomial model predictions----------------------------------------------------------
+# Format: for figure of multinomial model predictions----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
-df_om <- modeSite %>% 
+df_om <- df_aridity %>% 
   na.omit() %>% 
-  mutate(MAP_mean = mean(MAP),
-         MAT_mean = mean(MAT),
-         gamma_rich_mean = mean(gamma_rich),
-         HumanDisturbance_mean = mean(HumanDisturbance),
-         N_Deposition_mean = mean(N_Deposition),
-         anpp_mean = mean(anpp)) 
+  mutate(Aridity_mean = mean(Aridity),
+         GDiv_mean = mean(GDiv),
+         HumanFootprint_mean = mean(HumanFootprint),
+         NDep_mean = mean(NDep),
+         ANPP_mean = mean(ANPP)) 
 
 # Variables of interest
-var <- c("MAP", "MAT", "gamma_rich", "HumanDisturbance", "N_Deposition", "anpp") 
+var <- c("Aridity", "GDiv", "HumanFootprint", "NDep", "ANPP") 
 
 # Generate sequence of values looped for each variable 
 df_seq <- foreach(v = var, .combine = bind_cols) %do% {
   
   df_v <- df_om %>% 
-    select(v)
+    dplyr::select(v)
   
   out <- as_tibble(seq(from = min(df_v), 
              to = max(df_v), 
@@ -256,13 +272,13 @@ df_seq <- df_seq %>%
 
 # Combine dataframes- variable means and sequence 
 df_r <- df_om %>% 
-  select(ends_with("_mean")) %>% 
+  dplyr::select(ends_with("_mean")) %>% 
   slice(1:100) %>% 
   add_column(seq = seq(from = 1, to = 100, length.out = 100)) %>% 
   full_join(df_seq, by = "seq") 
 
 # Mean of variables of interest
-var2 <- c("MAP_mean", "MAT_mean", "gamma_rich_mean", "HumanDisturbance_mean", "N_Deposition_mean", "anpp_mean") 
+var2 <- c("Aridity_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean") 
 
 # Predict data using model, sequence, and mean
 df_predicted <- foreach(v = var, 
@@ -270,15 +286,15 @@ df_predicted <- foreach(v = var,
                         .combine = bind_cols) %do% {
  # Select variable sequence
    df_v <- df_r %>% 
-    select(v, seq)
+     dplyr::select(v, seq)
  # Select means for all other variables   
    df_m <- df_r %>% 
-     select(ends_with("_mean"), seq) %>% 
-     select(!v2)
+     dplyr::select(ends_with("_mean"), seq) %>% 
+     dplyr::select(!v2)
  # Combine data sets to predict from   
    df_s <- df_v %>% 
      full_join(df_m, by = "seq") %>% 
-     select(!seq) %>% 
+     dplyr::select(!seq) %>% 
      rename_with(~str_remove(., '_mean'))
  # Predict data
    df_p <- cbind(df_s,
@@ -289,7 +305,7 @@ df_predicted <- foreach(v = var,
    
  # Format for figure interpretation   
    df_c <- df_p %>% 
-     select(v, starts_with("X")) %>% 
+     dplyr::select(v, starts_with("X")) %>% 
      pivot_longer(cols = starts_with("X"), 
                   names_to = "Codom", 
                   values_to = "Probability")
@@ -304,32 +320,34 @@ df_predicted <- foreach(v = var,
 
 # Clarify column names 
 df_combined <- df_predicted %>% 
-  select(Codom...2, MAP, MAT, gamma_rich, HumanDisturbance, N_Deposition, anpp,
+  select(Codom...2, Aridity, GDiv, HumanFootprint, NDep, ANPP,
          starts_with("Probability")) %>% 
   rename(Codom = Codom...2,
-         "Gamma Diversity" = gamma_rich,
-         "Human Footprint Index" = HumanDisturbance, 
-         "N Deposition" = N_Deposition,
-         ANPP = anpp,
-         Prob_MAP = Probability...3,
-         Prob_MAT = Probability...6,
-         Prob_gamma = Probability...9,
-         Prob_Human = Probability...12,
-         Prob_N = Probability...15,
-         Prob_anpp = Probability...18)
+         Aridity = Aridity,
+         "Gamma Diversity" = GDiv,
+         "Human Footprint Index" = HumanFootprint, 
+         "N Deposition" = NDep,
+         ANPP = ANPP,
+         Prob_Aridity = Probability...3,
+         Prob_gamma = Probability...6,
+         Prob_Human = Probability...9,
+         Prob_N = Probability...12,
+         Prob_ANPP = Probability...15)
 
 # Assign names
-prob <- c("Prob_MAP", "Prob_MAT", "Prob_gamma", "Prob_anpp", "Prob_Human", "Prob_N")
-named_var <- c("MAP", "MAT", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition")
+prob <- c("Prob_Aridity", "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N")
+named_var <- c("Aridity", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition")
+
+
+
+# Fig: Multinomial model predictions --------------------------------------
 
 axis_limits <- list(
-  "MAP" = list(limits = c(0, 2500), breaks = seq(0, 2500, by = 500)),
-  "MAT" = list(limits = c(-10, 30), breaks = seq(-10, 30, by = 10)),
+  "Aridity" = list(limits = c(0, 45000), breaks = seq(0, 45000, by = 5000)),
   "Gamma Diversity" = list(limits = c(0, 250), breaks = seq(0, 250, by = 50)),
   "ANPP" = list(limits = c(0, 1500), breaks = seq(0, 1500, by = 500)),
   "Human Footprint Index" = list(limits = c(0, 50), breaks = seq(0, 50, by = 10)),
-  "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500))
-)
+  "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)))
 
 # Pre-allocate list
 output <- list()
@@ -340,7 +358,7 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
   p <- prob[i]
   
   df_combo <- df_combined %>% 
-    select(Codom, !!sym(v), !!sym(p)) %>% 
+    dplyr::select(Codom, !!sym(v), !!sym(p)) %>% 
     rename(v1 = !!sym(v), p1 = !!sym(p))
   
   lims <- axis_limits[[v]]$limits
@@ -386,16 +404,16 @@ output[[1]] <- plot_with_legend
 
 
 out_hist <- foreach(h = named_var) %do% {
-  df_o <- df_hist %>%
+  df_o <- df_h %>%
     filter(variable1 == h) %>% 
-    select(variable1, mode.levels, value) %>% 
+    dplyr::select(variable1, LumpNames, value) %>% 
     na.omit()
   
   lims <- axis_limits[[h]]$limits
   brks <- axis_limits[[h]]$breaks
   
   fig_h <- ggplot(df_o, aes(value)) +
-    geom_histogram(aes(fill = mode.levels), bins = 50, position = "identity", alpha = 0.7) +
+    geom_histogram(aes(fill = LumpNames), bins = 50, position = "identity", alpha = 0.7) +
     scale_x_continuous(limits = lims, breaks = brks) + 
     theme_bw() +
     theme(legend.position = "none",
@@ -416,18 +434,18 @@ out_hist <- foreach(h = named_var) %do% {
 # Arrange all plots
 final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
              output[[1]], output[[2]], output[[3]], 
-             out_hist[[4]], out_hist[[5]], out_hist[[6]], 
-             output[[4]], output[[5]], output[[6]], 
+             out_hist[[4]], out_hist[[5]], #out_hist[[6]], 
+             output[[4]], output[[5]], #output[[6]], 
              nrow = 4, ncol = 3, 
              heights = c(2.5, 3, 2.5, 3)) # adjusts height of plots
 
-
+#ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 400)
 # save figure as png
-ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 400)
+ggsave("Fig2_model_2.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
 
 
 
-# Visualizing distribution of codominance across sites ----------------------------------------------------------
+# Fig: Distribution of codominance across sites ----------------------------------------------------------
 
 mapData <- modeSite %>% 
   mutate(codom_category = ifelse(lumpMode == 1, "Mono", 
@@ -454,6 +472,7 @@ Fig1Bars <- cc_binsdf %>%
         axis.title.y = element_text(size = 40),
         axis.text.y  = element_text(size = 40),
         plot.margin = margin(1,.4,.4,.4,"cm"))
+
 
 
 
