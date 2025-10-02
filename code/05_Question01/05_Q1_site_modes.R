@@ -86,8 +86,6 @@ multipleModeProj <- modePlot %>%
   group_by(database, site_code, project_name, community_type) %>% 
   summarise(mode_site = round(mean(plot_codom), digits=0), .groups='drop')
 
-#############################################
-## envData either needs to be changed or removed 
 # bind dataframes for average ties and true modes at site level
 modeSite <- rbind(modeSiteTrue, multipleModeProj) %>% 
   left_join(readRDS("data/envData.rds")) %>% 
@@ -100,25 +98,23 @@ siteCount <- modeSite %>%
   select(lat, long) %>% 
   unique()
 
+# saveRDS(modePlot, file = "data/modePlot.rds")
+# saveRDS(modeSite, file = "data/modeSite.rds")
+# write.csv(modeSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\modeSite_20250624.csv', row.names=F)
 
 
 # Fig: Distribution of values ---------------------------------------------
 
-
-######################################################################
-# within this chunk of '#', uses the df_aridity csv file 
-## compared to the histogram made with 'df_hist', this hist has a much higher count of even
-
-# Ashley's upload of aridity data: already with mode (mono, co, tri, even) and lumped mode (mono, co, even)
-df_aridity <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Grad School/Terui Lab/Codominance/FinalAridity.csv") %>% 
+# Ashley's upload of new data: already with mode (mono, co, tri, even) and lumped mode (mono, co, even)
+## must mutate and factor levels so each group is treated as such 
+df_iap <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Grad School/Terui Lab/Codominance/IAP.csv") %>% 
   mutate(LumpNames = factor(LumpNames, c("Monodominated", "Codominated", "Even")))
 
-
-df_arid <- df_aridity %>% 
-  dplyr::select(lumpMode, LumpNames, lumpMode, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity)
+df_arid <- df_iap %>% 
+  dplyr::select(lumpMode, LumpNames, lumpMode, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity, cv_Precip)
 
 df_h <- df_arid %>% 
-  pivot_longer(cols = c("MAP", "MAT", "GDiv", "ANPP", "HumanFootprint", "NDep", "Aridity"), 
+  pivot_longer(cols = c("MAP", "MAT", "GDiv", "ANPP", "HumanFootprint", "NDep", "Aridity", "cv_Precip"), 
                names_to = "variable", values_to = "value") %>% 
   mutate(variable1 = case_when(variable == "MAP" ~ "MAP",
                                variable == "MAT" ~ "MAT",
@@ -126,7 +122,8 @@ df_h <- df_arid %>%
                                variable == "ANPP" ~ "ANPP",
                                variable == "HumanFootprint" ~ "Human Footprint Index",
                                variable == "NDep" ~ "N Deposition",
-                               variable == "Aridity" ~ "Aridity")) 
+                               variable == "Aridity" ~ "Aridity",
+                               variable == "cv_Precip" ~ "Precip")) 
 
 # plot histogram 
 ggplot(df_h, aes(value)) + # df_hist comes from formatted df above 
@@ -141,107 +138,17 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
        y = "Count")
 
 
-###################################################################
-
-## format data
-# df_wide <- modeSite %>% 
-#   dplyr::select(mode_site, lumpMode, MAP, MAT, gamma_rich, anpp, HumanDisturbance, N_Deposition)
-# 
-# df_hist <- df_wide %>% 
-#   pivot_longer(cols = c("MAP", "MAT", "gamma_rich", "anpp", "HumanDisturbance", "N_Deposition"), 
-#                names_to = "variable", values_to = "value") %>% 
-#   mutate(lumpMode = ifelse(lumpMode == 1, "Monodominated", 
-#                            ifelse(lumpMode == 2, "Codominated", "Even")),
-#          mode.levels = factor(lumpMode, levels = c("Monodominated", "Codominated", "Even")),
-#          variable1 = case_when(variable == "MAP" ~ "MAP",
-#                                variable == "MAT" ~ "MAT",
-#                                variable == "gamma_rich" ~ "Gamma Diversity",
-#                                variable == "anpp" ~ "ANPP",
-#                                variable == "HumanDisturbance" ~ "Human Footprint Index",
-#                                variable == "N_Deposition" ~ "N Deposition")) 
-# 
-# mode.labs <- c("monodominated", "codominated", "even")
-# names(mode.labs) <- c("Monodominated", "Codominated", "Even")
-# 
-# # plot histogram 
-# ggplot(df_hist, aes(value)) + # df_hist comes from formatted df above
-#   geom_histogram(aes(fill = mode.levels), bins = 50) +
-#   facet_wrap(~ variable1,
-#              scales = "free") +
-#   theme_bw() +
-#   theme(legend.position = "top") +
-#   scale_fill_manual(name = "",
-#                     labels = c("Monodominated", "Codominated", "Even"),
-#                     values = c("#007BA7", "#A63922", "#D8B573")) +
-#   labs(x = "Value",
-#        y = "Count")
-
-
-# saveRDS(modePlot, file = "data/modePlot.rds")
-# saveRDS(modeSite, file = "data/modeSite.rds")
-# write.csv(modeSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\modeSite_20250624.csv', row.names=F)
-
-# Interannual Precipitation addendum --------------------------------------
-##Calculation of the Coefficient of Variation for Annual Precipitation at Sites
-##Precipitation Data from MSWEP, modified code from Ingrid Slette, Feb 19, 2025
-# sites <- FinalAridity #
-# 
-# # make that file a SpatVector
-# site <- sites %>% vect(geom = c("Longitude", "Latitude"), crs = "EPSG:4326")
-# 
-# # list all of the monthly mswep precip data files
-# # change this to location to which you downloaded these files
-# r_paths <- list.files("MSWEP_Daily",
-#                       full.names = TRUE) %>% 
-#   sort()
-# 
-# # make that a SpatRaster
-# r <- rast(r_paths)
-# 
-# # extract daily precip data for each site
-# ppt_daily <- terra::extract(r, site, bind = TRUE)
-# 
-# df <- as.data.frame(ppt_daily)
-# 
-# names(df) <- c("OID_", "site_code", "site_proj_comm", "MAP", "MAT", "GDiv", "ANPP", "NDep", "HumanFootprint", "Aridity", "lumpMode", "LumpNames", paste0("precip_", time(r)))
-# 
-# out <- pivot_longer(df, -c("OID_", "site_code", "site_proj_comm", "MAP", "MAT", "GDiv", "ANPP", "NDep", "HumanFootprint", "Aridity", "lumpMode", "LumpNames"), names_to = "date",
-#                     values_to = "precip") %>% 
-#   mutate(date = str_replace(date, "^precip_", ""))
-# 
-# # create a new column for the year
-# out$year <- substr(out$date, 1, 4)
-# 
-# # create a new column for the month
-# out$month <- substr(out$date, 6, 7)
-# 
-# # create a new column for the day
-# out$day <- substr(out$date, 9, 10)
-# 
-# #calculate cv for annual precipitation at each site
-# interannual_precip <- filter(out, year != 2020 & year != 2025) %>% group_by(OID_,year) %>% 
-#   summarise(annual_total = sum(precip, na.rm = T)) %>% 
-#   summarise(
-#     mean_annual = mean(annual_total, na.rm = TRUE),
-#     sd_annual = sd(annual_total, na.rm = TRUE),
-#     cv_Precip = sd_annual / mean_annual)
-# 
-# Interannual.precip <- merge(FinalAridity, interannual_precip[,c(1,4)], by = "OID_" )
-# df_IAP <- as.data.frame(Interannual.precip)
-# write.csv(Interannual.precip, file = "C:/Users/msgrabda/Downloads/IAP.csv")
-# 
-
 # Fig: Correlation matrix of all the response variables ------------------------
 
 # shows that correlations are statistically significant but weak-moderately correlated with one another
-chart.Correlation(df_IAP[, c("MAP", 
-                              "MAT", 
-                              "GDiv", 
-                              "ANPP", 
-                              "HumanFootprint", 
-                              "NDep", 
-                              "Aridity",
-                              "cv_Precip")],
+chart.Correlation(df_iap[, c("MAP", 
+                             "MAT", 
+                             "GDiv", 
+                             "ANPP", 
+                             "HumanFootprint", 
+                             "NDep", 
+                             "Aridity",
+                             "cv_Precip")],
                   method = "pearson",
                   histogram = TRUE,
                   cex = 10)
@@ -250,14 +157,14 @@ chart.Correlation(df_IAP[, c("MAP",
 
 #multinom function comes from nnet
 #mutinomial model using monodominance as the reference state
-multinom.baseline1 <- multinom(factor(df_aridity$lumpMode,
+multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
                                levels = c(1,2,4)) ~ Aridity + 
                                                     cv_Precip +
                                                     ANPP + 
                                                     GDiv * 
                                                     NDep * 
                                                     HumanFootprint ,
-                              data = df_IAP)
+                              data = df_iap)
 
 #checking p-value manually
 (coef <- summary(multinom.baseline1)$coefficients)
@@ -288,16 +195,17 @@ results_table <- results %>%
 # Format: for figure of multinomial model predictions----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
-df_om <- df_aridity %>% 
+df_om <- df_iap %>% 
   na.omit() %>% 
   mutate(Aridity_mean = mean(Aridity),
          GDiv_mean = mean(GDiv),
          HumanFootprint_mean = mean(HumanFootprint),
          NDep_mean = mean(NDep),
-         ANPP_mean = mean(ANPP)) 
+         ANPP_mean = mean(ANPP),
+         cv_Precip_mean = mean(cv_Precip)) 
 
 # Variables of interest
-var <- c("Aridity", "GDiv", "HumanFootprint", "NDep", "ANPP") 
+var <- c("Aridity", "GDiv", "HumanFootprint", "NDep", "ANPP", "cv_Precip") 
 
 # Generate sequence of values looped for each variable 
 df_seq <- foreach(v = var, .combine = bind_cols) %do% {
@@ -326,7 +234,7 @@ df_r <- df_om %>%
   full_join(df_seq, by = "seq") 
 
 # Mean of variables of interest
-var2 <- c("Aridity_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean") 
+var2 <- c("Aridity_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean", "cv_Precip_mean") 
 
 # Predict data using model, sequence, and mean
 df_predicted <- foreach(v = var, 
@@ -368,7 +276,7 @@ df_predicted <- foreach(v = var,
 
 # Clarify column names 
 df_combined <- df_predicted %>% 
-  select(Codom...2, Aridity, GDiv, HumanFootprint, NDep, ANPP,
+  select(Codom...2, Aridity, GDiv, HumanFootprint, NDep, ANPP, cv_Precip,
          starts_with("Probability")) %>% 
   rename(Codom = Codom...2,
          Aridity = Aridity,
@@ -376,15 +284,17 @@ df_combined <- df_predicted %>%
          "Human Footprint Index" = HumanFootprint, 
          "N Deposition" = NDep,
          ANPP = ANPP,
+         Precip = cv_Precip,
          Prob_Aridity = Probability...3,
          Prob_gamma = Probability...6,
          Prob_Human = Probability...9,
          Prob_N = Probability...12,
-         Prob_ANPP = Probability...15)
+         Prob_ANPP = Probability...15,
+         Prob_Precip = Probability...18)
 
 # Assign names
-prob <- c("Prob_Aridity", "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N")
-named_var <- c("Aridity", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition")
+prob <- c("Prob_Aridity", "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N", "Prob_Precip")
+named_var <- c("Aridity", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition", "Precip")
 
 
 
@@ -395,7 +305,8 @@ axis_limits <- list(
   "Gamma Diversity" = list(limits = c(0, 160), breaks = seq(0, 160, by = 50)),
   "ANPP" = list(limits = c(0, 1100), breaks = seq(0, 1100, by = 500)),
   "Human Footprint Index" = list(limits = c(0, 45), breaks = seq(0, 45, by = 10)),
-  "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)))
+  "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)),
+  "Precip" = list(limits = c(0, 0.6), breaks = seq(0, 0.6, by = 0.1)))
 
 # Pre-allocate list
 output <- list()
@@ -420,7 +331,7 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
     geom_point(size = 4) +
     labs(y = "Probability", x = v) +
     scale_x_continuous(limits = lims, breaks = brks) +
-    ylim(0.0, 0.8) +
+    ylim(0.0, 1) +
     theme_bw() +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
@@ -485,8 +396,8 @@ out_hist <- foreach(h = named_var) %do% {
 # Arrange all plots
 final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
              output[[1]], output[[2]], output[[3]], 
-             out_hist[[4]], out_hist[[5]], #out_hist[[6]], 
-             output[[4]], output[[5]], #output[[6]], 
+             out_hist[[4]], out_hist[[5]], out_hist[[6]], 
+             output[[4]], output[[5]], output[[6]], 
              nrow = 4, ncol = 3, 
              heights = c(2.5, 3, 2.5, 3)) # adjusts height of plots
 
