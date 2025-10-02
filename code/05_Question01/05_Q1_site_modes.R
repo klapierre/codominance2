@@ -141,7 +141,7 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
 # Fig: Correlation matrix of all the response variables ------------------------
 
 # shows that correlations are statistically significant but weak-moderately correlated with one another
-chart.Correlation(df_iap[, c("MAP", 
+(fig_corr <- chart.Correlation(df_iap[, c("MAP", 
                              "MAT", 
                              "GDiv", 
                              "ANPP", 
@@ -151,7 +151,8 @@ chart.Correlation(df_iap[, c("MAP",
                              "cv_Precip")],
                   method = "pearson",
                   histogram = TRUE,
-                  cex = 10)
+                  cex = 10))
+
 
 # Multinomial Analysis ----------------------------------------------------------
 
