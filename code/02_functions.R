@@ -61,6 +61,9 @@ get_dist <- function(data, pool, md) {
                        
                        ## distance distribution for the pool
                        vd <- md[lower.tri(md)]
+                       mu_d <- mean(vd)
+                       sd_d <- sd(vd)
+                       ses <- (d - mu) / sd_d
                        
                        ## return pairwise distance and proportion > observed
                        distinct(df_pair, 
@@ -68,6 +71,7 @@ get_dist <- function(data, pool, md) {
                          bind_cols(tibble(sp1 = m_combo[1, ],
                                           sp2 = m_combo[2, ],
                                           dist = d,
+                                          ses = ses,
                                           p = sapply(d, function(x) mean(x > vd)),
                                           n_pool = length(vd),
                                           n_obs = sapply(d, function(x) sum(x > vd)))
