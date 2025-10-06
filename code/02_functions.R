@@ -63,7 +63,7 @@ get_dist <- function(data, pool, md) {
                        vd <- md[lower.tri(md)]
                        mu_d <- mean(vd)
                        sd_d <- sd(vd)
-                       ses <- (d - mu) / sd_d
+                       ses <- (d - mu_d) / sd_d
                        
                        ## return pairwise distance and proportion > observed
                        distinct(df_pair, 
