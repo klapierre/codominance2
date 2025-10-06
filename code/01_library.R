@@ -27,8 +27,6 @@ pacman::p_load(here,
                ggalluvial, # Q3 sankey diagram
                tidyverse,
                pscl, # Q1 McFadden R2libra
-               broom #table cleaning,
+               broom, #table cleaning
                terra,
-               lubridate,
-               
-               )
+               lubridate)
