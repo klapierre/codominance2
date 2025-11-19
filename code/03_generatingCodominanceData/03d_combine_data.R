@@ -99,8 +99,9 @@ unique(gex$trt_type)
 #NutNet
 nutnetANPP <- read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data/NutNet/comb-by-plot-clim-soil-diversity_2023-11-07.csv') %>%
   filter(trt=='Control') %>%
+  mutate(anpp_live=rowSums(across(c(vascular_live_mass,nonvascular_live_mass,unsorted_live_mass)), na.rm=T)) %>% 
   group_by(site_code, year) %>%
-  summarise(anpp=mean((vascular_live_mass+nonvascular_live_mass), na.rm=T)) %>%
+  summarise(anpp=mean(anpp_live, na.rm=T)) %>%
   ungroup() %>%
   filter(!is.nan(anpp), anpp>0) %>% #drops the data from some sites in years they didn't collect, and two years at one site that reported 0 growth
   filter(site_code!='glacphr.us') %>% #drop site because it is a seeded restoration
