@@ -204,9 +204,7 @@ expInfo <- individualExperiments %>%
 saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
 
 
-GISlayers <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\Environmental Data\\Codominance_AllSiteData.csv') %>% 
-  dplyr::select(site_code, Latitude, Longitude, HumanDisturbance, N_Deposition) %>% 
-  unique()
+GISlayers <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\Environmental Data\\EnvRasterData_withPrecip.csv')
 
 ecoregions <- read_xlsx('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GrasslandEcotypewCont_filled.xlsx') %>% 
   mutate(site_proj_comm=ifelse(site_proj_comm=='NA', NA, site_proj_comm))
@@ -218,11 +216,12 @@ envData <- individualExperiments %>%
   dplyr::select(-Location, -Continent, -PubLat, -PubLong, -Offset, -Tmin, -Tmax, -aridityValues, -Latitude, -Longitude) %>% 
   left_join(GISlayers, relationship='many-to-many') %>% 
   group_by(database, site_code, project_name, community_type) %>% 
-  summarise_at(vars(MAP:N_Deposition), .funs=mean, na.rm=T) %>% 
+  summarise_at(vars(MAP:cv_Precip), .funs=mean, na.rm=T) %>% 
   ungroup() %>%
   mutate(site_proj_comm=ifelse(database=='corre', paste(site_code, project_name, community_type, sep='_'), NA)) %>% 
   left_join(ecoregions) %>% 
-  select(-OID_, -lat_1, -long_1, -site_proj_comm, -ECO_NAME, -Division, -designation_criteria)
+  select(-OID_, -lat_1, -long_1, -site_proj_comm, -ECO_NAME, -Division, -designation_criteria) %>% 
+  filter(!is.nan(NDeposition))
 
 saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
 
