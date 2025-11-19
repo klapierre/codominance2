@@ -281,7 +281,7 @@ filterMeanPlotLevel <- filterComplete %>%
 
 # Create categorical codom groups -----------------------------------------
 
-# group number of codominants into 4 categories 
+# group number of codominants into 3 categories 
 df_grouped <- filterComplete %>% 
   mutate(group = case_when(num_codominants == 1 ~ "monodominated",
                            num_codominants %in% c(2,3) ~ "codominated",
@@ -299,7 +299,7 @@ df_plotLevel <- df_grouped %>%
 saveRDS(df_plotLevel, file = "data/numCodomPlotYear.rds") # saving derived data for analyses
 # saveRDS(df_plotLevel, file = "data/numCodomPlotYear_cutoff30.rds") # saving derived data for analyses
 
-summary(as.factor(df_plotLevel$group)) #35,197 plots monodominated, 19,344 codominanted, 8440 plots even
+summary(as.factor(df_plotLevel$group)) #35,192 plots monodominated, 19,341 codominanted, 8438 plots even
 
 # visualize groups
 ggplot(df_plotLevel,
