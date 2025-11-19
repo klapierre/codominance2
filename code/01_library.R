@@ -18,7 +18,6 @@ pacman::p_load(here,
                foreign, # Q1 analysis
                Hmisc, # Q1 analysis
                nnet, # Q1 analysis
-               gridExtra,
                foreach, # Q1 for each loop creation
                ggExtra,
                grid, # Q1 legend
@@ -28,5 +27,6 @@ pacman::p_load(here,
                ggalluvial, # Q3 sankey diagram
                tidyverse,
                pscl, # Q1 McFadden R2libra
-               broom #table cleaning
-               )
+               broom, #table cleaning
+               terra,
+               lubridate)

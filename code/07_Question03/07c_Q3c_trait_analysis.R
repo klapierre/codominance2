@@ -197,6 +197,7 @@ df_p_ctl <- readRDS("data/traitp_ctr.rds")
 
 df_lm <- df_p_ctl %>% 
   select(site_proj_comm,
+         ses,
          p,
          n_pool,
          n_obs) %>% 
@@ -204,6 +205,7 @@ df_lm <- df_p_ctl %>%
   bind_rows(
     select(df_p_trt,
            c(site_proj_comm,
+             ses,
              p,
              n_pool,
              n_obs,
@@ -213,15 +215,13 @@ df_lm <- df_p_ctl %>%
   filter(treatment != "CO2") %>% 
   mutate(treatment = fct_relevel(treatment,
                                  "control"))
-# df_lm %>%
-#   ggplot(aes(y = treatment,
-#              x = p)) +
-#   ggridges::geom_density_ridges(from = 0,
-#                                 to = 1)
+df_lm %>%
+  ggplot(aes(y = treatment,
+             x = ses)) +
+  ggridges::geom_density_ridges()
 
-glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~ treatment,
-                 df_lm,
-                 family = glmmTMB::betabinomial()) %>% 
+lm(ses ~ treatment,
+   df_lm) %>% 
   summary()
 
 # figures -----------------------------------------------------------------
@@ -302,9 +302,9 @@ ggplot(df_p_trt) +
                aes(x = p),
                fill = "lightgrey", color = NA, alpha = 0.75) +
   geom_segment(data = subset(dens_df, !(trt_type2 %in% c('K', 'other', 'NA'))), 
-            aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_type2), 
-            linewidth = 3,
-            lineend='round') +
+               aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_type2), 
+               linewidth = 3,
+               lineend='round') +
   scale_color_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_type2, ncol=5,
              scales = "free_y") +
@@ -344,9 +344,9 @@ ggplot(df_p_trt) +
                aes(x = p),
                fill = "lightgrey", color = NA, alpha = 0.75) +
   geom_segment(data = subset(dens_df, !(trt_category %in% c('NA'))), 
-            aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_category), 
-            linewidth=3,
-            lineend='round') +
+               aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_category), 
+               linewidth=3,
+               lineend='round') +
   scale_color_gradient(low="#FC9F32", high="#1A2766") +
   facet_wrap(~trt_category, ncol=5) +
   ylim(0,1.4) +
