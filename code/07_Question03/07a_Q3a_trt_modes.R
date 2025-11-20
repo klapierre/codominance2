@@ -256,6 +256,8 @@ ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=lump_mode_trt_cat)) +
 # ggsave(file='Fig5b_heatMapTrtTrt.png', width=10, height=4, units='in', dpi=300, bg='white')
 
 
+autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
+
 ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=100*percent, fill=lump_mode_trt_cat)) +
   geom_bar(stat='identity') +
   geom_text(aes(label = Freq, group=lump_mode_trt_cat), position=position_stack(vjust=0.5), size=6, color='grey20') +
@@ -268,8 +270,6 @@ ggplot(summaryModeTrtCodom, aes(x=trt_type_nice , y=100*percent, fill=lump_mode_
 
 
 # Histogram- count of codom level per treatment and site codom number ----------------------------
-
-autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
 
 #overall by trt codom category
 ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat) & !is.na(lump_mode_site_cat)), aes(x = lump_mode_trt_cat, fill = lump_mode_site_cat)) +
