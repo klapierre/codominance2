@@ -13,6 +13,11 @@ source("code/02_functions.R")
 
 # Read data ---------------------------------------------------------------
 
+modePlot <- readRDS("data/modePlot.rds")
+df_iap <- readRDS("data/modeSite.rds") %>% 
+  rename(ANPP=anpp,
+         GDiv=gamma_rich,
+         NDep=NDeposition)
 
 # Multinomial Analysis ----------------------------------------------------------
 
