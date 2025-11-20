@@ -2,13 +2,19 @@
 
 # Fig: Distribution of values ---------------------------------------------
 
-# Ashley's upload of new data: already with mode (mono, co, tri, even) and lumped mode (mono, co, even)
 ## must mutate and factor levels so each group is treated as such 
-df_iap <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Grad School/Terui Lab/Codominance/IAP.csv") %>% 
-  mutate(LumpNames = factor(LumpNames, c("Monodominated", "Codominated", "Even")))
+df_iap <- readRDS("data/modeSite.rds") %>% 
+  rename(ANPP=anpp,
+         GDiv=gamma_rich,
+         NDep=NDeposition) %>% 
+  mutate(LumpNames=factor(case_when(lumpMode==1 ~ 'Monodominated',
+                                        lumpMode==2 ~ 'Codominated', 
+                                        lumpMode==3 ~ 'Even'),
+                             levels=c('Monodominated', 'Codominated', 'Even')),
+         lumpMode=factor(lumpMode, levels=c(1,2,4)))
 
 df_arid <- df_iap %>% 
-  dplyr::select(lumpMode, LumpNames, lumpMode, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity, cv_Precip)
+  dplyr::select(lumpMode, LumpNames, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity, cv_Precip)
 
 df_h <- df_arid %>% 
   pivot_longer(cols = c("MAP", "MAT", "GDiv", "ANPP", "HumanFootprint", "NDep", "Aridity", "cv_Precip"), 
