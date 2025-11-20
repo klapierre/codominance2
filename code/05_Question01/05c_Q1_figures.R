@@ -53,8 +53,7 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
                                           "Aridity",
                                           "cv_Precip")],
                                method = "pearson",
-                               histogram = TRUE,
-                               cex = 10))
+                               histogram = TRUE))
 
 
 # Fig: Multinomial model predictions --------------------------------------
@@ -168,10 +167,10 @@ ggsave("Fig2_model_2.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
 
 # Fig: Distribution of codominance across sites ----------------------------------------------------------
 
-mapData <- modeSite %>% 
+mapData <- df_iap %>% 
   mutate(codom_category = ifelse(lumpMode == 1, "Mono", 
                                  ifelse(lumpMode == 2, "Codom", "Even"))) %>% 
-  filter(!is.na(N_Deposition))
+  filter(!is.na(NDep))
 
 mapData$codom_category <- factor(mapData$codom_category, levels = c("Mono", "Codom", "Even"))
 
