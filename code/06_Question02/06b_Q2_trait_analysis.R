@@ -260,10 +260,11 @@ df_m <- readRDS("data/traitp_ctr.rds")
 
 ## model with aridity
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
-                   scale(aridity) + 
+                   scale(Aridity) + 
+                   scale(cv_Precip) +
                    scale(gamma_rich) +
-                   scale(HumanDisturbance) +
-                   scale(N_Deposition) +
+                   scale(HumanFootprint) +
+                   scale(NDeposition) +
                    (1 | site_proj_comm),
                  family = glmmTMB::betabinomial,
                  data = df_m, 
@@ -274,9 +275,11 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
                    scale(MAP) + 
                    scale(MAT) + 
+                   scale(Aridity) +
+                   scale(cv_Precip) +
                    scale(gamma_rich) +
-                   scale(HumanDisturbance) +
-                   scale(N_Deposition) +
+                   scale(HumanFootprint) +
+                   scale(NDeposition) +
                    (1 | site_proj_comm),
                  family = glmmTMB::betabinomial,
                  data = df_m, 
@@ -284,7 +287,7 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
   summary()
 
 df_m %>% 
-  pivot_longer(cols = MAP:N_Deposition,
+  pivot_longer(cols = MAP:cv_Precip,
                values_to = "x",
                names_to = "var") %>% 
   ggplot(aes(y = p,
