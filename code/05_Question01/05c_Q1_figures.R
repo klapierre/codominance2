@@ -3,13 +3,14 @@
 # Fig: Distribution of values ---------------------------------------------
 
 ## must mutate and factor levels so each group is treated as such 
+#change this data file to represent the cutoff of interest
 df_iap <- readRDS("data/modeSite.rds") %>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition) %>% 
   mutate(LumpNames=factor(case_when(lumpMode==1 ~ 'Monodominated',
                                         lumpMode==2 ~ 'Codominated', 
-                                        lumpMode==3 ~ 'Even'),
+                                        lumpMode==4 ~ 'Even'),
                              levels=c('Monodominated', 'Codominated', 'Even')),
          lumpMode=factor(lumpMode, levels=c(1,2,4)))
 
@@ -34,9 +35,9 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
   facet_wrap(~ variable1,
              scales = "free") +
   theme_bw() +
-  theme(legend.position = "top") +
-  scale_fill_manual(name = "",
-                    values = c("#007BA7", "#A63922", "#D8B573")) +
+  theme(legend.position = "top")+
+  scale_fill_manual(name = c("Monodominated","Codominated","Even"),
+                    values = c( "#007BA7","#A63922", "#D8B573")) +
   labs(x = "Value",
        y = "Count")
 
@@ -59,7 +60,7 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
 # Fig: Multinomial model predictions --------------------------------------
 
 axis_limits <- list(
-  "Aridity" = list(limits = c(0, 3.6), breaks = seq(0, 3.6, by = 0.5)),
+  "Aridity" = list(limits = c(0, 3.5), breaks = seq(0, 3.5, by = 0.5)),
   "Gamma Diversity" = list(limits = c(0, 250), breaks = seq(0, 250, by = 50)),
   "ANPP" = list(limits = c(0, 1100), breaks = seq(0, 1100, by = 500)),
   "Human Footprint Index" = list(limits = c(0, 45), breaks = seq(0, 45, by = 10)),
@@ -161,7 +162,7 @@ final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],
 
 #ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 400)
 # save figure as png
-ggsave("Fig2_model_2.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
+ggsave("C:/Users/elise/Downloads/Fig2_model_2.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
 
 
 

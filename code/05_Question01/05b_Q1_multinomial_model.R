@@ -14,10 +14,28 @@ source("code/02_functions.R")
 # Read data ---------------------------------------------------------------
 
 modePlot <- readRDS("data/modePlot.rds")
-df_iap <- readRDS("data/modeSite") %>% 
+df_iap <- readRDS("data/modeSite.rds") %>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition)
+
+df_iap10 <- readRDS("C:/codominance2/data/modeSite_cutoff10.rds")%>% 
+  rename(ANPP=anpp,
+         GDiv=gamma_rich,
+         NDep=NDeposition)
+df_iap15 <- readRDS("C:/codominance2/data/modeSite_cutoff15.rds")%>% 
+  rename(ANPP=anpp,
+         GDiv=gamma_rich,
+         NDep=NDeposition)
+df_iap25 <- readRDS("C:/codominance2/data/modeSite_cutoff25.rds")%>% 
+  rename(ANPP=anpp,
+         GDiv=gamma_rich,
+         NDep=NDeposition)
+df_iap30 <- readRDS("C:/codominance2/data/modeSite_cutoff30.rds")%>% 
+  rename(ANPP=anpp,
+         GDiv=gamma_rich,
+         NDep=NDeposition)
+
 
 # Multinomial Analysis ----------------------------------------------------------
 
@@ -144,6 +162,7 @@ results_table30 <- results30 %>%
 # Format: for figure of multinomial model predictions----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
+# change this data file to represent the cutoff of interest
 df_om <- df_iap %>% 
   na.omit() %>% 
   mutate(Aridity_mean = mean(Aridity),
