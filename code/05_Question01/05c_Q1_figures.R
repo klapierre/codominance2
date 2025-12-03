@@ -59,8 +59,8 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
 # Fig: Multinomial model predictions --------------------------------------
 
 axis_limits <- list(
-  "Aridity" = list(limits = c(0, 40000), breaks = seq(0, 40000, by = 10000)),
-  "Gamma Diversity" = list(limits = c(0, 160), breaks = seq(0, 160, by = 50)),
+  "Aridity" = list(limits = c(0, 3.6), breaks = seq(0, 3.6, by = 0.5)),
+  "Gamma Diversity" = list(limits = c(0, 250), breaks = seq(0, 250, by = 50)),
   "ANPP" = list(limits = c(0, 1100), breaks = seq(0, 1100, by = 500)),
   "Human Footprint Index" = list(limits = c(0, 45), breaks = seq(0, 45, by = 10)),
   "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)),

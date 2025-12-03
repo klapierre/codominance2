@@ -14,7 +14,7 @@ source("code/02_functions.R")
 # Read data ---------------------------------------------------------------
 
 modePlot <- readRDS("data/modePlot.rds")
-df_iap <- readRDS("data/modeSite.rds") %>% 
+df_iap <- readRDS("data/modeSite") %>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition)
@@ -32,6 +32,42 @@ multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
                                  HumanFootprint ,
                                data = df_iap)
 
+#cutoff10 
+multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
+                                      levels = c(1,2,4)) ~ Aridity + 
+                                 cv_Precip +
+                                 ANPP + 
+                                 GDiv * 
+                                 NDep * 
+                                 HumanFootprint ,
+                               data = df_iap10)
+#cutoff15
+multinom.baseline15 <- multinom(factor(df_iap$lumpMode,
+                                      levels = c(1,2,4)) ~ Aridity + 
+                                 cv_Precip +
+                                 ANPP + 
+                                 GDiv * 
+                                 NDep * 
+                                 HumanFootprint ,
+                               data = df_iap15)
+#cutoff25
+multinom.baseline25 <- multinom(factor(df_iap$lumpMode,
+                                      levels = c(1,2,4)) ~ Aridity + 
+                                 cv_Precip +
+                                 ANPP + 
+                                 GDiv * 
+                                 NDep * 
+                                 HumanFootprint ,
+                               data = df_iap25)
+#cutoff30
+multinom.baseline30 <- multinom(factor(df_iap$lumpMode,
+                                      levels = c(1,2,4)) ~ Aridity + 
+                                 cv_Precip +
+                                 ANPP + 
+                                 GDiv * 
+                                 NDep * 
+                                 HumanFootprint ,
+                               data = df_iap30)
 #checking p-value manually
 (coef <- summary(multinom.baseline1)$coefficients)
 
@@ -43,13 +79,61 @@ z <- coef/stderr
 
 
 #PR2() from 'pscl' package provides many R2 estimates
-pR2(multinom.baseline1) #McFaddenR2 = 0.337
+pR2(multinom.baseline1) #McFaddenR2 = 0.324; our current cutoff exhibits the most explanatory power
+pR2(multinom.baseline10) #McFaddenR2 = 0.303
+pR2(multinom.baseline15) #McFaddenR2 = 0.296
+pR2(multinom.baseline25) #McFaddenR2 = 0.311
+pR2(multinom.baseline30) #McFaddenR2 = 0.310
 
 #Putting into more convenient table format, P-values and OR's match model output 
 results <- tidy(multinom.baseline1, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
 results_table <- results %>%
-  mutate(OR_CI = sprintf("%.2f (%.2f, %.2f)", estimate, conf.low, conf.high),
+  mutate(OR_CI = sprintf("%.2f ", estimate),
+         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+  select(y.level, term, OR_CI,p_value) %>%
+  rename( "Outcome Category" = y.level,
+          "Predictor" = term,
+          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+          "P-value" = p_value)
+#Results10
+results10 <- tidy(multinom.baseline10, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+
+results_table10 <- results10 %>%
+  mutate(OR_CI = sprintf("%.2f ", estimate),
+         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+  select(y.level, term, OR_CI,p_value) %>%
+  rename( "Outcome Category" = y.level,
+          "Predictor" = term,
+          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+          "P-value" = p_value)
+#Results15
+results15 <- tidy(multinom.baseline15, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+
+results_table15 <- results15 %>%
+  mutate(OR_CI = sprintf("%.2f ", estimate),
+         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+  select(y.level, term, OR_CI,p_value) %>%
+  rename( "Outcome Category" = y.level,
+          "Predictor" = term,
+          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+          "P-value" = p_value)
+#Results25
+results25 <- tidy(multinom.baseline25, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+
+results_table25 <- results25 %>%
+  mutate(OR_CI = sprintf("%.2f ", estimate),
+         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+  select(y.level, term, OR_CI,p_value) %>%
+  rename( "Outcome Category" = y.level,
+          "Predictor" = term,
+          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+          "P-value" = p_value)
+#Results30
+results30 <- tidy(multinom.baseline30, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+
+results_table30 <- results30 %>%
+  mutate(OR_CI = sprintf("%.2f ", estimate),
          p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
   select(y.level, term, OR_CI,p_value) %>%
   rename( "Outcome Category" = y.level,
