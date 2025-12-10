@@ -29,4 +29,5 @@ pacman::p_load(here,
                pscl, # Q1 McFadden R2libra
                broom, #table cleaning
                terra,
+               gt,
                lubridate)

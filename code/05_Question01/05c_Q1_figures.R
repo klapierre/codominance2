@@ -60,12 +60,13 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
 # Fig: Multinomial model predictions --------------------------------------
 
 axis_limits <- list(
-  "Aridity" = list(limits = c(0, 3.5), breaks = seq(0, 3.5, by = 0.5)),
+  "MAP" = list(limits = c(0, 2600), breaks = seq(0, 2600, by = 1000)),
+  "MAT" = list(limits = c(-12, 30), breaks = seq(-12, 30, by = 10)),
   "Gamma Diversity" = list(limits = c(0, 250), breaks = seq(0, 250, by = 50)),
   "ANPP" = list(limits = c(0, 1100), breaks = seq(0, 1100, by = 500)),
   "Human Footprint Index" = list(limits = c(0, 45), breaks = seq(0, 45, by = 10)),
   "N Deposition" = list(limits = c(0, 2000), breaks = seq(0, 2000, by = 500)),
-  "Precip" = list(limits = c(0, 0.6), breaks = seq(0, 0.6, by = 0.1)))
+  "Interannual Precip" = list(limits = c(0, 0.6), breaks = seq(0, 0.6, by = 0.1)))
 
 # Pre-allocate list
 output <- list()
@@ -87,7 +88,8 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
   brks <- axis_limits[[v]]$breaks
   
   fig <- ggplot(df_combo, aes(x = v1, y = p1, color = Codom)) +
-    geom_point(size = 4) +
+    geom_smooth(size = 2) +
+    geom_point(size = 0.0003)+
     labs(y = "Probability", x = v) +
     scale_x_continuous(limits = lims, breaks = brks) +
     ylim(0.0, 1) +
@@ -98,12 +100,12 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
           axis.text.x = element_text(size = 30),
           axis.text.y = element_text(size = 30),
           legend.position = "right",
-          legend.text = element_text(size = 30),
+          legend.text = element_text(size = 24),
           legend.background = element_rect(fill = "transparent", color = NA),
           legend.box.background = element_rect(fill = "transparent", color = NA),
           legend.key = element_rect(fill = "transparent", color = NA)) +
     scale_color_manual(name = "",
-                       #labels = c("Monodominated", "Codominated", "Even"),
+                       labels = c("Monodominated", "Codominated", "Even"),
                        values = c("#007BA7", "#A63922", "#D8B573")) +
     guides(color = guide_legend(override.aes = list(size = 7)))
   
@@ -114,7 +116,8 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
   
   list(fig_q1)
 }
-fig
+
+
 
 # Overlay the legend on the top-right of the first plot
 plot_with_legend <- grobTree(
@@ -149,20 +152,22 @@ out_hist <- foreach(h = named_var) %do% {
     scale_fill_manual(name = "",
                       values = c("#007BA7", "#A63922", "#D8B573")) +
     labs(x = "", y = "Count")
+
 }
 
 
 # Arrange all plots
-final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]],  
-                           output[[1]], output[[2]], output[[3]], 
-                           out_hist[[4]], out_hist[[5]], out_hist[[6]], 
-                           output[[4]], output[[5]], output[[6]], 
-                           nrow = 4, ncol = 3, 
+
+final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]], nullGrob(),  
+                           output[[1]], output[[2]], output[[3]], nullGrob(),
+                           out_hist[[4]], out_hist[[5]], out_hist[[6]], out_hist[[7]], 
+                           output[[4]], output[[5]], output[[6]], output[[7]],
+                           nrow = 4, ncol = 4, 
                            heights = c(2.5, 3, 2.5, 3)) # adjusts height of plots
 
 #ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 400)
 # save figure as png
-ggsave("C:/Users/elise/Downloads/Fig2_model_2.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
+ggsave("Fig2.png", final_plot, width = 28.5, height = 18, dpi = 400)
 
 
 

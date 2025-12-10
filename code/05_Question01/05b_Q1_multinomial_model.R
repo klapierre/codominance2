@@ -19,19 +19,19 @@ df_iap <- readRDS("data/modeSite.rds") %>%
          GDiv=gamma_rich,
          NDep=NDeposition)
 
-df_iap10 <- readRDS("C:/codominance2/data/modeSite_cutoff10.rds")%>% 
+df_iap10 <- readRDS("data/modeSite_cutoff10.rds")%>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition)
-df_iap15 <- readRDS("C:/codominance2/data/modeSite_cutoff15.rds")%>% 
+df_iap15 <- readRDS("data/modeSite_cutoff15.rds")%>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition)
-df_iap25 <- readRDS("C:/codominance2/data/modeSite_cutoff25.rds")%>% 
+df_iap25 <- readRDS("data/modeSite_cutoff25.rds")%>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition)
-df_iap30 <- readRDS("C:/codominance2/data/modeSite_cutoff30.rds")%>% 
+df_iap30 <- readRDS("data/modeSite_cutoff30.rds")%>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition)
@@ -42,9 +42,10 @@ df_iap30 <- readRDS("C:/codominance2/data/modeSite_cutoff30.rds")%>%
 #multinom function comes from nnet
 #mutinomial model using monodominance as the reference state
 multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ Aridity + 
+                                      levels = c(1,2,4)) ~ MAP +
+                                 MAT+
                                  cv_Precip +
-                                 ANPP + 
+                                 ANPP+
                                  GDiv * 
                                  NDep * 
                                  HumanFootprint ,
@@ -52,39 +53,43 @@ multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
 
 #cutoff10 
 multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ Aridity + 
-                                 cv_Precip +
-                                 ANPP + 
-                                 GDiv * 
-                                 NDep * 
-                                 HumanFootprint ,
+                                      levels = c(1,2,4)) ~ MAP +
+                                  MAT+
+                                  cv_Precip +
+                                  ANPP+
+                                  GDiv * 
+                                  NDep * 
+                                  HumanFootprint ,
                                data = df_iap10)
 #cutoff15
 multinom.baseline15 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ Aridity + 
-                                 cv_Precip +
-                                 ANPP + 
-                                 GDiv * 
-                                 NDep * 
-                                 HumanFootprint ,
+                                      levels = c(1,2,4)) ~ MAP +
+                                  MAT+
+                                  cv_Precip +
+                                  ANPP+
+                                  GDiv * 
+                                  NDep * 
+                                  HumanFootprint ,
                                data = df_iap15)
 #cutoff25
 multinom.baseline25 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ Aridity + 
-                                 cv_Precip +
-                                 ANPP + 
-                                 GDiv * 
-                                 NDep * 
-                                 HumanFootprint ,
+                                      levels = c(1,2,4)) ~MAP +
+                                  MAT+
+                                  cv_Precip +
+                                  ANPP+
+                                  GDiv * 
+                                  NDep * 
+                                  HumanFootprint ,
                                data = df_iap25)
 #cutoff30
 multinom.baseline30 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ Aridity + 
-                                 cv_Precip +
-                                 ANPP + 
-                                 GDiv * 
-                                 NDep * 
-                                 HumanFootprint ,
+                                      levels = c(1,2,4)) ~ MAP +
+                                  MAT+
+                                  cv_Precip +
+                                  ANPP+
+                                  GDiv * 
+                                  NDep * 
+                                  HumanFootprint ,
                                data = df_iap30)
 #checking p-value manually
 (coef <- summary(multinom.baseline1)$coefficients)
@@ -114,7 +119,10 @@ results_table <- results %>%
           "Predictor" = term,
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
-#Results10
+
+gt(results_table, caption = "20% Cutoff (Base)") %>% 
+  gtsave("C:/Users/elise/Downloads/Tables/cutoff20.png")
+#Results10#Resultscaption = 10
 results10 <- tidy(multinom.baseline10, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
 results_table10 <- results10 %>%
@@ -125,6 +133,9 @@ results_table10 <- results10 %>%
           "Predictor" = term,
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
+
+gt(results_table10, caption = "10% Cutoff (Base)") %>% 
+  gtsave("C:/Users/elise/Downloads/Tables/cutoff10.png")
 #Results15
 results15 <- tidy(multinom.baseline15, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
@@ -136,6 +147,9 @@ results_table15 <- results15 %>%
           "Predictor" = term,
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
+
+gt(results_table15, caption = "15% Cutoff (Base)") %>% 
+  gtsave("C:/Users/elise/Downloads/Tables/cutoff15.png")
 #Results25
 results25 <- tidy(multinom.baseline25, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
@@ -147,6 +161,9 @@ results_table25 <- results25 %>%
           "Predictor" = term,
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
+
+gt(results_table25, caption = "25% Cutoff (Base)") %>% 
+  gtsave("C:/Users/elise/Downloads/Tables/cutoff25.png")
 #Results30
 results30 <- tidy(multinom.baseline30, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
@@ -159,13 +176,16 @@ results_table30 <- results30 %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
+gt(results_table30, caption = "30% Cutoff (Base)") %>% 
+  gtsave("C:/Users/elise/Downloads/Tables/cutoff30.png")
 # Format: for figure of multinomial model predictions----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
 # change this data file to represent the cutoff of interest
 df_om <- df_iap %>% 
   na.omit() %>% 
-  mutate(Aridity_mean = mean(Aridity),
+  mutate(MAP_mean = mean(Aridity),
+         MAT_mean = mean(MAT),
          GDiv_mean = mean(GDiv),
          HumanFootprint_mean = mean(HumanFootprint),
          NDep_mean = mean(NDep),
@@ -173,7 +193,7 @@ df_om <- df_iap %>%
          cv_Precip_mean = mean(cv_Precip)) 
 
 # Variables of interest
-var <- c("Aridity", "GDiv", "HumanFootprint", "NDep", "ANPP", "cv_Precip") 
+var <- c("MAP", "MAT", "GDiv", "HumanFootprint", "NDep", "ANPP", "cv_Precip") 
 
 # Generate sequence of values looped for each variable 
 df_seq <- foreach(v = var, .combine = bind_cols) %do% {
@@ -202,7 +222,7 @@ df_r <- df_om %>%
   full_join(df_seq, by = "seq") 
 
 # Mean of variables of interest
-var2 <- c("Aridity_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean", "cv_Precip_mean") 
+var2 <- c("MAP_mean", "MAT_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean", "cv_Precip_mean") 
 
 # Predict data using model, sequence, and mean
 df_predicted <- foreach(v = var, 
@@ -244,25 +264,27 @@ df_predicted <- foreach(v = var,
 
 # Clarify column names 
 df_combined <- df_predicted %>% 
-  select(Codom...2, Aridity, GDiv, HumanFootprint, NDep, ANPP, cv_Precip,
+  select(Codom...2, MAP, MAT, GDiv, HumanFootprint, NDep, ANPP, cv_Precip,
          starts_with("Probability")) %>% 
   rename(Codom = Codom...2,
-         Aridity = Aridity,
+         "MAP" = MAP,
+         "MAT" = MAT,
          "Gamma Diversity" = GDiv,
          "Human Footprint Index" = HumanFootprint, 
          "N Deposition" = NDep,
          ANPP = ANPP,
-         Precip = cv_Precip,
-         Prob_Aridity = Probability...3,
-         Prob_gamma = Probability...6,
-         Prob_Human = Probability...9,
-         Prob_N = Probability...12,
-         Prob_ANPP = Probability...15,
-         Prob_Precip = Probability...18)
+         "Precip" = cv_Precip,
+         Prob_MAP = Probability...3,
+         Prob_MAT = Probability...6,
+         Prob_gamma = Probability...9,
+         Prob_Human = Probability...12,
+         Prob_N = Probability...15,
+         Prob_ANPP = Probability...18,
+         Prob_Precip = Probability...21)
 
 # Assign names
-prob <- c("Prob_Aridity", "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N", "Prob_Precip")
-named_var <- c("Aridity", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition", "Precip")
+prob <- c("Prob_MAP","Prob_MAT", "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N", "Prob_Precip")
+named_var <- c("MAP","MAT", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition", "Precip")
 
 
 
