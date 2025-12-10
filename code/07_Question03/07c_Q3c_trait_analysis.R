@@ -196,14 +196,22 @@ summary(m)
 
 ## set theme
 theme_set(theme_bw())
-theme_update(axis.title.x=element_text(size=22, vjust=-0.35, margin=margin(t=15)),
-             axis.text.x=element_text(size=12),
-             axis.title.y=element_text(size=22, angle=90, vjust=0.5, margin=margin(r=15)), 
-             axis.text.y=element_text(size=12),
-             plot.title = element_text(size=20, vjust=2),
-             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
-             strip.text=element_text(size=18),
-             legend.title=element_text(size=20), legend.text=element_text(size=20))
+theme_update(axis.title.x = element_text(size = 22, 
+                                         vjust = -0.35, 
+                                         margin = margin(t = 15)),
+             axis.text.x = element_text(size = 12),
+             axis.title.y = element_text(size = 22,
+                                         angle = 90,
+                                         vjust = 0.5,
+                                         margin = margin(r = 15)), 
+             axis.text.y = element_text(size = 12),
+             plot.title = element_text(size = 20, 
+                                       vjust = 2),
+             panel.grid.major = element_blank(), 
+             panel.grid.minor = element_blank(),
+             strip.text = element_text(size = 18),
+             legend.title = element_text(size = 20),
+             legend.text = element_text(size = 20))
 
 ## set new column for visual
 df_ses <- df_ses %>% 
@@ -310,7 +318,7 @@ right_text <- ggplot() +
 
 # Combine horizontally: left text | colorbar | right text
 (legend_block <- (left_text | legend | right_text) +
-  plot_layout(width = c(3, 0.1, 3)))
+    plot_layout(width = c(3, 0.1, 3)))
 
 ## combine and export
 g_ses <- g_ses_main / legend_block
