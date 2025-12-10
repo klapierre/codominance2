@@ -1,5 +1,9 @@
 # figures for multinomial model with aridity and precip
 
+
+source("code/01_library.R")
+source("code/02_functions.R")
+
 # Fig: Distribution of values ---------------------------------------------
 
 ## must mutate and factor levels so each group is treated as such 
