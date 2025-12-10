@@ -68,7 +68,8 @@ get_dist <- function(data, pool, md) {
                        ## return pairwise distance and proportion > observed
                        distinct(df_pair, 
                                 site_proj_comm) %>% 
-                         bind_cols(tibble(sp1 = m_combo[1, ],
+                         bind_cols(tibble(pair_id = i,
+                                          sp1 = m_combo[1, ],
                                           sp2 = m_combo[2, ],
                                           dist = d,
                                           ses = ses,
