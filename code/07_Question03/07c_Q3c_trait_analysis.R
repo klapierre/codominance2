@@ -186,32 +186,40 @@ df_ses <- foreach(k = usite,
   filter(trt_cat != "other")
 
 # NOTE: category "other" has only 5 data points
+
+## ses-based analysis
 m <- lm(ses ~ trt_cat,
         data = df_ses, 
         weights = 1 - p_na)
 
 summary(m)
 
+## RDFD-based analysis, beta-binomial
+library(glmmTMB)
+glmmTMB(cbind(n_obs, n_pool - n_obs) ~ trt_cat,
+        data = df_ses,
+        family = betabinomial(),
+        weights = 1 - p_na) %>% 
+  summary()
+
 # figures -----------------------------------------------------------------
 
 ## set theme
 theme_set(theme_bw())
-theme_update(axis.title.x = element_text(size = 22, 
+theme_update(plot.title = element_text(size = 20, 
+                                       vjust = 2),
+             axis.title.x = element_text(size = 18, 
                                          vjust = -0.35, 
                                          margin = margin(t = 15)),
-             axis.text.x = element_text(size = 12),
-             axis.title.y = element_text(size = 22,
+             axis.title.y = element_text(size = 18,
                                          angle = 90,
                                          vjust = 0.5,
                                          margin = margin(r = 15)), 
-             axis.text.y = element_text(size = 12),
-             plot.title = element_text(size = 20, 
-                                       vjust = 2),
+             axis.text = element_text(size = 9),
              panel.grid.major = element_blank(), 
              panel.grid.minor = element_blank(),
              strip.text = element_text(size = 18),
-             legend.title = element_text(size = 20),
-             legend.text = element_text(size = 20))
+             legend.text = element_text(size = 9))
 
 ## set new column for visual
 df_ses <- df_ses %>% 
@@ -227,16 +235,16 @@ df_ses <- df_ses %>%
 ## density gradient
 df_dens <- df_ses %>%
   group_by(trt_label) %>% 
-  reframe(x = density(ses,
+  reframe(x = density(p,
                       n = 1000,
                       bw = "nrd0",
-                      from = min(ses),
-                      to = max(ses))$x,
-          y = density(ses,
+                      from = 0,
+                      to = 1)$x,
+          y = density(p,
                       n = 1000,
                       bw = "nrd0",
-                      from = min(ses),
-                      to = max(ses))$y) %>% 
+                      from = 0,
+                      to = 1)$y) %>%
   group_by(trt_label) %>% 
   mutate(xend = ifelse(is.na(lead(x)),
                        x,
@@ -250,13 +258,13 @@ df_dens <- df_ses %>%
   ungroup()
 
 ## draw figure
-g_ses_main <- df_ses %>% 
+g_p_main <- df_ses %>% 
   ggplot() +
   geom_tile(data = df_dens %>% 
               filter(trt_label == "Control") %>% 
               dplyr::select(-trt_label),
             aes(x = x,
-                y = y/2,
+                y = y / 2,
                 height = y,
                 width = width),
             fill = "lightgrey",
@@ -283,19 +291,20 @@ g_ses_main <- df_ses %>%
   facet_wrap(~trt_label,
              ncol = 4) +
   labs(y = "Density",
-       x = "SES",
+       x = "Relative Deviation of Functional Distance",
        fill = NULL) +
+  scale_fill_gradient(low="#FC9F32", 
+                      high="#1A2766", 
+                      breaks = c(0, 0.5, 1.0)) +
+  scale_color_gradient(low="#FC9F32",  
+                       high="#1A2766") +
   guides(color = "none") +
   theme(strip.background = element_blank(),
-        legend.position = "none") +
-  scale_fill_gradient(low="#FC9F32", 
-                      high="#1A2766") +
-  scale_color_gradient(low="#FC9F32", 
-                       high="#1A2766")
+        legend.position = "none")
 
-legend <- get_legend(g_ses_main + theme(legend.position = "bottom",
-                                        plot.margin = margin(0, 0, 0, 0),
-                                        legend.text = element_text(size = 12)))
+legend <- get_legend(g_p_main + theme(legend.position = "bottom",
+                                      plot.margin = margin(0, 0, 0, 0),
+                                      legend.text = element_text(size = 12)))
 
 # Create left and right title labels as grobs
 left_text <- ggplot() + 
@@ -318,14 +327,15 @@ right_text <- ggplot() +
 
 # Combine horizontally: left text | colorbar | right text
 (legend_block <- (left_text | legend | right_text) +
-    plot_layout(width = c(3, 0.1, 3)))
+    plot_layout(width = c(3, 1, 3)))
 
 ## combine and export
-g_ses <- g_ses_main / legend_block
+g_p <- g_p_main / legend_block
 
-ggsave(g_ses,
+ggsave(g_p,
        filename = "figure_3.pdf",
-       width = )
+       width = 9,
+       height = 5)
 
 # # figure for control
 # 
