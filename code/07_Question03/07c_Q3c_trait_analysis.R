@@ -1,7 +1,7 @@
 ################################################################################
 ##  06b_Q2_trait_analysis.R: link codominants to trait data
 ##
-##  Authors: Akira Terui, Kim Komatsu
+##  Authors: Akira Terui (modifid by K. Komatsu)
 ##  Date created: 5/30/2025
 ################################################################################
 
@@ -191,9 +191,16 @@ df_ses <- foreach(k = usite,
 #         weights = 1 - p_na)
 # summary(m)
 
-## RDFD-based analysis, beta-binomial
+## RDFD-based analysis, beta-binomial by treatment category
 glmmTMB(cbind(n_obs, n_pool - n_obs) ~ trt_cat,
         data = df_ses,
+        family = betabinomial(),
+        weights = 1 - p_na) %>% 
+  summary()
+
+## RDFD-based analysis, beta-binomial by treatment type
+glmmTMB(cbind(n_obs, n_pool - n_obs) ~ trt_type,
+        data = filter(df_ses, trt_type!='co2'),
         family = betabinomial(),
         weights = 1 - p_na) %>% 
   summary()
@@ -333,3 +340,130 @@ g_p <- arrangeGrob(main_grob, legend_block,
                    ncol=1, heights=c(5,1))
 
 ggsave("Fig3_all.png", g_p, width = 9, height = 5, dpi = 400)
+
+
+
+### by treatment type ---------------------------------------------------------
+
+df_ses <- df_ses %>% 
+  mutate(trt_label = case_when(trt_type == "control" ~ "Control",
+                               trt_type == "n" ~ "N",
+                               trt_type == "p" ~ "P",
+                               trt_type == "k" ~ "K",
+                               trt_type == "n*p" ~ "NP",
+                               trt_type == "mult_nutrient" ~ "Mult. Nut.",
+                               trt_type == "co2" ~ "CO2",
+                               trt_type == "irr" ~ "Irrigation",
+                               trt_type == "drought" ~ "Drought",
+                               trt_type == "temp" ~ "Warming",
+                               trt_type == "herb_removal" ~ "Herb. Removal",
+                               trt_type == "multiple_trts" ~ "Mult. Trts") %>% 
+           factor(levels = c("Control","N","P","K","NP","Mult. Nut.",
+                             "CO2","Irrigation","Drought","Warming",
+                             "Herb. Removal","Mult. Trts")))
+## density gradient
+df_dens <- df_ses %>%
+  filter(trt_label!='CO2') %>% 
+  group_by(trt_label) %>% 
+  reframe(x = density(p,
+                      n = 1000,
+                      bw = "nrd0",
+                      from = 0,
+                      to = 1)$x,
+          y = density(p,
+                      n = 1000,
+                      bw = "nrd0",
+                      from = 0,
+                      to = 1)$y) %>%
+  group_by(trt_label) %>% 
+  mutate(xend = ifelse(is.na(lead(x)),
+                       x,
+                       lead(x)),
+         yend = ifelse(is.na(lead(y)),
+                       y,
+                       lead(y)),
+         width = ifelse(is.na(lead(x) - x),
+                        abs(lag(x) - x),
+                        lead(x) - x)) %>% 
+  ungroup()
+
+## draw figure
+g_p_main <- df_ses %>% 
+  ggplot() +
+  geom_tile(data = df_dens %>% 
+              filter(trt_label == "Control") %>% 
+              dplyr::select(-trt_label),
+            aes(x = x,
+                y = y / 2,
+                height = y,
+                width = width),
+            fill = "lightgrey",
+            alpha = 0.75,
+            inherit.aes = FALSE) +
+  geom_tile(data = df_dens %>% 
+              filter(trt_label == "Control"),
+            aes(x = x,
+                y = y/2,
+                height = y,
+                width = width,
+                fill = x),
+            inherit.aes = FALSE) +
+  geom_segment(data = df_dens %>% 
+                 filter(trt_label != "Control"), 
+               aes(x = x,
+                   y = y, 
+                   xend = xend,
+                   yend = yend,
+                   color = x, 
+                   group = trt_label),
+               linewidth = 2,
+               lineend = 'round') +
+  facet_wrap(~trt_label,
+             ncol = 4) +
+  labs(y = "Density",
+       x = "Relative Deviation of Functional Distance",
+       fill = NULL) +
+  scale_fill_gradient(low="#FC9F32", 
+                      high="#1A2766", 
+                      breaks = c(0, 0.5, 1.0)) +
+  scale_color_gradient(low="#FC9F32",  
+                       high="#1A2766") +
+  guides(color = "none") +
+  theme(strip.background = element_blank(),
+        legend.position = "none")
+
+main_grob <- ggplotGrob(g_p_main)
+
+legend <- get_legend(g_p_main + theme(legend.position = "bottom",
+                                      plot.margin = margin(0, 0, 0, 0),
+                                      legend.text = element_text(size = 12)))
+
+# Create left and right title labels as grobs
+left_text <- ggplot() + 
+  theme_void() +
+  annotate("text", 
+           x = 0.1, 
+           y = 0.5, 
+           label = "Similar traits \n(habitat filtering)", 
+           angle = 0, 
+           size = 5)
+
+right_text <- ggplot() + 
+  theme_void() +
+  annotate("text", 
+           x = 0.5, 
+           y = 0.5, 
+           label = "Dissimilar traits \n(niche differentiation)", 
+           angle = 0,
+           size = 5)
+
+# Combine horizontally: left text | colorbar | right text
+legend_block <- arrangeGrob(left_text, legend, right_text,
+                            ncol=3, widths=c(3,1,3))
+
+
+## combine and export
+g_p <- arrangeGrob(main_grob, legend_block,
+                   ncol=1, heights=c(5,1))
+
+ggsave("FigG_traits_byTrt.png", g_p, width = 9, height = 9, dpi = 400)
