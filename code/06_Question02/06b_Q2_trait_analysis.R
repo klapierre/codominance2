@@ -13,7 +13,7 @@
 # 3. keep how many species/sites are excluded
 
 # ISSUE:
-# Some pairs are duplicated in the outcome, look into codes to fix
+# Some pairs are duplicated in the outcome
 # - duplicates appear when there are overlaps in tri-dominant and co-dominant pairs
 # - removed duplicates with distinct() function
 
@@ -22,6 +22,13 @@
 rm(list = ls())
 source("code/01_library.R")
 source("code/02_functions.R")
+
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
+             axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
+             plot.title = element_text(size=40, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_blank(), legend.text=element_text(size=40))
 
 # read data ---------------------------------------------------------------
 
@@ -206,26 +213,24 @@ df_p <- foreach(k = usite,
                   return(df_dist)
                 }
 
-df_p %>% 
-  ggplot(aes(x = p)) +
-  geom_density(size = 1) +
-  xlab('Relative Deviation\nof Functional Distance') +
-  ylab('Density') +
-  theme_bw() +
-  theme(panel.grid = element_blank())
+# df_p %>% 
+#   ggplot(aes(x = p)) +
+#   geom_density(size = 1) +
+#   xlab('Relative Deviation\nof Functional Distance') +
+#   ylab('Density') +
+#   theme_bw() +
+#   theme(panel.grid = element_blank())
 
-ggsave('Fig3_traitDensityCtl.png',
-       width=3,
-       height=3,
-       units='in',
-       dpi=300,
-       bg='white')
+# ggsave('Fig3_traitDensityCtl.png',
+#        width=3,
+#        height=3,
+#        units='in',
+#        dpi=300,
+#        bg='white')
 
 # linking p to environmental factors --------------------------------------
 
 ## p value and environmental factors in sf
-spr_aridity <- terra::rast("data/aridity_index.tif")
-
 sf_m <- readRDS("data/envData.rds") %>% 
   mutate(site_proj_comm = paste0(site_code, "_", 
                                  project_name, "_",
@@ -235,33 +240,19 @@ sf_m <- readRDS("data/envData.rds") %>%
   st_as_sf(coords = c("Longitude", "Latitude"),
            crs= 4326)
 
-v_arid <- terra::extract(spr_aridity, sf_m)
-
-sf_m <- sf_m %>% 
-  mutate(aridity = v_arid[, 2])
-
-## sf continent data
-sf_countries <- rnaturalearth::ne_countries(scale = "medium", 
-                                            returnclass = "sf") %>% 
-  dplyr::select(continent) %>% 
-  st_make_valid()
-
-df_m <- st_join(sf_m, 
-                sf_countries,
-                join = st_nearest_feature) %>% 
-  as_tibble() %>% 
-  dplyr::select(-geometry)
-
-saveRDS(df_m, file = "data/traitp_ctr.rds")
+saveRDS(sf_m, file = "data/traitp_ctr.rds")
 
 # analysis ----------------------------------------------------------------
 
-df_m <- readRDS("data/traitp_ctr.rds")
+df_m <- readRDS("data/traitp_ctr.rds") %>% 
+  filter(!is.na(anpp),
+         n_obs>0)
 
-## model with aridity
+## model with environmental gradient
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
-                   scale(Aridity) + 
-                   scale(cv_Precip) +
+                   scale(MAP) +
+                   scale(MAT) +
+                   scale(anpp) +
                    scale(gamma_rich) +
                    scale(HumanFootprint) +
                    scale(NDeposition) +
@@ -271,34 +262,31 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
                  weights = 1 - p_na) %>% 
   summary()
 
-## model with MAP & MAT
-glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
-                   scale(MAP) + 
-                   scale(MAT) + 
-                   scale(Aridity) +
-                   scale(cv_Precip) +
-                   scale(gamma_rich) +
-                   scale(HumanFootprint) +
-                   scale(NDeposition) +
-                   (1 | site_proj_comm),
-                 family = glmmTMB::betabinomial,
-                 data = df_m, 
-                 weights = 1 - p_na) %>% 
-  summary()
-
-df_m %>% 
-  pivot_longer(cols = MAP:cv_Precip,
+df_m2  <- df_m %>% 
+  select(database, site_code, project_name, community_type, site_proj_comm,
+         MAP:CONTINENT, pair_id, sp1, sp2, dist, ses, p, n_pool, n_obs, p_na) %>% 
+  pivot_longer(cols = c(MAP, MAT, anpp, gamma_rich, HumanFootprint, NDeposition),
                values_to = "x",
                names_to = "var") %>% 
-  ggplot(aes(y = p,
+  mutate(var = case_when(var == "anpp" ~ "ANPP",
+                         var == "gamma_rich" ~ "Gamma Diversity",
+                         var == "HumanFootprint" ~ "Human Footprint",
+                         var == "NDeposition" ~ "N Deposition",
+                         .default = var) %>% 
+           factor(levels=c('MAP','MAT','Gamma Diversity','ANPP','Human Footprint','N Deposition')))
+
+envGradientPlot <- ggplot(data=df_m2, aes(y = p,
              x = x,
-             color = continent)) +
-  geom_point(alpha = 0.2) +
+             color = CONTINENT)) +
+  geom_point(alpha = 0.7, size=5) +
+  ylab('Relative Deviation of Functional Distance') +
   facet_wrap(facets =~ var, 
              scales = "free",
              strip.position = "bottom")  +
-  theme_bw() +
   theme(strip.background = element_blank(),
         strip.placement = "outside",
-        axis.title.x = element_blank())
+        strip.text.x = element_text(size=40, vjust=0.5, margin=margin(r=15)),
+        axis.title.x = element_blank(),
+        legend.position='bottom')
 
+ggsave("FigH_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)

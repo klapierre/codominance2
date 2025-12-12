@@ -37,7 +37,7 @@ df_codom0 <- bind_rows(df_codom0_ctr,
   mutate(site_proj_comm = paste0(site_code, "_", 
                                  project_name, "_",
                                  community_type) %>% 
-           str_to_lower(),
+         str_to_lower(),
          trt_type = str_to_lower(trt_type),
          .before = site_code) %>% 
   dplyr::select(-c(site_code,
