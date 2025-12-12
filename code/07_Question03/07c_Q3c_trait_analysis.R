@@ -183,19 +183,15 @@ df_ses <- foreach(k = usite,
                     
                     return(df_dist)
                   } %>% 
-  filter(trt_cat != "other")
+  filter(trt_cat != "other") # NOTE: category "other" has only 5 data points
 
-# NOTE: category "other" has only 5 data points
-
-## ses-based analysis
-m <- lm(ses ~ trt_cat,
-        data = df_ses, 
-        weights = 1 - p_na)
-
-summary(m)
+# ## ses-based analysis
+# m <- lm(ses ~ trt_cat,
+#         data = df_ses, 
+#         weights = 1 - p_na)
+# summary(m)
 
 ## RDFD-based analysis, beta-binomial
-library(glmmTMB)
 glmmTMB(cbind(n_obs, n_pool - n_obs) ~ trt_cat,
         data = df_ses,
         family = betabinomial(),
@@ -302,6 +298,8 @@ g_p_main <- df_ses %>%
   theme(strip.background = element_blank(),
         legend.position = "none")
 
+main_grob <- ggplotGrob(g_p_main)
+
 legend <- get_legend(g_p_main + theme(legend.position = "bottom",
                                       plot.margin = margin(0, 0, 0, 0),
                                       legend.text = element_text(size = 12)))
@@ -312,7 +310,7 @@ left_text <- ggplot() +
   annotate("text", 
            x = 0.1, 
            y = 0.5, 
-           label = "Similar traits \n(environmental filtering)", 
+           label = "Similar traits \n(habitat filtering)", 
            angle = 0, 
            size = 5)
 
@@ -321,171 +319,17 @@ right_text <- ggplot() +
   annotate("text", 
            x = 0.5, 
            y = 0.5, 
-           label = "Dissimilar traits \n(niche difference)", 
+           label = "Dissimilar traits \n(niche differentiation)", 
            angle = 0,
            size = 5)
 
 # Combine horizontally: left text | colorbar | right text
-(legend_block <- (left_text | legend | right_text) +
-    plot_layout(width = c(3, 1, 3)))
+legend_block <- arrangeGrob(left_text, legend, right_text,
+                            ncol=3, widths=c(3,1,3))
+
 
 ## combine and export
-g_p <- g_p_main / legend_block
+g_p <- arrangeGrob(main_grob, legend_block,
+                   ncol=1, heights=c(5,1))
 
-ggsave(g_p,
-       filename = "figure_3.pdf",
-       width = 9,
-       height = 5)
-
-# # figure for control
-# 
-# dens_ctl <- df_ses %>%
-#   group_map(~ {
-#     dens <- density(.x$ses,
-#                     n = 500000,
-#                     bw = "nrd0",
-#                     from = min(.x$ses),
-#                     to = max(.x$ses))  
-#     tibble(x = dens$x, y = dens$y)
-#   }) %>%
-#   bind_rows()
-# 
-# dens_ctl <- dens_ctl %>%
-#   mutate(width = lead(x) - x,
-#          width = ifelse(is.na(width),
-#                         lag(width),
-#                         width))  # handle last NA
-# 
-# #png("figure_ctl_gradient.png", width = 12, height = 10, units='in', res = 300)
-# ggplot(data = df_ses) +
-#   geom_tile(data = dens_ctl,
-#             aes(x = x, 
-#                 y = y / 2, 
-#                 height = y, 
-#                 width = width, 
-#                 fill = x),
-#             inherit.aes = FALSE) +
-#   scale_fill_gradient(low="#FC9F32", high="#1A2766") +
-#   facet_wrap(~trt_cat,
-#              ncol = 4,
-#              scales = "free_y") +
-#   theme(panel.grid = element_blank(),
-#         strip.background = element_blank(),
-#         legend.position = 'none') +
-#   labs(y = "Density",
-#        x = "Relative Deviation of Functional Distance")
-# dev.off()
-# 
-# 
-# # figure for treatments
-# dens_df <- df_p_trt %>%
-#   group_by(trt_type2) %>%
-#   filter(n() >= 2) %>%  # Remove tiny groups
-#   filter(!(trt_type2 %in% c('K', 'Other'))) %>%
-#   group_map(~ {
-#     dens <- density(.x$p, n = 500000, bw = "nrd0",
-#                     from = 0,
-#                     to = 1)  
-#     tibble(x = dens$x, y = dens$y, trt_type2 = .y$trt_type2)
-#   }) %>%
-#   bind_rows() %>%
-#   arrange(trt_type2, x) %>%
-#   group_by(trt_type2) %>%
-#   mutate(
-#     xend = lead(x),
-#     yend = lead(y)
-#   ) %>%
-#   drop_na()
-# 
-# png("figure_3_traits_bytrt.png", width = 12, height = 10, units='in', res = 300)
-# ggplot(df_p_trt) +
-#   geom_density(data = df_p_ctl,
-#                aes(x = p),
-#                fill = "lightgrey", color = NA, alpha = 0.75) +
-#   geom_segment(data = subset(dens_df, !(trt_type2 %in% c('K', 'other', 'NA'))), 
-#                aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_type2), 
-#                linewidth = 3,
-#                lineend='round') +
-#   scale_color_gradient(low="#FC9F32", high="#1A2766") +
-#   facet_wrap(~trt_type2, ncol=5,
-#              scales = "free_y") +
-#   theme(panel.grid = element_blank(),
-#         strip.background = element_blank()) +
-#   labs(y = "Density",
-#        x = "Relative Deviation of Functional Distance") +
-#   theme(legend.position='none')
-# dev.off()
-# 
-# ### edit in photoshop to overlap control gradient panel with the grey background for all trts ###
-# 
-# 
-# # figure for treatment categories (stress vs resource)
-# dens_df <- df_p_trt %>%
-#   group_by(trt_category) %>%
-#   filter(n() >= 2) %>%  # Remove tiny groups
-#   # filter(!(trt_category %in% c('K', 'Other'))) %>%
-#   group_map(~ {
-#     dens <- density(.x$p, n = 500000, bw = "nrd0",
-#                     from = 0,
-#                     to = 1)  
-#     tibble(x = dens$x, y = dens$y, trt_category = .y$trt_category)
-#   }) %>%
-#   bind_rows() %>%
-#   arrange(trt_category, x) %>%
-#   group_by(trt_category) %>%
-#   mutate(
-#     xend = lead(x),
-#     yend = lead(y)
-#   ) %>%
-#   drop_na()
-# 
-# png("figure_3_traits_byCategory.png", width = 10, height = 5, units='in', res = 300)
-# ggplot(df_p_trt) +
-#   geom_density(data = df_p_ctl,
-#                aes(x = p),
-#                fill = "lightgrey", color = NA, alpha = 0.75) +
-#   geom_segment(data = subset(dens_df, !(trt_category %in% c('NA'))), 
-#                aes(x = x, y = y, xend = xend, yend = yend, color = x, group = trt_category), 
-#                linewidth=3,
-#                lineend='round') +
-#   scale_color_gradient(low="#FC9F32", high="#1A2766") +
-#   facet_wrap(~trt_category, ncol=5) +
-#   ylim(0,1.4) +
-#   scale_y_continuous(breaks=seq(0,1.4, by=0.2), limits = c(0, 1.4) ) +
-#   theme(panel.grid = element_blank(),
-#         strip.background = element_blank()) +
-#   labs(y = "Density",
-#        x = "Relative Deviation of Functional Distance") +
-#   theme(legend.position='none')
-# dev.off()
-# 
-# #figure for ctl
-# dens_ctl <- df_p_ctl %>%
-#   group_map(~ {
-#     dens <- density(.x$p, n = 500000, bw = "nrd0",
-#                     from = 0,
-#                     to = 1)  
-#     tibble(x = dens$x, y = dens$y)
-#   }) %>%
-#   bind_rows()
-# 
-# dens_ctl <- dens_ctl %>%
-#   mutate(width = lead(x) - x,
-#          width = ifelse(is.na(width), lag(width), width))  # handle last NA
-# 
-# png("figure_ctl_gradient_category.png", width = 10, height = 5, units='in', res = 300)
-# ggplot(df_p_trt) +
-#   geom_tile(data = dens_ctl,
-#             aes(x = x, y = y / 2, height = y, width = width, fill = x),
-#             inherit.aes = FALSE) +
-#   scale_fill_gradient(low="#FC9F32", high="#1A2766") +
-#   facet_wrap(~trt_category, ncol = 5) +
-#   # ylim(0,1.4) +
-#   scale_y_continuous(breaks=seq(0,1.4, by=0.2), limits = c(0, 1.4)) +
-#   theme(panel.grid = element_blank(),
-#         strip.background = element_blank(),
-#         legend.position = 'none') +
-#   labs(y = "Density",
-#        x = "Relative Deviation of Functional Distance")
-# dev.off()
-# 
+ggsave("Fig3_all.png", g_p, width = 9, height = 5, dpi = 400)
