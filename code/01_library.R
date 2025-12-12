@@ -30,4 +30,5 @@ pacman::p_load(here,
                broom, #table cleaning
                terra,
                gt,
+               webshot2,
                lubridate)

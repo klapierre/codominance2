@@ -1,5 +1,10 @@
-# figures for multinomial model with aridity and precip
 
+################################################################################
+##  05c_Q1_figures.R: Create figures of codominance incidence across environmental gradients.
+##
+##  Authors: Ashley LaRoque, Jordan Winter, Elise Grabda, Alyssa Young, Rachael Brenneman (modified K. Komatsu)
+##  Date created: 
+################################################################################
 
 source("code/01_library.R")
 source("code/02_functions.R")
@@ -16,13 +21,11 @@ df_iap <- readRDS("data/modeSite.rds") %>%
                                         lumpMode==2 ~ 'Codominated', 
                                         lumpMode==4 ~ 'Even'),
                              levels=c('Monodominated', 'Codominated', 'Even')),
-         lumpMode=factor(lumpMode, levels=c(1,2,4)))
+         lumpMode=factor(lumpMode, levels=c(1,2,4))) %>%  
+  dplyr::select(lumpMode, LumpNames, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity)
 
-df_arid <- df_iap %>% 
-  dplyr::select(lumpMode, LumpNames, MAP, MAT, GDiv, ANPP, HumanFootprint, NDep, Aridity, cv_Precip)
-
-df_h <- df_arid %>% 
-  pivot_longer(cols = c("MAP", "MAT", "GDiv", "ANPP", "HumanFootprint", "NDep", "Aridity", "cv_Precip"), 
+df_h <- df_iap %>% 
+  pivot_longer(cols = c("MAP", "MAT", "GDiv", "ANPP", "HumanFootprint", "NDep", "Aridity"),
                names_to = "variable", values_to = "value") %>% 
   mutate(variable1 = case_when(variable == "MAP" ~ "MAP",
                                variable == "MAT" ~ "MAT",
@@ -30,8 +33,7 @@ df_h <- df_arid %>%
                                variable == "ANPP" ~ "ANPP",
                                variable == "HumanFootprint" ~ "Human Footprint Index",
                                variable == "NDep" ~ "N Deposition",
-                               variable == "Aridity" ~ "Aridity",
-                               variable == "cv_Precip" ~ "Precip")) 
+                               variable == "Aridity" ~ "Aridity"))
 
 # plot histogram 
 ggplot(df_h, aes(value)) + # df_hist comes from formatted df above 
@@ -51,17 +53,20 @@ ggplot(df_h, aes(value)) + # df_hist comes from formatted df above
 # shows that correlations are statistically significant but weak-moderately correlated with one another
 (fig_corr <- chart.Correlation(df_iap[, c("MAP", 
                                           "MAT", 
-                                          "GDiv", 
-                                          "ANPP", 
-                                          "HumanFootprint", 
-                                          "NDep", 
                                           "Aridity",
-                                          "cv_Precip")],
+                                          # "cv_Precip",
+                                          "ANPP", 
+                                          "GDiv", 
+                                          "HumanFootprint", 
+                                          "NDep"
+                                          )],
                                method = "pearson",
                                histogram = TRUE))
 
 
 # Fig: Multinomial model predictions --------------------------------------
+
+df_combined <- readRDS("data/multimodalModelPredictions.rds")
 
 axis_limits <- list(
   "MAP" = list(limits = c(0, 2600), breaks = seq(0, 2600, by = 1000)),
@@ -74,6 +79,10 @@ axis_limits <- list(
 
 # Pre-allocate list
 output <- list()
+
+# Assign names
+prob <- c("Prob_MAP","Prob_MAT", "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N") #, "Prob_Precip")
+named_var <- c("MAP","MAT", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition") #, "Precip")
 
 # Generate figures using loop across variables and their probabilities 
 output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
@@ -92,11 +101,11 @@ output <- foreach(i = seq_along(named_var), .combine = 'c') %do% {
   brks <- axis_limits[[v]]$breaks
   
   fig <- ggplot(df_combo, aes(x = v1, y = p1, color = Codom)) +
-    geom_smooth(size = 2) +
+    geom_smooth(size = 3) +
     geom_point(size = 0.0003)+
     labs(y = "Probability", x = v) +
     scale_x_continuous(limits = lims, breaks = brks) +
-    ylim(0.0, 1) +
+    ylim(0.0, 0.8) +
     theme_bw() +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
@@ -162,16 +171,16 @@ out_hist <- foreach(h = named_var) %do% {
 
 # Arrange all plots
 
-final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]], nullGrob(),  
-                           output[[1]], output[[2]], output[[3]], nullGrob(),
-                           out_hist[[4]], out_hist[[5]], out_hist[[6]], out_hist[[7]], 
-                           output[[4]], output[[5]], output[[6]], output[[7]],
-                           nrow = 4, ncol = 4, 
+final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]], #nullGrob(),  
+                           output[[1]], output[[2]], output[[3]], #nullGrob(),
+                           out_hist[[4]], out_hist[[5]], out_hist[[6]], #out_hist[[7]], 
+                           output[[4]], output[[5]], output[[6]], #output[[7]],
+                           nrow = 4, ncol = 3, 
                            heights = c(2.5, 3, 2.5, 3)) # adjusts height of plots
 
 #ggsave("Fig2_model.png", final_plot, width = 28.5, height = 18, dpi = 400)
 # save figure as png
-ggsave("Fig2.png", final_plot, width = 28.5, height = 18, dpi = 400)
+ggsave("Fig2_model_3.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
 
 
 

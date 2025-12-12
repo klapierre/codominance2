@@ -41,56 +41,38 @@ df_iap30 <- readRDS("data/modeSite_cutoff30.rds")%>%
 
 #multinom function comes from nnet
 #mutinomial model using monodominance as the reference state
+
 multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ MAP +
-                                 MAT+
-                                 cv_Precip +
-                                 ANPP+
-                                 GDiv * 
-                                 NDep * 
-                                 HumanFootprint ,
+                                      levels = c(1,2,4)) ~ 
+                                 ANPP*(MAP + MAT + GDiv) +
+                                 NDep + HumanFootprint,
                                data = df_iap)
 
 #cutoff10 
 multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ MAP +
-                                  MAT+
-                                  cv_Precip +
-                                  ANPP+
-                                  GDiv * 
-                                  NDep * 
-                                  HumanFootprint ,
+                                      levels = c(1,2,4)) ~ 
+                                  ANPP*(MAP + MAT + GDiv) +
+                                  NDep + HumanFootprint,
                                data = df_iap10)
 #cutoff15
 multinom.baseline15 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ MAP +
-                                  MAT+
-                                  cv_Precip +
-                                  ANPP+
-                                  GDiv * 
-                                  NDep * 
-                                  HumanFootprint ,
+                                      levels = c(1,2,4)) ~ 
+                                  ANPP*(MAP + MAT + GDiv) +
+                                  NDep + HumanFootprint,
                                data = df_iap15)
 #cutoff25
 multinom.baseline25 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~MAP +
-                                  MAT+
-                                  cv_Precip +
-                                  ANPP+
-                                  GDiv * 
-                                  NDep * 
-                                  HumanFootprint ,
+                                      levels = c(1,2,4)) ~
+                                  ANPP*(MAP + MAT + GDiv) +
+                                  NDep + HumanFootprint,
                                data = df_iap25)
 #cutoff30
 multinom.baseline30 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ MAP +
-                                  MAT+
-                                  cv_Precip +
-                                  ANPP+
-                                  GDiv * 
-                                  NDep * 
-                                  HumanFootprint ,
+                                      levels = c(1,2,4)) ~ 
+                                  ANPP*(MAP + MAT + GDiv) +
+                                  NDep + HumanFootprint,
                                data = df_iap30)
+
 #checking p-value manually
 (coef <- summary(multinom.baseline1)$coefficients)
 
@@ -102,11 +84,11 @@ z <- coef/stderr
 
 
 #PR2() from 'pscl' package provides many R2 estimates
-pR2(multinom.baseline1) #McFaddenR2 = 0.324; our current cutoff exhibits the most explanatory power
-pR2(multinom.baseline10) #McFaddenR2 = 0.303
-pR2(multinom.baseline15) #McFaddenR2 = 0.296
-pR2(multinom.baseline25) #McFaddenR2 = 0.311
-pR2(multinom.baseline30) #McFaddenR2 = 0.310
+pR2(multinom.baseline1) #McFaddenR2 = 0.325; our current cutoff exhibits the most explanatory power
+pR2(multinom.baseline10) #McFaddenR2 = 0.311
+pR2(multinom.baseline15) #McFaddenR2 = 0.293
+pR2(multinom.baseline25) #McFaddenR2 = 0.314
+pR2(multinom.baseline30) #McFaddenR2 = 0.293
 
 #Putting into more convenient table format, P-values and OR's match model output 
 results <- tidy(multinom.baseline1, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
@@ -121,7 +103,8 @@ results_table <- results %>%
           "P-value" = p_value)
 
 gt(results_table, caption = "20% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff20.png")
+  gtsave("multinomial_cutoff20.png")
+
 #Results10#Resultscaption = 10
 results10 <- tidy(multinom.baseline10, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
@@ -136,6 +119,7 @@ results_table10 <- results10 %>%
 
 gt(results_table10, caption = "10% Cutoff (Base)") %>% 
   gtsave("C:/Users/elise/Downloads/Tables/cutoff10.png")
+
 #Results15
 results15 <- tidy(multinom.baseline15, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
@@ -150,6 +134,7 @@ results_table15 <- results15 %>%
 
 gt(results_table15, caption = "15% Cutoff (Base)") %>% 
   gtsave("C:/Users/elise/Downloads/Tables/cutoff15.png")
+
 #Results25
 results25 <- tidy(multinom.baseline25, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
@@ -164,6 +149,7 @@ results_table25 <- results25 %>%
 
 gt(results_table25, caption = "25% Cutoff (Base)") %>% 
   gtsave("C:/Users/elise/Downloads/Tables/cutoff25.png")
+
 #Results30
 results30 <- tidy(multinom.baseline30, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
@@ -178,22 +164,23 @@ results_table30 <- results30 %>%
 
 gt(results_table30, caption = "30% Cutoff (Base)") %>% 
   gtsave("C:/Users/elise/Downloads/Tables/cutoff30.png")
+
+
 # Format: for figure of multinomial model predictions----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
 # change this data file to represent the cutoff of interest
 df_om <- df_iap %>% 
   na.omit() %>% 
-  mutate(MAP_mean = mean(Aridity),
+  mutate(MAP_mean = mean(MAP),
          MAT_mean = mean(MAT),
          GDiv_mean = mean(GDiv),
          HumanFootprint_mean = mean(HumanFootprint),
          NDep_mean = mean(NDep),
-         ANPP_mean = mean(ANPP),
-         cv_Precip_mean = mean(cv_Precip)) 
+         ANPP_mean = mean(ANPP))
 
 # Variables of interest
-var <- c("MAP", "MAT", "GDiv", "HumanFootprint", "NDep", "ANPP", "cv_Precip") 
+var <- c("MAP", "MAT", "GDiv", "HumanFootprint", "NDep", "ANPP")
 
 # Generate sequence of values looped for each variable 
 df_seq <- foreach(v = var, .combine = bind_cols) %do% {
@@ -222,7 +209,7 @@ df_r <- df_om %>%
   full_join(df_seq, by = "seq") 
 
 # Mean of variables of interest
-var2 <- c("MAP_mean", "MAT_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean", "cv_Precip_mean") 
+var2 <- c("MAP_mean", "MAT_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean") 
 
 # Predict data using model, sequence, and mean
 df_predicted <- foreach(v = var, 
@@ -264,7 +251,7 @@ df_predicted <- foreach(v = var,
 
 # Clarify column names 
 df_combined <- df_predicted %>% 
-  select(Codom...2, MAP, MAT, GDiv, HumanFootprint, NDep, ANPP, cv_Precip,
+  select(Codom...2, MAP, MAT, GDiv, HumanFootprint, NDep, ANPP, # cv_Precip,
          starts_with("Probability")) %>% 
   rename(Codom = Codom...2,
          "MAP" = MAP,
@@ -273,47 +260,11 @@ df_combined <- df_predicted %>%
          "Human Footprint Index" = HumanFootprint, 
          "N Deposition" = NDep,
          ANPP = ANPP,
-         "Precip" = cv_Precip,
          Prob_MAP = Probability...3,
          Prob_MAT = Probability...6,
          Prob_gamma = Probability...9,
          Prob_Human = Probability...12,
          Prob_N = Probability...15,
-         Prob_ANPP = Probability...18,
-         Prob_Precip = Probability...21)
+         Prob_ANPP = Probability...18)
 
-# Assign names
-prob <- c("Prob_MAP","Prob_MAT", "Prob_gamma", "Prob_ANPP", "Prob_Human", "Prob_N", "Prob_Precip")
-named_var <- c("MAP","MAT", "Gamma Diversity", "ANPP", "Human Footprint Index", "N Deposition", "Precip")
-
-
-
-
-
-# # Determining differences in codominance across ecoregions ----------------------------------------------------------
-# 
-# modeSiteEcoregion <- modeSite %>% 
-#   mutate(lump_mode_cat=ifelse(lumpMode==1, 'Monodominated',
-#                        ifelse(lumpMode==2, 'Codominated', 'Even'))) 
-# 
-# 
-# ecoregionModel <- xtabs(~ Formation + lump_mode_cat, data = modeSiteEcoregion)
-# 
-# print(chisq <- chisq.test(ecoregionModel))
-# # X-squared = 36.811, df = 28, p-value = 0.1231
-# 
-# mosaicplot(ecoregionModel, shade = TRUE, las=2,
-#            main = "modeSiteCodom")
-# 
-# summaryModeSiteCodom <- as.data.frame(ecoregionModel) %>% 
-#   group_by(lump_mode_cat ) %>%
-#   mutate(percent=Freq/sum(Freq)) %>% 
-#   ungroup()
-# 
-# ggplot(summaryModeSiteCodom, aes(x=lump_mode_cat , y=Formation)) +
-#   geom_tile(aes(fill=percent)) +
-#   geom_text(aes(label=Freq), size=6, color='grey40') +
-#   # geom_text(aes(label=round(100*percent, digits=0))) +
-#   scale_fill_gradient(low='#F8FBF8', high='#031B88') +
-#   scale_y_discrete(limits=rev) +
-#   xlab('Control') + ylab('Treatment') + labs(fill='Column\nPercentage')
+saveRDS(df_combined, file = "data/multimodalModelPredictions.rds") # saving derived data for analyses
