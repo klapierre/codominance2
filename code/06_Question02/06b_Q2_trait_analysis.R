@@ -280,7 +280,7 @@ df_m2  <- df_m %>%
                          var == "n_deposition" ~ "N Deposition",
                          .default = var) %>% 
            factor(levels = c('MAP','MAT','Gamma Diversity','ANPP','Human Footprint','N Deposition'))
-         )
+  )
 
 envGradientPlot <- ggplot(data=df_m2, aes(y = p,
                                           x = x,
