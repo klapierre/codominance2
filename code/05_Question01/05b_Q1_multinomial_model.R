@@ -93,6 +93,9 @@ pR2(multinom.baseline30) #McFaddenR2 = 0.293
 #Putting into more convenient table format, P-values and OR's match model output 
 results <- tidy(multinom.baseline1, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
+results$y.level[results$y.level == 2] <- "Codominated"
+results$y.level[results$y.level == 4] <- "Even"
+
 results_table <- results %>%
   mutate(OR_CI = sprintf("%.2f ", estimate),
          p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
@@ -102,7 +105,7 @@ results_table <- results %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
-gt(results_table, caption = "20% Cutoff (Base)") %>% 
+gt(results_table, caption = "") %>% 
   gtsave("multinomial_cutoff20.png")
 
 #Results10#Resultscaption = 10
