@@ -12,10 +12,6 @@
 #   - for all species pairs (null distribution)
 # 3. keep how many species/sites are excluded
 
-# ISSUE:
-# Some pairs are duplicated in the outcome
-# - duplicates appear when there are overlaps in tri-dominant and co-dominant pairs
-# - removed duplicates with distinct() function
 
 # setup -------------------------------------------------------------------
 
@@ -286,6 +282,15 @@ envGradientPlot <- ggplot(data=df_m2, aes(y = p,
                                           x = x,
                                           color = continent)) +
   geom_point(alpha = 0.7, size=5) +
+  geom_smooth(
+    data = subset(df_m2, var == "MAP"),
+    aes(x = x, y = p, group = 1),
+    method = "lm",
+    se = F,
+    color = "black",
+    linewidth = 1.5,
+    inherit.aes = FALSE
+  ) +
   ylab('Relative Deviation of Functional Distance') +
   facet_wrap(facets =~ var, 
              scales = "free",
