@@ -212,6 +212,8 @@ df_p <- foreach(k = usite,
                   return(df_dist)
                 }
 
+saveRDS(df_p, file = "data/traitp_ctr.rds")
+
 # analysis ----------------------------------------------------------------
 
 ## RDFD value and environmental factors
