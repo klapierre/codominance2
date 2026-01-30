@@ -43,8 +43,12 @@ plotSize <- rbind(corre, gex) %>%
 
 siteModel <- polr(as.factor(group) ~ plot_size, data = plotSize, Hess=T) 
 nullSiteModel <- polr(as.factor(group) ~ 1, data = plotSize, Hess=T)
-summary(siteModel)
-lrt <- anova(siteModel, nullSiteModel)
+ctable <- coef(summary(siteModel))
+pvals <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+cbind(ctable, "p value" = pvals)
+exp(coef(siteModel))
+exp(confint(siteModel))
+anova(siteModel, nullSiteModel)
 
 
 # anovas (backwards testing) ------------------

@@ -116,32 +116,36 @@ modeSite <- rbind(modeSiteTrue, multipleModeProj) %>%
 
 # ordinal logistic regressions ------------------
 
-allModel <- polr(group ~ richness, data = plotRichness, Hess=T) 
-nullAllModel <- polr(group ~ 1, data = plotRichness, Hess=T)
-summary(allModel)
-lrt <- anova(allModel, nullAllModel)
+# allModel <- polr(as.factor(group) ~ richness, data = plotRichness, Hess=T) 
+# nullAllModel <- polr(as.factor(group) ~ 1, data = plotRichness, Hess=T)
+# summary(allModel)
+# lrt <- anova(allModel, nullAllModel)
+# 
+# plotModel <- polr(as.factor(group) ~ plot_rich, data = modePlot, Hess=T) 
+# nullPlotModel <- polr(as.factor(group) ~ 1, data = modePlot, Hess=T)
+# summary(plotModel)
+# lrt <- anova(plotModel, nullPlotModel)
 
-plotModel <- polr(group ~ plot_rich, data = modePlot, Hess=T) 
-nullPlotModel <- polr(group ~ 1, data = modePlot, Hess=T)
-summary(plotModel)
-lrt <- anova(plotModel, nullPlotModel)
-
-siteModel <- polr(group ~ site_rich, data = modeSite, Hess=T) 
-nullSiteModel <- polr(group ~ 1, data = modeSite, Hess=T)
+siteModel <- polr(as.factor(group) ~ site_rich, data = modeSite, Hess=T) 
+nullSiteModel <- polr(as.factor(group) ~ 1, data = modeSite, Hess=T)
 summary(siteModel)
-lrt <- anova(siteModel, nullSiteModel)
+(ctable <- coef(summary(siteModel)))
+pvals <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+cbind(ctable, "p value" = pvals)
+exp(coef(siteModel))
+exp(confint(siteModel))
+anova(siteModel, nullSiteModel)
 
 
-
-# anovas (backwards testing) ------------------
-summary(allBackwardModel <- aov(richness ~ group, data=plotRichness))
-TukeyHSD(allBackwardModel)
-
-summary(plotBackwardModel <- aov(plot_rich ~ group, data=modePlot))
-TukeyHSD(plotBackwardModel)
-
-summary(siteBackwardModel <- aov(site_rich ~ group, data=modeSite))
-TukeyHSD(siteBackwardModel)
+# # anovas (backwards testing) ------------------
+# summary(allBackwardModel <- aov(richness ~ group, data=plotRichness))
+# TukeyHSD(allBackwardModel)
+# 
+# summary(plotBackwardModel <- aov(plot_rich ~ group, data=modePlot))
+# TukeyHSD(plotBackwardModel)
+# 
+# summary(siteBackwardModel <- aov(site_rich ~ group, data=modeSite))
+# TukeyHSD(siteBackwardModel)
 
 
 # figures ------------------
@@ -150,33 +154,33 @@ plotRichness$group <- factor(plotRichness$group, levels=c('even', 'codominated',
 modePlot$group <- factor(modePlot$group, levels=c('even', 'codominated', 'monodominated'))
 modeSite$group <- factor(modeSite$group, levels=c('even', 'codominated', 'monodominated'))
 
-allFig <- ggplot(data=plotRichness, aes(x=group, y=richness)) +
-  geom_boxplot() +
-  xlab('') + ylab('Richness (all plots and years)') +
-  coord_flip()
+# allFig <- ggplot(data=plotRichness, aes(x=group, y=richness)) +
+#   geom_boxplot() +
+#   xlab('') + ylab('Richness (all plots and years)') +
+#   coord_flip()
+# 
+# plotModeFig <- ggplot(data=modePlot, aes(x=group, y=plot_rich)) +
+#   geom_boxplot() +
+#   xlab('') + ylab('Richness (plot mode)') +
+#   coord_flip()
+# 
+# siteModeFig <- ggplot(data=modeSite, aes(x=group, y=site_rich)) +
+#   geom_boxplot() +
+#   xlab('') + ylab('Richness (site mode)') +
+#   coord_flip()
+# 
+# blank <- grid.rect(gp = gpar(col = NA))  # an empty grob
+# grid.arrange(allFig, blank, plotModeFig, blank, siteModeFig, 
+#              ncol=1, nrow=5,
+#              heights=c(3,1,3,1,3))
+# #export at 1500x1000
 
-plotModeFig <- ggplot(data=modePlot, aes(x=group, y=plot_rich)) +
-  geom_boxplot() +
-  xlab('') + ylab('Richness (plot mode)') +
-  coord_flip()
 
-siteModeFig <- ggplot(data=modeSite, aes(x=group, y=site_rich)) +
-  geom_boxplot() +
-  xlab('') + ylab('Richness (site mode)') +
-  coord_flip()
-
-blank <- grid.rect(gp = gpar(col = NA))  # an empty grob
-grid.arrange(allFig, blank, plotModeFig, blank, siteModeFig, 
-             ncol=1, nrow=5,
-             heights=c(3,1,3,1,3))
-#export at 1500x1000
-
-
-ggplot(data=modeSite, aes(x=group, y=site_rich)) +
-  geom_boxplot() +
-  xlab('') + ylab('Richness (site mode)') +
-  coord_flip()
-#export at 1500x500
+# ggplot(data=modeSite, aes(x=group, y=site_rich)) +
+#   geom_boxplot() +
+#   xlab('') + ylab('Richness (site mode)') +
+#   coord_flip()
+# #export at 1500x500
 
 ggplot(data=barGraphStats(data=modeSite, variable="site_rich", byFactorNames=c("group")), aes(x=group, y=mean)) +
   geom_jitter(data=modeSite, aes(x=group, y=site_rich), size=4, color='grey',
@@ -184,7 +188,7 @@ ggplot(data=barGraphStats(data=modeSite, variable="site_rich", byFactorNames=c("
   geom_point(size=9) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, size=6) +
   geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2, size=3) +
-  xlab('') + ylab('Richness (site mode)') +
+  xlab('') + ylab('Alpha Richness') +
   coord_flip()
 #export at 1500x500
 
