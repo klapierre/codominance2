@@ -109,8 +109,6 @@ df_pool0 <- readRDS("data/allSppList.rds") %>%
 # 
 # write.csv(test, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv')
 
-####### NOTE: fix this here, some species probably should have traits, but are missing for some reason. Complete traits for species in the spreadsheet in onedrive, redo trait imputation, and rerun all trait-based code #########
-
 
 # select unique combo of site, project, community-type --------------------
 
@@ -228,14 +226,14 @@ df_m <- readRDS("data/envData.rds") %>%
                    project_name,
                    community_type)) %>% 
   right_join(df_p,
-             by = "site_proj_comm") %>% 
-  filter(!is.na(anpp))
+             by = "site_proj_comm") #%>% 
+  # filter(!is.na(anpp))
 
 ## model with environmental gradient
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
                    scale(map) +
                    scale(mat) +
-                   scale(anpp) +
+                   # scale(anpp) +
                    scale(gamma_rich) +
                    scale(human_footprint) +
                    scale(n_deposition) +
@@ -248,6 +246,7 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
 # figure ------------------------------------------------------------------
 
 df_m2  <- df_m %>% 
+  select(-anpp) %>% 
   dplyr::select(database, 
                 site_proj_comm,
                 map:continent, 
@@ -262,7 +261,7 @@ df_m2  <- df_m %>%
                 p_na) %>% 
   pivot_longer(cols = c(map,
                         mat, 
-                        anpp, 
+                        # anpp, 
                         gamma_rich, 
                         human_footprint, 
                         n_deposition),
@@ -270,27 +269,27 @@ df_m2  <- df_m %>%
                names_to = "var") %>% 
   mutate(var = case_when(var == "map" ~ "MAP",
                          var == "mat" ~ "MAT",
-                         var == "anpp" ~ "ANPP",
+                         # var == "anpp" ~ "ANPP",
                          var == "gamma_rich" ~ "Gamma Diversity",
                          var == "human_footprint" ~ "Human Footprint",
                          var == "n_deposition" ~ "N Deposition",
                          .default = var) %>% 
-           factor(levels = c('MAP','MAT','Gamma Diversity','ANPP','Human Footprint','N Deposition'))
+           factor(levels = c('MAP','MAT','Gamma Diversity','Human Footprint','N Deposition'))
   )
 
 envGradientPlot <- ggplot(data=df_m2, aes(y = p,
                                           x = x,
                                           color = continent)) +
   geom_point(alpha = 0.7, size=5) +
-  geom_smooth(
-    data = subset(df_m2, var == "MAP"),
-    aes(x = x, y = p, group = 1),
-    method = "lm",
-    se = F,
-    color = "black",
-    linewidth = 1.5,
-    inherit.aes = FALSE
-  ) +
+  # geom_smooth(
+  #   data = subset(df_m2, var == "MAP"),
+  #   aes(x = x, y = p, group = 1),
+  #   method = "lm",
+  #   se = F,
+  #   color = "black",
+  #   linewidth = 1.5,
+  #   inherit.aes = FALSE
+  # ) +
   ylab('Relative Deviation of Functional Distance') +
   facet_wrap(facets =~ var, 
              scales = "free",
