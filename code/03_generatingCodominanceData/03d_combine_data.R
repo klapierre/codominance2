@@ -253,7 +253,7 @@ allAbund <- rbind(correAbund, gexAbund, nutnetAbund) %>%
 
 replicatesAll <- allAbund %>% dplyr::select(exp_unit) %>% unique() #62,971 individual data points (plot*year combinations)
 replicatesSpatial <- allAbund %>% dplyr::select(site_code, project_name, community_type, plot_id) %>% unique() #10,606 individual plots
-replicatesExperiment <- allAbund %>% dplyr::select(site_code, project_name, community_type) %>% unique() #527 experiments
+replicatesExperiment <- allAbund %>% dplyr::select(site_code, project_name, community_type) %>% unique() #523 experiments (4 dropped later in pipeline)
 replicatesSite <- allAbund %>% dplyr::select(site_code) %>% unique() #470 sites (but this needs further work, because some sites are named multiple things)
 
 
