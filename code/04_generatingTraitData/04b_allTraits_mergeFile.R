@@ -59,7 +59,9 @@ allTraits <- continuousTraits %>%
 
 # write.csv(allTraits, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\allTraits_CoRREGExNutNet_20250701.csv', row.names=F)
 
+# write.csv(categoricalTraits, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\2024_corre traits_Nature Scientific Data\\with BIEN and TIPleaf\\trait data for EDI\\v3\\CoRRE_categoricalTraitData_Feb2026.csv', row.names=F)
 
+# write.csv(continuousTraits, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\2024_corre traits_Nature Scientific Data\\with BIEN and TIPleaf\\trait data for EDI\\v3\\CoRRE_continuousTraitData_Feb2026.csv', row.names=F)
 
 
 
