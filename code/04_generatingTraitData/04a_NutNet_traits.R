@@ -468,9 +468,9 @@ CPTDtraits <- rbind(chem, photo) %>%
 allTraits <- rbind(TRYtraits, AusTraits, BIENtraits, tipTraits, CPTDtraits) %>% 
   mutate(ReferenceID=paste(DatabaseID, DatasetID, sep='_')) %>% 
   select(DatabaseID, DatasetID, ObservationID, Family, genus, species_matched, 
-         CleanTraitName, StdValue) %>% 
+         CleanTraitName, StdValue, Reference) %>% 
   group_by(DatabaseID, DatasetID, ObservationID, Family, genus, species_matched, 
-           CleanTraitName) %>% 
+           CleanTraitName, Reference) %>% 
   summarise(StdValue=mean(StdValue)) %>% 
   ungroup()
 
