@@ -270,4 +270,4 @@ df_combined <- df_predicted %>%
          Prob_N = Probability...15,
          Prob_ANPP = Probability...18)
 
-saveRDS(df_combined, file = "data/multimodalModelPredictions.rds") # saving derived data for analyses
+# saveRDS(df_combined, file = "data/multimodalModelPredictions.rds") # saving derived data for analyses
