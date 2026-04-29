@@ -12,39 +12,13 @@ source("code/01_library.R")
 source("code/02_functions.R")
 
 
-##### CoRRE and GEx Traits from EDI #####
-correGExTraitsContinuous <- read.csv('https://pasta.lternet.edu/package/data/eml/edi/1533/3/169fc12d10ac20b0e504f8d5ca0b8ee8') %>% 
-  select(-family, -source, -imputation_error, -error_risk_overall, -error_risk_family, -error_risk_genus)
-
-correGExTraitsCategorical <- read.csv('https://pasta.lternet.edu/package/data/eml/edi/1533/3/5ebbc389897a6a65dd0865094a8d0ffd') %>% 
-  select(-family, -source, -error_risk_overall)
-
-##### NutNet Traits - imputed/gathered for this project #####
-nutnetTraitsContinuous <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet/NutNet_continuousTraitData_imputed_20240711.csv') %>% 
-  select(species, trait, trait_value) %>% 
-  filter(!species %in% correGExTraitsContinuous$species)
-
-## NutNet N-fixers ##
-nutnetNfixer <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet/NutNet_species_list_N-fixers.csv') %>% 
-  select(species_matched, n_fixer) %>% 
-  rename(species=species_matched,
-         n_fixation_type=n_fixer)
-
-nutnetTraitsCategorical <- read_xlsx('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet/NutNet_categorical_traits_2024.xlsx') %>% 
-  select(species_matched, leaf_type, leaf_compoundness, growth_form, photosynthetic_pathway,
-         lifespan, stem_support, clonal) %>% 
-  rename(species=species_matched) %>% 
-  full_join(nutnetNfixer) %>% 
-  pivot_longer(leaf_type:n_fixation_type, names_to='trait', values_to='trait_value') %>% 
-  unique() %>% 
-  filter(!species %in% correGExTraitsCategorical$species)
-
-
-##### rbind, pivot wider, and merge #####
-continuousTraits <- rbind(correGExTraitsContinuous, nutnetTraitsContinuous) %>% 
+##### CoRRE, GEx, and NutNet Traits from EDI #####
+continuousTraits <- read.csv('https://pasta.lternet.edu/package/data/eml/edi/1533/4/169fc12d10ac20b0e504f8d5ca0b8ee8') %>% 
+  select(-family, -source, -imputation_error, -error_risk_overall, -error_risk_family, -error_risk_genus) %>% 
   pivot_wider(names_from=trait, values_from=trait_value)
 
-categoricalTraits <- rbind(correGExTraitsCategorical, nutnetTraitsCategorical) %>% 
+categoricalTraits <- read.csv('https://pasta.lternet.edu/package/data/eml/edi/1533/4/5ebbc389897a6a65dd0865094a8d0ffd') %>% 
+  select(-family, -source, -error_risk_overall) %>% 
   pivot_wider(names_from=trait, values_from=trait_value) %>% 
   select(-mycorrhizal_type)
 
