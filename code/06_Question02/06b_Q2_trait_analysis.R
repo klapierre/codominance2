@@ -78,34 +78,31 @@ df_pool0 <- readRDS("data/allSppList.rds") %>%
            genus_species)
 
 # # how many plants are identified to species level
-# completeSpp <- df_pool0 %>% 
-#   select(genus_species) %>% 
+# completeSpp <- df_pool0 %>%
+#   select(genus_species) %>%
 #   unique() %>% #start with 7725 unique species identifiers
 #   separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2',
 #                                      'other3', 'other4', 'other5', 'other6',
 #                                      'other7', 'other10'), sep=' ', remove=F) %>%
-#   filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.', 
-#                           '1', '2', '3', 'seedling')), 
-#          !is.na(species), 
-#          !(genus %in% c('unknown', 'unk', 'ZZZZ', 'Unknown')), 
-#          !(genus_species %in% c('forb, unidentified', 'geranium pot', 
-#                                 'rosa spec', 'pycnan vir', 'annual forb', 
+#   filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.',
+#                           '1', '2', '3', 'seedling')),
+#          !is.na(species),
+#          !(genus %in% c('unknown', 'unk', 'ZZZZ', 'Unknown')),
+#          !(genus_species %in% c('forb, unidentified', 'geranium pot',
+#                                 'rosa spec', 'pycnan vir', 'annual forb',
 #                                 'fleshy forb', 'forb hibiscus',
-#                                 'cottony forb', 'forb six', 
-#                                 'grass, unidentified', 'un lily', 
-#                                 'unidentified dicot', 'poaceae family', 
-#                                 'cyperaceae family', 'ericaceae family', 
-#                                 'cryptantha blue', 'Stiff leathery', 
+#                                 'cottony forb', 'forb six',
+#                                 'grass, unidentified', 'un lily',
+#                                 'unidentified dicot', 'poaceae family',
+#                                 'cyperaceae family', 'ericaceae family',
+#                                 'cryptantha blue', 'Stiff leathery',
 #                                 'Dangle flower', 'Aster opposite',
 #                                 'Long thin', '')),
 #          is.na(other1)) %>%  #6211 species identified to species level
-#   select(genus_species) %>% 
-#   rename(species=genus_species) %>% 
-#   left_join(df_trait) %>% 
+#   select(genus_species) %>%
+#   rename(species=genus_species) %>%
+#   left_join(df_trait) %>%
 #   na.omit() #3817 species have all traits
-# 
-# test <- completeSpp %>%
-#   filter(is.na(LDMC))
 # 
 # write.csv(test, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv')
 
@@ -302,4 +299,4 @@ envGradientPlot <- ggplot(data=df_m2, aes(y = p,
         axis.title.x = element_blank(),
         legend.position='bottom')
 
-ggsave("FigH_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
+ggsave("FigG_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
