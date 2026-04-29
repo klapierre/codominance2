@@ -201,7 +201,7 @@ expInfo <- individualExperiments %>%
   dplyr::select(database, site_code, project_name, community_type, plot_id, treatment, trt_type) %>%
   unique()
 
-saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
+# saveRDS(expInfo, file = "data/expInfo.rds") # saving derived data for analyses
 
 
 GISlayers <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\Environmental Data\\EnvRasterData_withPrecip.csv')
@@ -223,7 +223,7 @@ envData <- individualExperiments %>%
   select(-OID_, -lat_1, -long_1, -site_proj_comm, -ECO_NAME, -Division, -designation_criteria) %>% 
   filter(!is.nan(NDeposition))
 
-saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
+# saveRDS(envData, file = "data/envData.rds") # saving derived data for analyses
 
 
 #-----abundance cutoffs of codominance-----
@@ -296,7 +296,7 @@ df_plotLevel <- df_grouped %>%
   select(exp_unit, num_codominants, num_group, group) %>% 
   unique()
 
-saveRDS(df_plotLevel, file = "data/numCodomPlotYear.rds") # saving derived data for analyses
+# saveRDS(df_plotLevel, file = "data/numCodomPlotYear.rds") # saving derived data for analyses
 # saveRDS(df_plotLevel, file = "data/numCodomPlotYear_cutoff10.rds") # saving derived data for analyses
 
 summary(as.factor(df_plotLevel$group)) #35,192 plots monodominated, 19,341 codominanted, 8438 plots even
@@ -314,7 +314,7 @@ allSppList <- df_grouped %>%
   dplyr::select(database, site_proj_comm, exp_unit, site_code, project_name, community_type, plot_id, calendar_year, treatment_year, 
                 group, num_group, genus_species, rank)
 
-saveRDS(allSppList, file = "data/allSppList.rds") # saving derived data for analyses
+# saveRDS(allSppList, file = "data/allSppList.rds") # saving derived data for analyses
 
 codomSppList <- df_grouped %>% 
   group_by(exp_unit) %>% 
@@ -324,4 +324,4 @@ codomSppList <- df_grouped %>%
   dplyr::select(database, site_proj_comm, exp_unit, site_code, project_name, community_type, plot_id, calendar_year, treatment_year, 
                 group, num_group, genus_species, rank)
 
-saveRDS(codomSppList, file = "data/codomSppList.rds") # saving derived data for analyses
+# saveRDS(codomSppList, file = "data/codomSppList.rds") # saving derived data for analyses
