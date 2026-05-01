@@ -348,7 +348,7 @@ ggsave("Fig3_all.png", g_p, width = 9, height = 5, dpi = 400)
 ### by treatment type ---------------------------------------------------------
 
 df_ses <- df_ses %>% 
-  mutate(trt_label = case_when(trt_type == "control" ~ "Control",
+  mutate(trt_label = case_when(trt_type == "control" ~ "Unmanipulated",
                                trt_type == "n" ~ "N",
                                trt_type == "p" ~ "P",
                                trt_type == "k" ~ "K",
@@ -360,7 +360,7 @@ df_ses <- df_ses %>%
                                trt_type == "temp" ~ "Warming",
                                trt_type == "herb_removal" ~ "Herb. Removal",
                                trt_type == "multiple_trts" ~ "Mult. Trts") %>% 
-           factor(levels = c("Control","N","P","K","NP","Mult. Nut.",
+           factor(levels = c("Unmanipulated","N","P","K","NP","Mult. Nut.",
                              "CO2","Irrigation","Drought","Warming",
                              "Herb. Removal","Mult. Trts")))
 ## density gradient
@@ -393,7 +393,7 @@ df_dens <- df_ses %>%
 g_p_main <- df_ses %>% 
   ggplot() +
   geom_tile(data = df_dens %>% 
-              filter(trt_label == "Control") %>% 
+              filter(trt_label == "Unmanipulated") %>% 
               dplyr::select(-trt_label),
             aes(x = x,
                 y = y / 2,
@@ -403,7 +403,7 @@ g_p_main <- df_ses %>%
             alpha = 0.75,
             inherit.aes = FALSE) +
   geom_tile(data = df_dens %>% 
-              filter(trt_label == "Control"),
+              filter(trt_label == "Unmanipulated"),
             aes(x = x,
                 y = y/2,
                 height = y,
@@ -411,7 +411,7 @@ g_p_main <- df_ses %>%
                 fill = x),
             inherit.aes = FALSE) +
   geom_segment(data = df_dens %>% 
-                 filter(trt_label != "Control"), 
+                 filter(trt_label != "Unmanipulated"), 
                aes(x = x,
                    y = y, 
                    xend = xend,
@@ -446,7 +446,7 @@ left_text <- ggplot() +
   annotate("text", 
            x = 0.1, 
            y = 0.5, 
-           label = "Similar traits \n(habitat filtering)", 
+           label = "Similar\ntraits", 
            angle = 0, 
            size = 5)
 
@@ -455,7 +455,7 @@ right_text <- ggplot() +
   annotate("text", 
            x = 0.5, 
            y = 0.5, 
-           label = "Dissimilar traits \n(niche differentiation)", 
+           label = "Dissimilar\ntraits", 
            angle = 0,
            size = 5)
 
@@ -468,4 +468,4 @@ legend_block <- arrangeGrob(left_text, legend, right_text,
 g_p <- arrangeGrob(main_grob, legend_block,
                    ncol=1, heights=c(5,1))
 
-ggsave("FigG_traits_byTrt.png", g_p, width = 9, height = 9, dpi = 400)
+ggsave("Fig3_traits_byTrt.png", g_p, width = 9, height = 9, dpi = 400)
