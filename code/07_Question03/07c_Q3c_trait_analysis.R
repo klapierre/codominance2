@@ -185,6 +185,8 @@ df_ses <- foreach(k = usite,
                   } %>% 
   filter(trt_cat != "other") # NOTE: category "other" has only 5 data points
 
+saveRDS(df_ses, file = "data/traitp_trt.rds")
+
 # ## ses-based analysis
 # m <- lm(ses ~ trt_cat,
 #         data = df_ses, 
