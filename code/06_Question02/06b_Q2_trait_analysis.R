@@ -277,8 +277,7 @@ df_m2  <- df_m %>%
   )
 
 envGradientPlot <- ggplot(data=df_m2, aes(y = p,
-                                          x = x,
-                                          color = continent)) +
+                                          x = x)) +
   geom_point(alpha = 0.7, size=5) +
   # geom_smooth(
   #   data = subset(df_m2, var == "MAP"),
@@ -299,4 +298,4 @@ envGradientPlot <- ggplot(data=df_m2, aes(y = p,
         axis.title.x = element_blank(),
         legend.position='bottom')
 
-ggsave("FigG_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
+ggsave("FigF_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
