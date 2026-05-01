@@ -113,7 +113,7 @@ codomFamiliesSite <- RDFD %>%
   mutate(groups=ifelse(sp1==sp2, 'Same Family', 'Diff. Family'),
          ctl_trt=ifelse(trt_type=='control', 'Unmanipulated', 'Treatment'))
 
-## RDFD beta-binomial by functional group pairings
+## RDFD beta-binomial by family pairings
 n <- glmmTMB(cbind(n_obs, n_pool - n_obs) ~ ctl_trt*groups,
              data = codomFamiliesSite,
              family = betabinomial(),
