@@ -325,3 +325,53 @@ codomSppList <- df_grouped %>%
                 group, num_group, genus_species, rank)
 
 # saveRDS(codomSppList, file = "data/codomSppList.rds") # saving derived data for analyses
+
+
+
+# Example RACs with Cmax ----------------------------------------
+
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=8, vjust=-0.15, margin=margin(t=4)), axis.text.x=element_text(size=8),
+             axis.title.y=element_text(size=8, angle=90, vjust=0.3, margin=margin(r=4)), axis.text.y=element_text(size=8),
+             plot.title = element_text(size=8, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_text(size=16), legend.text=element_text(size=14))
+
+
+oneRank <- ggplot(data=subset(allAbund, exp_unit=='KNP::GFP::0::6_2_2::Open_Ungrazed::2011'), aes(x=rank, y=relcov)) +
+  geom_point() + geom_line() +
+  scale_x_continuous(breaks=seq(1,30,1)) +
+  coord_cartesian(ylim=c(0,70)) +
+  geom_hline(yintercept=59.1, linetype=3) +
+  xlab('Species Rank') + ylab('Relative Cover (%)') +
+  labs(title='(A) Monodominant (1) - Kruger National Park, South Africa')
+
+twoRank <- ggplot(data=subset(allAbund, exp_unit=='KNZ::pplots::0::25::N1P0::2016'), aes(x=rank, y=relcov)) +
+  geom_point() + geom_line() +
+  scale_x_continuous(breaks=seq(1,30,2)) +
+  coord_cartesian(ylim=c(0,70)) +
+  geom_hline(yintercept=19.3, linetype=3) +
+  xlab('Species Rank') + ylab('Relative Cover (%)') +
+  labs(title='(B) Codominant (2) - Konza Prairie Biological Station, USA')
+
+
+threeRank <- ggplot(data=subset(allAbund, exp_unit=='LasChilcas::0::0::Lowland::U::1989'), aes(x=rank, y=relcov)) +
+  geom_point() + geom_line() +
+  scale_x_continuous(breaks=seq(1,30,1)) +
+  coord_cartesian(ylim=c(0,70)) +
+  geom_hline(yintercept=12.3, linetype=3) +
+  xlab('Species Rank') + ylab('Relative Cover (%)') +
+  labs(title='(C) Codominant (3) - Las Chilcas, Argentina')
+
+evenRank <- ggplot(data=subset(allAbund, exp_unit=='AZI::EELplot::0::30::C::2016'), aes(x=rank, y=relcov)) +
+  geom_point() + geom_line() +
+  scale_x_continuous(breaks=seq(1,30,2)) +
+  coord_cartesian(ylim=c(0,70)) +
+  geom_hline(yintercept=3.4, linetype=3) +
+  xlab('Species Rank') + ylab('Relative Cover (%)') +
+  labs(title='(D) Even (4+) - Azi Research Station, China')
+
+ggsave("FigB_oneRank.png", oneRank, width = 4, height = 1.5, dpi = 400)
+ggsave("FigB_twoRank.png", twoRank, width = 4, height = 1.5, dpi = 400)
+ggsave("FigB_threeRank.png", threeRank, width = 4, height = 1.5, dpi = 400)
+ggsave("FigB_evenRank.png", evenRank, width = 4, height = 1.5, dpi = 400)
