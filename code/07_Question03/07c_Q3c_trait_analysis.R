@@ -348,21 +348,21 @@ ggsave("Fig3_all.png", g_p, width = 9, height = 5, dpi = 400)
 ### by treatment type ---------------------------------------------------------
 
 df_ses <- df_ses %>% 
-  mutate(trt_label = case_when(trt_type == "control" ~ "Unmanipulated",
-                               trt_type == "n" ~ "N",
-                               trt_type == "p" ~ "P",
-                               trt_type == "k" ~ "K",
-                               trt_type == "n*p" ~ "NP",
-                               trt_type == "mult_nutrient" ~ "Mult. Nut.",
+  mutate(trt_label = case_when(trt_type == "control" ~ "(A) Unmanipulated",
+                               trt_type == "n" ~ "(B) N",
+                               trt_type == "p" ~ "(C) P",
+                               trt_type == "k" ~ "(D) K",
+                               trt_type == "n*p" ~ "(E) NP",
+                               trt_type == "mult_nutrient" ~ "(F) Mult. Nut.",
                                trt_type == "co2" ~ "CO2",
-                               trt_type == "irr" ~ "Irrigation",
-                               trt_type == "drought" ~ "Drought",
-                               trt_type == "temp" ~ "Warming",
-                               trt_type == "herb_removal" ~ "Herb. Removal",
-                               trt_type == "multiple_trts" ~ "Mult. Trts") %>% 
-           factor(levels = c("Unmanipulated","N","P","K","NP","Mult. Nut.",
-                             "CO2","Irrigation","Drought","Warming",
-                             "Herb. Removal","Mult. Trts")))
+                               trt_type == "irr" ~ "(G) Irrigation",
+                               trt_type == "drought" ~ "(H) Drought",
+                               trt_type == "temp" ~ "(I) Warming",
+                               trt_type == "herb_removal" ~ "(J) Herb. Removal",
+                               trt_type == "multiple_trts" ~ "(K) Mult. Trts") %>% 
+           factor(levels = c("(A) Unmanipulated","(B) N","(C) P","(D) K","(E) NP","(F) Mult. Nut.",
+                             "CO2","(G) Irrigation","(H) Drought","(I) Warming",
+                             "(J) Herb. Removal","(K) Mult. Trts")))
 ## density gradient
 df_dens <- df_ses %>%
   filter(trt_label!='CO2') %>% 
@@ -468,4 +468,4 @@ legend_block <- arrangeGrob(left_text, legend, right_text,
 g_p <- arrangeGrob(main_grob, legend_block,
                    ncol=1, heights=c(5,1))
 
-ggsave("Fig3_traits_byTrt.png", g_p, width = 9, height = 9, dpi = 400)
+ggsave("Fig3_traits_byTrt.png", g_p, width = 10, height = 9, dpi = 400)
