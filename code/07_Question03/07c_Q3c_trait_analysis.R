@@ -353,16 +353,16 @@ df_ses <- df_ses %>%
                                trt_type == "p" ~ "(C) P",
                                trt_type == "k" ~ "(D) K",
                                trt_type == "n*p" ~ "(E) NP",
-                               trt_type == "mult_nutrient" ~ "(F) Mult. Nut.",
+                               trt_type == "mult_nutrient" ~ "(F) Mult. Nutrients",
                                trt_type == "co2" ~ "CO2",
                                trt_type == "irr" ~ "(G) Irrigation",
                                trt_type == "drought" ~ "(H) Drought",
                                trt_type == "temp" ~ "(I) Warming",
                                trt_type == "herb_removal" ~ "(J) Herb. Removal",
-                               trt_type == "multiple_trts" ~ "(K) Mult. Trts") %>% 
-           factor(levels = c("(A) Unmanipulated","(B) N","(C) P","(D) K","(E) NP","(F) Mult. Nut.",
+                               trt_type == "multiple_trts" ~ "(K) Mult. Treatments") %>% 
+           factor(levels = c("(A) Unmanipulated","(B) N","(C) P","(D) K","(E) NP","(F) Mult. Nutrients",
                              "CO2","(G) Irrigation","(H) Drought","(I) Warming",
-                             "(J) Herb. Removal","(K) Mult. Trts")))
+                             "(J) Herb. Removal","(K) Mult. Treatments")))
 ## density gradient
 df_dens <- df_ses %>%
   filter(trt_label!='CO2') %>% 
@@ -393,7 +393,7 @@ df_dens <- df_ses %>%
 g_p_main <- df_ses %>% 
   ggplot() +
   geom_tile(data = df_dens %>% 
-              filter(trt_label == "Unmanipulated") %>% 
+              filter(trt_label == "(A) Unmanipulated") %>% 
               dplyr::select(-trt_label),
             aes(x = x,
                 y = y / 2,
@@ -403,7 +403,7 @@ g_p_main <- df_ses %>%
             alpha = 0.75,
             inherit.aes = FALSE) +
   geom_tile(data = df_dens %>% 
-              filter(trt_label == "Unmanipulated"),
+              filter(trt_label == "(A) Unmanipulated"),
             aes(x = x,
                 y = y/2,
                 height = y,
@@ -411,7 +411,7 @@ g_p_main <- df_ses %>%
                 fill = x),
             inherit.aes = FALSE) +
   geom_segment(data = df_dens %>% 
-                 filter(trt_label != "Unmanipulated"), 
+                 filter(trt_label != "(A) Unmanipulated"), 
                aes(x = x,
                    y = y, 
                    xend = xend,
@@ -448,7 +448,7 @@ left_text <- ggplot() +
            y = 0.5, 
            label = "Similar\ntraits", 
            angle = 0, 
-           size = 5)
+           size = 6)
 
 right_text <- ggplot() + 
   theme_void() +
@@ -457,7 +457,7 @@ right_text <- ggplot() +
            y = 0.5, 
            label = "Dissimilar\ntraits", 
            angle = 0,
-           size = 5)
+           size = 6)
 
 # Combine horizontally: left text | colorbar | right text
 legend_block <- arrangeGrob(left_text, legend, right_text,
