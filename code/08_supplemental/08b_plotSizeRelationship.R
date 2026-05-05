@@ -67,12 +67,12 @@ ggplot(data=barGraphStats(data=plotSize, variable="plot_size", byFactorNames=c("
   geom_point(size=9) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, size=6) +
   geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2, size=3) +
-  xlab('') + ylab('Plot Size') +
+  xlab('') + ylab(expression("Plot Size (m"^2*")")) +
   coord_flip()
 #export at 1500x500
 
 ggplot(data=plotSize, aes(x=group, y=plot_size)) +
   geom_boxplot() +
-  xlab('') + ylab('Plot Size') +
+  xlab('') + ylab(expression("Plot Size (m"^2*")")) +
   coord_flip()
 #export at 1500x500
