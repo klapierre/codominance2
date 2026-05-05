@@ -371,7 +371,7 @@ evenRank <- ggplot(data=subset(allAbund, exp_unit=='AZI::EELplot::0::30::C::2016
   xlab('Species Rank') + ylab('Relative Cover (%)') +
   labs(title='(D) Even (4+) - Azi Research Station, China')
 
-ggsave("FigB_oneRank.png", oneRank, width = 4, height = 1.5, dpi = 400)
-ggsave("FigB_twoRank.png", twoRank, width = 4, height = 1.5, dpi = 400)
-ggsave("FigB_threeRank.png", threeRank, width = 4, height = 1.5, dpi = 400)
-ggsave("FigB_evenRank.png", evenRank, width = 4, height = 1.5, dpi = 400)
+# ggsave("FigB_oneRank.png", oneRank, width = 3, height = 1.5, dpi = 400)
+# ggsave("FigB_twoRank.png", twoRank, width = 3, height = 1.5, dpi = 400)
+# ggsave("FigB_threeRank.png", threeRank, width = 3, height = 1.5, dpi = 400)
+# ggsave("FigB_evenRank.png", evenRank, width = 3, height = 1.5, dpi = 400)
