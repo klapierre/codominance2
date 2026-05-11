@@ -41,7 +41,7 @@ codomGroupsSite <- RDFD %>%
   rownames_to_column() %>% 
   pivot_longer(cols=c(sp1, sp2), names_to='codom', values_to='species') %>%
   left_join(functionalGroup) %>% 
-  select(-c(LDMC:stem_support), -c(photosynthetic_pathway:n_fixation_type)) %>% 
+  # select(-c(LDMC:stem_support), -c(photosynthetic_pathway:n_fixation_type)) %>% 
   mutate(growth_form=ifelse(growth_form %in% c('vine', 'woody'), 'other', growth_form)) %>% 
   select(-species, -codom) %>%
   group_by(rowname, site_proj_comm, trt_type, p) %>% 
