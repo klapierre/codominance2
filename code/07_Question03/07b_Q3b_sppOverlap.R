@@ -180,6 +180,15 @@ overallOverlap <- summaryOverlapTable %>%
   mutate(percent=count/sum(count)) %>% 
   ungroup()
 
+# #alternate, removing mono to co switch ups
+# overallOverlap <- summaryOverlapTable %>% 
+#   mutate(match_condensed=ifelse(match=='full', 'Full', 
+#                                 ifelse(match=='partial', 'Partial',
+#                                        'None'))) %>% 
+#   group_by(match_condensed) %>% 
+#   summarize(count=sum(Freq)) %>% 
+#   mutate(percent=count/sum(count)) %>% 
+#   ungroup()
 
 overallOverlap$match_condensed <- factor(overallOverlap$match_condensed, levels = c('Full','Partial','None'))
 
@@ -191,91 +200,3 @@ ggplot(overallOverlap, aes(x=1 , y=match_condensed)) +
   scale_y_discrete(limits=rev) +
   xlab('') + ylab('Species Overlap') + labs(fill='Column\nPercentage') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
-
-# ggsave(file='Fig6_overlapTrt_heatMap.png', width=4, height=4, units='in', dpi=300, bg='white')
-
-# ggplot(overallOverlap, aes(x="", y=count, fill=match_nice)) +
-#   geom_col() +
-#   coord_polar(theta="y") +
-#   # scale_fill_manual(values=c('#B0AAD1', '#F7695F', '#6EA1C9'))  +
-#   theme(axis.text.x = element_blank(),
-#         axis.text.y = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.title.y = element_blank(),
-#         axis.ticks = element_blank(),
-#         panel.grid  = element_blank(),
-#         plot.title = element_text(vjust = 0.5),
-#         legend.position = 'none')  
-
-# ggsave(file='Fig6a_pieOverlapTrt.png', width=4, height=4, units='in', dpi=300, bg='white')
-
-
-# Two-level Sankey diagram with trt
-
-autumnalPalette <- c("#007BA7", "#A63922", "#D8B573", 'grey')
-
-longModeTrt <- allGroupsSite %>%
-  full_join(read_rds('data/modeTrt.rds')) %>%
-  mutate(match2=ifelse(lump_mode_site_cat=='Even' | lump_mode_trt_cat=='Even', 'N/A', match),
-         match3=paste(lump_mode_trt_cat, match2, sep='::')) %>%
-  select(lump_mode_site_cat, lump_mode_trt_cat, match3) %>%
-  # na.omit() %>%
-  count(lump_mode_trt_cat, lump_mode_site_cat, match3) %>%
-  group_by(lump_mode_trt_cat, lump_mode_site_cat, match3) %>%
-  mutate(group = cur_group_id(),
-         fill_cat = lump_mode_trt_cat) %>%
-  ungroup() %>%
-  pivot_longer(cols = c(lump_mode_trt_cat, lump_mode_site_cat, match3),
-               names_to = "ctl_trt",
-               values_to = "category") %>%
-  mutate(ctl_trt = factor(ctl_trt,
-                          levels = c("lump_mode_site_cat", "lump_mode_trt_cat", "match3"),
-                          labels = c("Ambient", "Treatment", "Species Match")))
-
-
-
-ggplot(longModeTrt, aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = fill_cat)) +
-  geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
-  geom_stratum(width = 1/3) +
-  scale_fill_manual(values=autumnalPalette) +
-  labs(x=NULL, y='Count', fill=NULL) +
-  coord_cartesian(xlim=c(1.3, 2.7))
-
-
-# longModeTrt <- allGroupsSite %>%
-#   full_join(read_rds('data/modeTrt.rds')) %>%
-#   mutate(match2 = ifelse(lump_mode_site_cat == 'Even' | lump_mode_trt_cat == 'Even', 'N/A', match),
-#          match3 = paste(lump_mode_trt_cat, match2, sep = '::')) %>%
-#   select(lump_mode_site_cat, lump_mode_trt_cat, match3) %>%
-#   count(lump_mode_site_cat, lump_mode_trt_cat, match3) %>%
-#   group_by(lump_mode_site_cat, lump_mode_trt_cat, match3) %>%
-#   mutate(group = cur_group_id()) %>%
-#   ungroup() %>%
-#   pivot_longer(cols = c(lump_mode_site_cat, lump_mode_trt_cat, match3),
-#                names_to = "ctl_trt",
-#                values_to = "category") %>%
-#   filter(!(category %in% c('Monodominated::NA',
-#                            'NA::N/A', 'NA::NA', NA,
-#                            'Even::NA', 'Codominated::NA'))) %>% 
-#   mutate(ctl_trt = factor(ctl_trt,
-#                           levels = c("lump_mode_site_cat", "lump_mode_trt_cat", "match3"),
-#                           labels = c("Ambient", "Treatment", "Species Match"))) %>% 
-#   mutate(category=factor(category,
-#                          levels = c('Monodominated', 'Codominated', 'Even',
-#                                     'Monodominated::full', 'Monodominated::none', 
-#                                     'Monominated::full-', 'Monodominated::none-',
-#                                     'Monodominated::N/A',
-#                                     'Codominated::full+', 'Codominated::partial+', 'Codominated::none+',
-#                                     'Codominated::full', 'Codominated::partial', 'Codominated::none',
-#                                     'Codominated::full-', 'Codominated::partial-', 'Codominated::none-',
-#                                     'Codominated::N/A',
-#                                     'Even::N/A')))
-# 
-# 
-# ggplot(na.omit(longModeTrt), aes(x = ctl_trt, stratum = category, alluvium = group, y = n, fill = category)) +
-#   geom_flow(stat = "alluvium", lode.guidance = "forward", alpha = 0.7) +
-#   geom_stratum(width = 1/3) +
-#   # scale_fill_manual(values = autumnalPalette) +
-#   labs(x = NULL, y = 'Count', fill = NULL) +
-#   coord_cartesian(xlim = c(1.3, 2.7))  
-
