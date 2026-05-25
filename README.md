@@ -15,9 +15,17 @@ README file for codominance project
 | `code/03_generatingCodominaceData/03a_CoRRE_codominance.R`        | determining codominance for CoRRE database                              |
 | `code/03_generatingCodominaceData/03b_GEx_codominance.R`          | determining codominance for GEx database                                |
 | `code/03_generatingCodominaceData/03c_NutNet_codominance.R`       | determining codominance for NutNet database                             |
-| `code/03_generatingCodominaceData/03d_combine_data.R`             | merging databases: generates allSppList.rds, codomSppList.rds, numCodomPlotYear.rds, and envData.rds  |
-| `code/04_generatingTraitData/04a_NutNet_traits.R`                 | imputing continous and gathering categorical trait data for NutNet species not in CoRRE Trait Data      |
-| `code/04_generatingTraitData/04b_allTraits_mergeFile.R`           |  merge trait data from CoRRE database and new NutNet trait data         |
-| `code/05_Question01/05_Q1_site_modes.R`                           |  calculates num codominant modes per site in control plots only         |
-| `code/06_Question02/06a_Q2_generate_codom_groups.R`               |  generates lists of codominating species that most commonly occur in each experiment         |
-| `code/06_Question02/sample_gawdist`                               | sample code for calculating dendrogram trait distance `gawdist()`       |
+| `code/03_generatingCodominaceData/03d_combine_data.R`             | merging databases: generates allSppList.rds, codomSppList.rds, numCodomPlotYear.rds, expInfo.rds, and envData.rds  |
+| `code/04_generatingTraitData/04_allTraits_mergeFile.R`            | gathering trait data from CoRRE database: generates allTraits.rds       |
+| `code/05_Question01/05a_Q1_format_mode.R`                         | calculates number of dominant species per site in control plots only    |
+| `code/05_Question01/05b_Q1_multinomial_model.R`                   | multinomial model of number of dominant species per site                |
+| `code/05_Question01/05c_Q1_figures.R`                             | generates map and multinomial model probability figures                 |
+| `code/06_Question02/06a_Q2_generate_codom_groups.R`               | generates lists of codominating species that most commonly occur in each experiment         |
+| `code/06_Question02/06b_Q2_trait_analysis.R`                      | calculates dendrogram of trait distances and determines RDFD for each codominant pair |
+| `code/07_Question03/07a_Q3a_trt_modes.R`                          | calculates number of dominant species in treatment plots                |
+| `code/07_Question03/07b_Q3b_sppOverlap.R`                         | determines species overlap in codominants with treatments               |
+| `code/07_Question03/07c_Q3c_trait_analysis.R`                     | calculates dendrogram of trait distances and determines RDFD for each codominant pair in treatment plots and compares to control plots |
+| `code/08_supplemental/08a_richnessRelationship.R`                 | determines RDFD and codominance relationships with species richness     |
+| `code/08_supplemental/08b_plotSizeRelationship.R`                 | determines RDFD and codominance relationships with plot size            |
+| `code/08_supplemental/08c_functionalGroups.R`                     | determines RDFD and codominance relationships with plant families       |
+
