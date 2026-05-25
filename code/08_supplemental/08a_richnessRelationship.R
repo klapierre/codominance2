@@ -194,6 +194,8 @@ ggplot(data=barGraphStats(data=modeSite, variable="site_rich", byFactorNames=c("
 
 
 # compare to RDFD ------------------
+modeSite <- modeSite %>% 
+  mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_'))
 
 df_p_ctl <- readRDS("data/traitp_ctr.rds") %>% 
   left_join(modeSite)
