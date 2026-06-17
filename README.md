@@ -13,6 +13,8 @@ R version 4.5.2 or later
 1. Install R version 4.5.2 or later
 2. Run code in numeric order, pulling from the test data housed within the peer review repository
 
+Install time for the R software is likely 5 minutes or less on a typical computer. Code repository download is less than 1 minute on a typical computer.
+
 ## Demo
 1. Run R scripts in numerical order (see detailed file description in table below):
    - All necessary test data are included in the repository's data folder.
