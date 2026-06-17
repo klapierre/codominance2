@@ -14,7 +14,11 @@ R version 4.5.2 or later
 2. Run code in numeric order, pulling from the test data housed within the peer review repository
 
 ## Demo
-1. 
+1. Run R scripts in numerical order (see detailed file description in table below):
+   - All necessary test data are included in the repository's data folder.
+   - Start with scripts 01_library.R and 02_function.R to set up workspace.
+   - Proceed to run scripts nested within folder 03_generatingCodominanceData. For peer review purposes with test dataset, only the scripts 03a_CoRRE_codominance.R and 03d_combine_data.R are needed, as the test dataset does not contain GEx or NutNet sites. The code in scripts 03b and 03c have been commented out to indicate that they do not need to be run.
+   - Proceed to run scripts nested within folder 04_generatingTrait Data through 08_supplemental, following in sequential order of folders and nested scripts.
 
 ## File description
 
