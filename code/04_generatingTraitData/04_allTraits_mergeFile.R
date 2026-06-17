@@ -29,13 +29,7 @@ allTraits <- continuousTraits %>%
                                            'Sclerocactus whipplei'), 'cactus', growth_form),
          leaf_compoundness=ifelse(growth_form %in% c('cactus'), 'none', leaf_compoundness))
 
-# saveRDS(allTraits, file = "data/allTraits.rds")
-
-# write.csv(allTraits, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\allTraits_CoRREGExNutNet_20250701.csv', row.names=F)
-
-# write.csv(categoricalTraits, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\2024_corre traits_Nature Scientific Data\\with BIEN and TIPleaf\\trait data for EDI\\v3\\CoRRE_categoricalTraitData_Feb2026.csv', row.names=F)
-
-# write.csv(continuousTraits, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\2024_corre traits_Nature Scientific Data\\with BIEN and TIPleaf\\trait data for EDI\\v3\\CoRRE_continuousTraitData_Feb2026.csv', row.names=F)
+saveRDS(allTraits, file = "data/allTraits.rds")
 
 
 
@@ -47,127 +41,129 @@ allTraits <- continuousTraits %>%
 
 
 
-##### Figuring out what proportion of cover and species we have all traits for #####
-correNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>% 
-  select(genus_species, species_matched) %>% 
-  unique()
 
-correAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>% 
-  left_join(correNames) %>% 
-  rename(species2=species_matched) %>% 
-  mutate(species=ifelse(is.na(species2), genus_species, species2)) %>% 
-  select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance) 
 
-GExAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>% 
-  rename(site_code=site, plot_id=plot, treatment=trt, abundance=relcov, calendar_year=year) %>% 
-  mutate(project_name=NA, community_type=NA) %>% 
-  mutate(species=ifelse(is.na(genus_species_clean), genus_species, genus_species_clean)) %>% 
-  select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance)
-
-###START HERE: a few experiments have multiple data points within each plot (comped multiple subplots). Need to get one value for each plot per species in some way (pick one or average)
-NutNetAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\full-cover_2023-11-07.csv') %>% 
-  left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv')) %>% 
-  filter(!(functional_group %in% c('BRYOPHYTE', 'NON-LIVE', 'LIVERWORT', 'LICHEN')),
-         live==1) %>% 
-  mutate(species2=paste(New.Genus, New.Species, sep=' ')) %>% 
-  mutate(species=ifelse(species2=='NA NA', Taxon, species2)) %>% 
-  rename(plot_id=plot, treatment=trt, abundance=max_cover, treatment=trt, calendar_year=year) %>% 
-  mutate(project_name=NA, community_type=NA) %>% 
-  select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance)
-
-coverData <- rbind(correAbund, GExAbund, NutNetAbund)
-
-totCover <- coverData %>% 
-  group_by(site_code, project_name, community_type, block, plot_id, calendar_year) %>% 
-  summarize(tot_cover=sum(abundance)) %>% 
-  ungroup()
-
-richness <- coverData %>% 
-  select(site_code, project_name, community_type, species) %>% 
-  unique() %>% 
-  group_by(site_code, project_name, community_type) %>% 
-  summarize(richness_all=length(species)) %>% 
-  ungroup()  
-
-# relCoverAll <- coverData %>% 
-#   left_join(totCover) %>% 
-#   mutate(rel_cover=100*(abundance/tot_cover)) %>% 
-#   ungroup() %>%
+# ##### Figuring out what proportion of cover and species we have all traits for #####
+# correNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>% 
+#   select(genus_species, species_matched) %>% 
+#   unique()
+# 
+# correAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\CoRRE_RawAbundance_2021.csv') %>% 
+#   left_join(correNames) %>% 
+#   rename(species2=species_matched) %>% 
+#   mutate(species=ifelse(is.na(species2), genus_species, species2)) %>% 
+#   select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance) 
+# 
+# GExAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>% 
+#   rename(site_code=site, plot_id=plot, treatment=trt, abundance=relcov, calendar_year=year) %>% 
+#   mutate(project_name=NA, community_type=NA) %>% 
+#   mutate(species=ifelse(is.na(genus_species_clean), genus_species, genus_species_clean)) %>% 
+#   select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance)
+# 
+# ###START HERE: a few experiments have multiple data points within each plot (comped multiple subplots). Need to get one value for each plot per species in some way (pick one or average)
+# NutNetAbund <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\full-cover_2023-11-07.csv') %>% 
+#   left_join(read_csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\NutNet\\NutNet_clean_spp_names_20240710.csv')) %>% 
+#   filter(!(functional_group %in% c('BRYOPHYTE', 'NON-LIVE', 'LIVERWORT', 'LICHEN')),
+#          live==1) %>% 
+#   mutate(species2=paste(New.Genus, New.Species, sep=' ')) %>% 
+#   mutate(species=ifelse(species2=='NA NA', Taxon, species2)) %>% 
+#   rename(plot_id=plot, treatment=trt, abundance=max_cover, treatment=trt, calendar_year=year) %>% 
+#   mutate(project_name=NA, community_type=NA) %>% 
+#   select(site_code, project_name, community_type, block, plot_id, treatment, calendar_year, species, abundance)
+# 
+# coverData <- rbind(correAbund, GExAbund, NutNetAbund)
+# 
+# totCover <- coverData %>% 
+#   group_by(site_code, project_name, community_type, block, plot_id, calendar_year) %>% 
+#   summarize(tot_cover=sum(abundance)) %>% 
+#   ungroup()
+# 
+# richness <- coverData %>% 
+#   select(site_code, project_name, community_type, species) %>% 
+#   unique() %>% 
+#   group_by(site_code, project_name, community_type) %>% 
+#   summarize(richness_all=length(species)) %>% 
+#   ungroup()  
+# 
+# # relCoverAll <- coverData %>% 
+# #   left_join(totCover) %>% 
+# #   mutate(rel_cover=100*(abundance/tot_cover)) %>% 
+# #   ungroup() %>%
+# #   left_join(richness) %>% 
+# #   left_join(allTraits)
+# 
+# # relCoverWide <- relCoverAll %>% 
+# #   select(site_code, project_name, community_type, block, plot_id, calendar_year, 
+# #          treatment, species, rel_cover) %>% 
+# #   # group_by(site_code, project_name, community_type, block, plot_id, calendar_year,
+# #   #          treatment, species) %>%
+# #   # summarise(length=length(rel_cover)) %>%
+# #   # ungroup() %>%
+# #   pivot_wider(names_from=species, values_from=rel_cover, values_fill=0)
+# 
+# 
+# 
+# 
+# ###proportion of species remaining if we remove NAs
+# 
+# codomNum <- df_grouped %>% 
+#   ungroup() %>% 
+#   select(site_code, project_name, community_type, plot_id, calendar_year, num_codominants) %>% 
+#   unique()
+# 
+# proportionSppRemain <- relCoverAll %>%
+#   left_join(df_grouped) %>% 
+#   filter(num_codominants>1, num_codominants<4) %>% 
+#   filter(!is.na(LDMC)) %>% 
+#   select(site_code, project_name, community_type, species) %>% 
+#   unique() %>% 
+#   group_by(site_code, project_name, community_type) %>% 
+#   summarise(richness_remaining=length(species)) %>% 
+#   ungroup() %>% 
 #   left_join(richness) %>% 
-#   left_join(allTraits)
-
-# relCoverWide <- relCoverAll %>% 
-#   select(site_code, project_name, community_type, block, plot_id, calendar_year, 
-#          treatment, species, rel_cover) %>% 
-#   # group_by(site_code, project_name, community_type, block, plot_id, calendar_year,
-#   #          treatment, species) %>%
-#   # summarise(length=length(rel_cover)) %>%
-#   # ungroup() %>%
-#   pivot_wider(names_from=species, values_from=rel_cover, values_fill=0)
-
-
-
-
-###proportion of species remaining if we remove NAs
-
-codomNum <- df_grouped %>% 
-  ungroup() %>% 
-  select(site_code, project_name, community_type, plot_id, calendar_year, num_codominants) %>% 
-  unique()
-
-proportionSppRemain <- relCoverAll %>%
-  left_join(df_grouped) %>% 
-  filter(num_codominants>1, num_codominants<4) %>% 
-  filter(!is.na(LDMC)) %>% 
-  select(site_code, project_name, community_type, species) %>% 
-  unique() %>% 
-  group_by(site_code, project_name, community_type) %>% 
-  summarise(richness_remaining=length(species)) %>% 
-  ungroup() %>% 
-  left_join(richness) %>% 
-  mutate(prop_richness_remaining=richness_remaining/richness_all) %>% 
-  filter(prop_richness_remaining>0.5)
-
-hist(proportionSppRemain$prop_richness_remaining)
-
-test <- proportionSppRemain %>% 
-  select(site_code, project_name, community_type) %>% 
-  unique()
-#if we have a cutoff of 80% of species have traits, then we would drop 464 experiments out of 550
-#cutoff of 70%, then we drop 365 experiments out of 550
-
-
-### percent cover that has traits- this might not be as relevant to our dendrograms
-
-coverWithTraits <- relCoverAll %>% 
-  filter(!is.na(LDMC)) %>% 
-  group_by(site_code, project_name, community_type, block, plot_id, calendar_year, richness_all) %>% 
-  summarise(cover_remaining=sum(rel_cover)) %>% 
-  ungroup() %>% 
-  filter(cover_remaining<80)
-
-test <- coverWithTraits %>% 
-  select(site_code, project_name, community_type) %>% 
-  unique()
-
-#we have 550 experiments (site_proj_comm) and dropping any experiments that have at least one plot*year with <80% cover containing traits results in dropping 400 experiments
-
-hist(coverWithTraits$cover_remaining)
-
-
-
-#### Species with missing traits -- in the trait databases? ####
-missingData <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv') %>% 
-  left_join(read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_categorical and cont.csv')) %>% 
-  filter(!(reason %in% c('tree','lichen','moss','liverwort','lycophyte'))) %>% 
-  mutate(missing='missing')
-
-searchSpecies <- missingData %>% 
-  select(species)
-
-write.csv(searchSpecies, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\searchSpecies.csv', row.names=F)
-
-trySpp <- read.delim('C:\\Users\\kjkomatsu\\Desktop\\TryAccSpecies.txt') %>% 
-  rename(species=AccSpeciesName) %>% 
-  left_join(missingData) %>% 
-  filter(missing=='missing')
+#   mutate(prop_richness_remaining=richness_remaining/richness_all) %>% 
+#   filter(prop_richness_remaining>0.5)
+# 
+# hist(proportionSppRemain$prop_richness_remaining)
+# 
+# test <- proportionSppRemain %>% 
+#   select(site_code, project_name, community_type) %>% 
+#   unique()
+# #if we have a cutoff of 80% of species have traits, then we would drop 464 experiments out of 550
+# #cutoff of 70%, then we drop 365 experiments out of 550
+# 
+# 
+# ### percent cover that has traits- this might not be as relevant to our dendrograms
+# 
+# coverWithTraits <- relCoverAll %>% 
+#   filter(!is.na(LDMC)) %>% 
+#   group_by(site_code, project_name, community_type, block, plot_id, calendar_year, richness_all) %>% 
+#   summarise(cover_remaining=sum(rel_cover)) %>% 
+#   ungroup() %>% 
+#   filter(cover_remaining<80)
+# 
+# test <- coverWithTraits %>% 
+#   select(site_code, project_name, community_type) %>% 
+#   unique()
+# 
+# #we have 550 experiments (site_proj_comm) and dropping any experiments that have at least one plot*year with <80% cover containing traits results in dropping 400 experiments
+# 
+# hist(coverWithTraits$cover_remaining)
+# 
+# 
+# 
+# #### Species with missing traits -- in the trait databases? ####
+# missingData <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv') %>% 
+#   left_join(read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_categorical and cont.csv')) %>% 
+#   filter(!(reason %in% c('tree','lichen','moss','liverwort','lycophyte'))) %>% 
+#   mutate(missing='missing')
+# 
+# searchSpecies <- missingData %>% 
+#   select(species)
+# 
+# write.csv(searchSpecies, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\searchSpecies.csv', row.names=F)
+# 
+# trySpp <- read.delim('C:\\Users\\kjkomatsu\\Desktop\\TryAccSpecies.txt') %>% 
+#   rename(species=AccSpeciesName) %>% 
+#   left_join(missingData) %>% 
+#   filter(missing=='missing')
