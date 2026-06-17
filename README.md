@@ -16,13 +16,13 @@ R version 4.5.2 or later
 Install time for the R software is likely 5 minutes or less on a typical computer. Code repository download is less than 1 minute on a typical computer.
 
 ## Demo
-1. Instructions: Run R scripts in numerical order (see detailed file description in table below):
+1. **Instructions:** Run R scripts in numerical order (see detailed file description in table below):
    - All necessary test data are included in the repository's data folder.
    - Start with scripts 01_library.R and 02_function.R to set up workspace.
    - Proceed to run scripts nested within folder 03_generatingCodominanceData. For peer review purposes with test dataset, only the scripts 03a_CoRRE_codominance.R and 03d_combine_data.R are needed, as the test dataset does not contain GEx or NutNet sites. The code in scripts 03b and 03c have been commented out to indicate that they do not need to be run.
    - Proceed to run scripts nested within folder 04_generatingTrait Data through 08_supplemental, following in sequential order of folders and nested scripts.
-2. Expected output: Calculations of dominance structure for each site and experimental treatments in test dataset, all statistical output, and all figures and tables from submitted manuscript.
-3. Expected run time for demo on a typical computer: 2-3 hours
+2. **Expected output:** Calculations of dominance structure for each site and experimental treatments in test dataset, all statistical output, and all figures and tables from submitted manuscript.
+3. **Expected run time for demo on a typical computer:** 2-3 hours
 
 ## File description
 
@@ -47,3 +47,7 @@ Install time for the R software is likely 5 minutes or less on a typical compute
 | `code/08_supplemental/08b_plotSizeRelationship.R`                 | determines RDFD and codominance relationships with plot size            |
 | `code/08_supplemental/08c_functionalGroups.R`                     | determines RDFD and codominance relationships with plant families       |
 
+## Instructions for use
+Follow the demo instructions above to utilize scripts for all data processing, analysis, and visualization of test data.
+
+The full dataset and code for completing all data processing, analysis, and visualization can be found in the main branch at https://github.com/klapierre/codominance2
