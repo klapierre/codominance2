@@ -10,7 +10,7 @@ README file for codominance test dataset for peer review
 R version 4.5.2 or later
 
 ## Installation guide
-(1) Install R version 4.5.2 or later
+(1) Install R version 4.5.2 or later /n
 (2) Run code in numeric order, pulling from the test data housed within the peer review repository
 
 ## Demo
