@@ -46,3 +46,8 @@ corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first a
   semi_join(expList)
 
 saveRDS(corre, file = "data/testRelativeAbundance.rds")
+
+# GIS layers
+GISlayers <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\Environmental Data\\EnvRasterData_withPrecip.csv')
+
+saveRDS(GISlayers, 'data/GISlayers.RDS')

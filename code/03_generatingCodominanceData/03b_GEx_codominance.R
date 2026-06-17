@@ -1,388 +1,388 @@
-################################################################################
-##  03b_GEx_codominance.R: Calculate codominance of a community for GEx database.
-##
-##  Author: Kimberly Komatsu
-##  Date created: April 24, 2019
-################################################################################
-
-
-source('code\\01_library.R')
-source('code\\02_functions.R')
-
-theme_set(theme_bw())
-theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
-             axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
-             plot.title = element_text(size=40, vjust=2),
-             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
-             legend.title=element_blank(), legend.text=element_text(size=20))
-
-
-###read in data
-spp <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_species_family_May2023.csv') %>% 
-  unique()
-
-GEx <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>%
-  left_join(spp) %>% 
-  mutate(species_matched=ifelse(is.na(species_matched), genus_species_use, species_matched)) %>% 
-  mutate(species_matched=ifelse(genus_species=='Juniperus.nana',
-                                'Juniperus communis',
-                         ifelse(genus_species=='Panicum queenslandicum var. queenslandicum',
-                                'Panicum queenslandicum',
-                         ifelse(genus_species=='Pentapogon.quadrifidus.var..quadrifidus',
-                                'Pentapogon quadrifidus',
-                         ifelse(genus_species=='Phyllanthus.burchellii',
-                                'Phyllanthus parvulus',
-                         ifelse(genus_species=='Ptilotus exaltatus var. exaltatus',
-                                'Ptilotus exaltatus',
-                         ifelse(genus_species=='Dolichos trilobus transvaalicus',
-                                'Dolichos trilobus',
-                         ifelse(genus_species %in% c('Ipomoea plebia africana','Ipomoea.plebia.africana'),
-                                'Ipomoea plebeia',
-                         ifelse(genus_species=='Krasheninnikovia.lanata',
-                                'Krascheninnikovia ceratoides',
-                         ifelse(genus_species=='Lathyrus.maritimus',
-                                'Lathyrus japonicus',
-                         ifelse(genus_species=='Lomandra filiformis subsp. coriacea',
-                                'Lomandra filiformis',
-                         ifelse(genus_species=='Ononis.repens',
-                                'Ononis spinosa',
-                         ifelse(genus_species=='Ophioglossum lusitanicum ssp. coriaceum',
-                                'Ophioglossum lusitanicum',
-                         ifelse(genus_species=='Salsola.kali.subsp..tragus',
-                                'Salsola kali',
-                         ifelse(genus_species=='Sclerocarya birrea',
-                                'Sclerocarya birrea',
-                         ifelse(genus_species=='Tephrosia purpurea leptostachya',
-                                'Tephrosia purpurea',
-                         ifelse(genus_species=='Vicia.angustifolia',
-                                'Vicia sativa',
-                         ifelse(genus_species=='Xanthocephalum_Sarothrae',
-                                'Gutierrezia sarothrae',
-                         ifelse(genus_species=='Velleia.paradoxa',
-                                'Velleia paradoxa',
-                         ifelse(genus_species=='STCO',
-                                'Stipa comata',
-                         ifelse(genus_species=='Sonchus.Oleracea',
-                                'Sonchus oleraceus',
-                         ifelse(genus_species=='PSTE',
-                                'Psilocarphus tenellus',
-                         ifelse(genus_species=='PSSP',
-                                'Psilostrophe sparsiflora',
-                         ifelse(genus_species=='ZIVE',
-                                'Zigadenus venenosus',
-                         ifelse(genus_species=='PODO4',
-                                'Polygonum douglasii',
-                         ifelse(genus_species=='POAL',
-                                'Populus alba',
-                         ifelse(genus_species=='PASE',
-                                'Paspalum setaceum',
-                         ifelse(genus_species=='Pamphalea.bupleurifolia',
-                                'Pamphalea bupleurifolia',
-                         ifelse(genus_species=='Ozothamnus.vauvilliersii',
-                                'Ozothamnus vauvilliersii',
-                         ifelse(genus_species=='OPFR',
-                                'Opuntia fragilis',
-                         ifelse(genus_species=='NEBR',
-                                'Nemophila breviflora',
-                         ifelse(genus_species=='Muhlenbergia_Porteri',
-                                'Muhlenbergia porteri',
-                         ifelse(genus_species=='MYAP',
-                                'Myosurus apetalus',
-                         ifelse(genus_species=='LEPI',
-                                'Lepidium pinnatifidum',
-                         ifelse(genus_species=='LARE',
-                                'Lappula redowskii',
-                         ifelse(genus_species=='Lagohillus.elicifolia',
-                                'Lagochilus ilicifolius',
-                         ifelse(genus_species=='Ipomea cassipes',
-                                'Ipomea crassipes',
-                         ifelse(genus_species=='HICY',
-                                'Hieracium cynoglossoides',
-                         ifelse(genus_species=='FIAR',
-                                'Filago arvensis',
-                         ifelse(genus_species=='EUSP',
-                                'Euphorbia spathulata',
-                         ifelse(genus_species=='EUGL',
-                                'Euphorbia glyptosperma',
-                         ifelse(genus_species=='ESMI',
-                                'Eschscholzia minutiflora',
-                         ifelse(genus_species=='ERUT',
-                                'Erigeron utahensis',
-                         ifelse(genus_species=='ERSE',
-                                'Eragrostis secundiflora',
-                         ifelse(genus_species=='EROV',
-                                'Eriogonum ovalifolium',
-                         ifelse(genus_species=='Dontostemon.brabolius',
-                                'Dontostemon brabolius',
-                         ifelse(genus_species=='Detitrophaea.bicalculata',
-                                'Detitrophaea bicalyculata',
-                         ifelse(genus_species=='DACO',
-                                'Danthonia compressa',
-                         ifelse(genus_species=='Croton_Pottsii',
-                                'Croton pottsii',
-                         ifelse(genus_species=='COMI',
-                                'Coccoloba microstachya',
-                                species_matched)))))))))))))))))))))))))))))))))))))))))))))))))) %>% 
-  mutate(species_matched=ifelse(genus_species=='COMA2',
-                                'Conium maculatum',
-                         ifelse(genus_species=='COMA',
-                                'Collomia mazama',
-                         ifelse(genus_species=='COLI',
-                                'Collinsia linearis',
-                         ifelse(genus_species=='PEAR',
-                                'Penstemon arenarius',
-                         ifelse(genus_species=='COAR4',
-                                'Convolvulus arvensis',
-                         ifelse(genus_species=='COAR',
-                                'Coccothrinax argentata',
-                         ifelse(genus_species=='CHVI',
-                                'Chloris virgata',
-                         ifelse(genus_species=='Chenopodium.glaucum',
-                                'Chenopodium glaucum',
-                         ifelse(genus_species=='CHDE7',
-                                'Chamaesyce deltoidea',
-                         ifelse(genus_species=='CELA',
-                                'Celtis laevigata',
-                         ifelse(genus_species=='CALE',
-                                'Cassia leptophylla',
-                         ifelse(genus_species=='BUAR3',
-                                'Buglossoides arvensis',
-                         ifelse(genus_species=='Brachycome perpusilla var. tenella',
-                                'Brachycome perpusilla',
-                         ifelse(genus_species=='Brachycome heterodonta var. heterodonta',
-                                'Brachycome heterodonta',
-                         ifelse(genus_species=='BERBERIS_HETEROPHYLlA',
-                                'Berberis heterophylla',
-                         ifelse(genus_species=='BAHO',
-                                'Balsamorhiza hookeri',
-                         ifelse(genus_species=='ARLO',
-                                'Aristida longiseta',
-                         ifelse(genus_species=='ARBI',
-                                'Araucaria bidwillii',
-                         ifelse(genus_species=='Hypnum.cupressiforme.var..lacunosum',
-                                'Hypnum cupressiforme',
-                         ifelse(genus_species=='Sclerocarya birrea supsp. Caffra',
-                                'Sclerocarya birrea',
-                         ifelse(genus_species=='TACA8',
-                                'Taeniatherum caput-medusae',
-                         ifelse(genus_species=='MUSH',
-                                'Multiclavula sharpii',
-                         ifelse(genus_species=='MELA',
-                                'Mentzelia laciniata',
-                         ifelse(genus_species=='MEAL6',
-                                'Mentzelia albicaulis',
-                         ifelse(genus_species=='GACO',
-                                'Galium collomiae',
-                         ifelse(genus_species=='COWR',
-                                'Colpodium wrightii',
-                         ifelse(genus_species=='COPA',
-                                'Coldenia palmeri',
-                                species_matched)))))))))))))))))))))))))))) %>% 
-  mutate(drop=ifelse(genus_species_use=="#N/A"|
-                     genus_species_use=="Dead unidentified"|
-                     genus_species_use=="Leaf.Litter"|
-                     genus_species_use=="cactus__dead_", 1, 0)) %>%
-  filter(drop!=1) %>%
-  select(-genus_species, -genus_species_clean, -drop) %>%
-  rename(genus_species=species_matched, cover=relcov) %>%
-  group_by(site, year, exage, block, trt, genus_species) %>%
-  summarise(cover=mean(cover)) %>%
-  ungroup() %>%
-  mutate(project_name='0', community_type='0') %>% 
-  mutate(exp_unit=paste(site, project_name, community_type, block, trt, year, sep='::')) %>% 
-  select(site, year, exage, block, trt, genus_species, cover, project_name, community_type, exp_unit)
-
-
-#############################################
-#####calculate Cmax (codominance metric)#####
-
-#calculate relative abundance
-relCover <- GEx %>%
-  group_by(exp_unit) %>%
-  summarise(totcov=sum(cover)) %>%
-  ungroup() %>%
-  right_join(GEx) %>%
-  mutate(relcov=(cover/totcov)*100) %>%
-  select(-cover, -totcov)
-
-evenness <- relCover %>%
-  community_structure(time.var = 'year', abundance.var = 'relcov',
-                      replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
-
-# write.csv(evenness, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\gex_richEven_20240213.csv', row.names=F)
-
-#generate rank of each species in each plot by relative cover, with rank 1 being most abundant
-rankOrder <- relCover %>%
-  group_by(exp_unit) %>%
-  mutate(rank = as.numeric(order(order(relcov, decreasing=TRUE)))) %>%
-  ungroup()
-
-###calculating harmonic means for all subsets of rank orders
-#make a new dataframe with just the label
-expUnit=GEx %>%
-  select(exp_unit) %>%
-  unique()
-
-#makes an empty dataframe
-harmonicMean=data.frame(row.names=1) 
-
-#calculate harmonic means
-for(i in 1:length(expUnit$exp_unit)) {
-  
-  #creates a dataset for each unique experimental unit
-  subset <- rankOrder[rankOrder$exp_unit==as.character(expUnit$exp_unit[i]),] %>%
-    select(exp_unit, genus_species, relcov, rank)
-  
-  for(j in 1:length(subset$rank)) {
-    
-    #creates a dataset for each series of ranks from 1 through end of the number of ranks
-    subset2 <- subset[subset$rank<=j,]
-    
-    #calculate harmonic mean of values
-    mean <- harmonic.mean(subset2$relcov)
-    meanData <- data.frame(exp_unit=unique(subset2$exp_unit),
-                           num_ranks=j, 
-                           harmonic_mean=mean)
-    
-    harmonicMean=rbind(meanData, harmonicMean)
-    
-  }
-  
-}
-
-differenceData <- harmonicMean %>%
-  left_join(rankOrder) %>%
-  filter(rank==num_ranks+1) %>% #only keep the next most abundant species after the number that went into the calculation of the harmonic mean
-  mutate(difference=harmonic_mean-relcov) #calculates difference between harmonic mean and the relative cover of the next most abundant species
-  
-Cmax <- differenceData %>%
-  group_by(exp_unit) %>%
-  summarise(Cmax=max(difference)) %>%
-  ungroup() %>%
-  left_join(differenceData) %>%
-  filter(Cmax==difference) %>%
-  rename(num_codominants=num_ranks) %>%
-  select(exp_unit, Cmax, num_codominants) %>%
-  mutate(exp_unit2=exp_unit) %>%
-  separate(exp_unit2, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::') %>%
-  mutate(calendar_year=as.integer(calendar_year)) %>%
-  left_join(evenness) %>% 
-  mutate(num_codominants_fix = ifelse(Cmax==0, richness, num_codominants)) %>% # for completely even communities (Evar=1 and Cmax=0), then set num_codominants to number of species in plot (richness) [[does not apply for GEx]]
-  select(-num_codominants, -year) %>% 
-  rename(num_codominants=num_codominants_fix)
-
-codomSppList <- Cmax%>%
-  left_join(rankOrder)%>%
-  group_by(exp_unit)%>%
-  filter(rank<=num_codominants)%>%
-  ungroup()
-
-# write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_codominants_list_20250312.csv', row.names=F)
-
-
-##### Plots -- gut check if number of codominants is correct #####
-
-siteProjComm <- codomSppList %>%
-  select(site_code, project_name, community_type, plot_id) %>%
-  unique()
-
-rankCodominance <- Cmax %>% 
-  select(exp_unit, num_codominants) %>% 
-  left_join(rankOrder) %>% 
-  rename(calendar_year=year,
-         plot_id=block,
-         treatment=trt,
-         site_code=site) %>% 
-  mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_'))
-
-# write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\gex_codominantsRankAll_20250312.csv', row.names=F)
-
-site_proj_comm_vector <- unique(rankCodominance$site_proj_comm)
-
-for(PROJ in 1:length(site_proj_comm_vector)){
-  ggplot(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector[PROJ]),
-         aes(x=rank, y=relcov)) +
-    facet_wrap(~exp_unit, scales='free') +
-    geom_point() +
-    geom_line() +
-    geom_vline(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector[PROJ]), 
-               mapping=aes(xintercept=num_codominants+0.5), color="blue") +
-    ggtitle(site_proj_comm_vector[PROJ]) +
-    theme_bw()
-  
-  ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\rank abundance curves\\",
-                         site_proj_comm_vector[PROJ], "_RAC.png"),
-         width = 35, height = 35, dpi = 300, units = "in", device='png')
-  
-}
-
-
-
-##### histogram of codom #####
-ggplot(data=codomSppList, aes(x=num_codominants)) +
-  geom_histogram(color="black", fill="white", binwidth=1) +
-  xlab('Number of Codominant Species') + ylab('Count')
-#export at 1000x800
-
-ggplot(data=codomSppList, aes(x=Cmax, y=num_codominants)) +
-  geom_point() +
-  xlab('Cmax') + ylab('Number of Codominants')
-#export at 800x800
-
-
-# ##### what drives codominance? #####
-# 
-# #read in site-level data
-# siteData <- read.csv('GEx-metadata-with-other-env-layers-v2.csv')%>%
-#   # select(-X)%>%
-#   rename(plant_gamma=sprich, Ndep=N.deposition1993, latitude=Final.Lat, longitude=Final.Long, MAT=bio1, temp_range=bio7, MAP=bio12, precip_cv=bio15)
-# 
-# #get site-level average cmax and number of codominants
-# CmaxDrivers <- Cmax%>%
-#   group_by(site, year, trt)%>%
-#   summarise(num_codominants=mean(num_codominants), Cmax=mean(Cmax))%>%
-#   ungroup()%>%
-#   left_join(siteData)
-# 
-# # write.csv(CmaxDrivers, 'GEx_codominance_06112020.csv', row.names=F)
-# 
-# ggplot(data=CmaxDrivers, aes(x=Cmax, y=num_codominants)) +
-#   geom_point() +
-#   xlab('Cmax') + ylab('Number of Codominants')
-# #export at 800x800
+# ################################################################################
+# ##  03b_GEx_codominance.R: Calculate codominance of a community for GEx database.
+# ##
+# ##  Author: Kimberly Komatsu
+# ##  Date created: April 24, 2019
+# ################################################################################
 # 
 # 
+# source('code\\01_library.R')
+# source('code\\02_functions.R')
 # 
-# #### 4 or more codom only #####
+# theme_set(theme_bw())
+# theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
+#              axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
+#              plot.title = element_text(size=40, vjust=2),
+#              panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+#              legend.title=element_blank(), legend.text=element_text(size=20))
+# 
+# 
+# ###read in data
+# spp <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_species_family_May2023.csv') %>% 
+#   unique()
+# 
+# GEx <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>%
+#   left_join(spp) %>% 
+#   mutate(species_matched=ifelse(is.na(species_matched), genus_species_use, species_matched)) %>% 
+#   mutate(species_matched=ifelse(genus_species=='Juniperus.nana',
+#                                 'Juniperus communis',
+#                          ifelse(genus_species=='Panicum queenslandicum var. queenslandicum',
+#                                 'Panicum queenslandicum',
+#                          ifelse(genus_species=='Pentapogon.quadrifidus.var..quadrifidus',
+#                                 'Pentapogon quadrifidus',
+#                          ifelse(genus_species=='Phyllanthus.burchellii',
+#                                 'Phyllanthus parvulus',
+#                          ifelse(genus_species=='Ptilotus exaltatus var. exaltatus',
+#                                 'Ptilotus exaltatus',
+#                          ifelse(genus_species=='Dolichos trilobus transvaalicus',
+#                                 'Dolichos trilobus',
+#                          ifelse(genus_species %in% c('Ipomoea plebia africana','Ipomoea.plebia.africana'),
+#                                 'Ipomoea plebeia',
+#                          ifelse(genus_species=='Krasheninnikovia.lanata',
+#                                 'Krascheninnikovia ceratoides',
+#                          ifelse(genus_species=='Lathyrus.maritimus',
+#                                 'Lathyrus japonicus',
+#                          ifelse(genus_species=='Lomandra filiformis subsp. coriacea',
+#                                 'Lomandra filiformis',
+#                          ifelse(genus_species=='Ononis.repens',
+#                                 'Ononis spinosa',
+#                          ifelse(genus_species=='Ophioglossum lusitanicum ssp. coriaceum',
+#                                 'Ophioglossum lusitanicum',
+#                          ifelse(genus_species=='Salsola.kali.subsp..tragus',
+#                                 'Salsola kali',
+#                          ifelse(genus_species=='Sclerocarya birrea',
+#                                 'Sclerocarya birrea',
+#                          ifelse(genus_species=='Tephrosia purpurea leptostachya',
+#                                 'Tephrosia purpurea',
+#                          ifelse(genus_species=='Vicia.angustifolia',
+#                                 'Vicia sativa',
+#                          ifelse(genus_species=='Xanthocephalum_Sarothrae',
+#                                 'Gutierrezia sarothrae',
+#                          ifelse(genus_species=='Velleia.paradoxa',
+#                                 'Velleia paradoxa',
+#                          ifelse(genus_species=='STCO',
+#                                 'Stipa comata',
+#                          ifelse(genus_species=='Sonchus.Oleracea',
+#                                 'Sonchus oleraceus',
+#                          ifelse(genus_species=='PSTE',
+#                                 'Psilocarphus tenellus',
+#                          ifelse(genus_species=='PSSP',
+#                                 'Psilostrophe sparsiflora',
+#                          ifelse(genus_species=='ZIVE',
+#                                 'Zigadenus venenosus',
+#                          ifelse(genus_species=='PODO4',
+#                                 'Polygonum douglasii',
+#                          ifelse(genus_species=='POAL',
+#                                 'Populus alba',
+#                          ifelse(genus_species=='PASE',
+#                                 'Paspalum setaceum',
+#                          ifelse(genus_species=='Pamphalea.bupleurifolia',
+#                                 'Pamphalea bupleurifolia',
+#                          ifelse(genus_species=='Ozothamnus.vauvilliersii',
+#                                 'Ozothamnus vauvilliersii',
+#                          ifelse(genus_species=='OPFR',
+#                                 'Opuntia fragilis',
+#                          ifelse(genus_species=='NEBR',
+#                                 'Nemophila breviflora',
+#                          ifelse(genus_species=='Muhlenbergia_Porteri',
+#                                 'Muhlenbergia porteri',
+#                          ifelse(genus_species=='MYAP',
+#                                 'Myosurus apetalus',
+#                          ifelse(genus_species=='LEPI',
+#                                 'Lepidium pinnatifidum',
+#                          ifelse(genus_species=='LARE',
+#                                 'Lappula redowskii',
+#                          ifelse(genus_species=='Lagohillus.elicifolia',
+#                                 'Lagochilus ilicifolius',
+#                          ifelse(genus_species=='Ipomea cassipes',
+#                                 'Ipomea crassipes',
+#                          ifelse(genus_species=='HICY',
+#                                 'Hieracium cynoglossoides',
+#                          ifelse(genus_species=='FIAR',
+#                                 'Filago arvensis',
+#                          ifelse(genus_species=='EUSP',
+#                                 'Euphorbia spathulata',
+#                          ifelse(genus_species=='EUGL',
+#                                 'Euphorbia glyptosperma',
+#                          ifelse(genus_species=='ESMI',
+#                                 'Eschscholzia minutiflora',
+#                          ifelse(genus_species=='ERUT',
+#                                 'Erigeron utahensis',
+#                          ifelse(genus_species=='ERSE',
+#                                 'Eragrostis secundiflora',
+#                          ifelse(genus_species=='EROV',
+#                                 'Eriogonum ovalifolium',
+#                          ifelse(genus_species=='Dontostemon.brabolius',
+#                                 'Dontostemon brabolius',
+#                          ifelse(genus_species=='Detitrophaea.bicalculata',
+#                                 'Detitrophaea bicalyculata',
+#                          ifelse(genus_species=='DACO',
+#                                 'Danthonia compressa',
+#                          ifelse(genus_species=='Croton_Pottsii',
+#                                 'Croton pottsii',
+#                          ifelse(genus_species=='COMI',
+#                                 'Coccoloba microstachya',
+#                                 species_matched)))))))))))))))))))))))))))))))))))))))))))))))))) %>% 
+#   mutate(species_matched=ifelse(genus_species=='COMA2',
+#                                 'Conium maculatum',
+#                          ifelse(genus_species=='COMA',
+#                                 'Collomia mazama',
+#                          ifelse(genus_species=='COLI',
+#                                 'Collinsia linearis',
+#                          ifelse(genus_species=='PEAR',
+#                                 'Penstemon arenarius',
+#                          ifelse(genus_species=='COAR4',
+#                                 'Convolvulus arvensis',
+#                          ifelse(genus_species=='COAR',
+#                                 'Coccothrinax argentata',
+#                          ifelse(genus_species=='CHVI',
+#                                 'Chloris virgata',
+#                          ifelse(genus_species=='Chenopodium.glaucum',
+#                                 'Chenopodium glaucum',
+#                          ifelse(genus_species=='CHDE7',
+#                                 'Chamaesyce deltoidea',
+#                          ifelse(genus_species=='CELA',
+#                                 'Celtis laevigata',
+#                          ifelse(genus_species=='CALE',
+#                                 'Cassia leptophylla',
+#                          ifelse(genus_species=='BUAR3',
+#                                 'Buglossoides arvensis',
+#                          ifelse(genus_species=='Brachycome perpusilla var. tenella',
+#                                 'Brachycome perpusilla',
+#                          ifelse(genus_species=='Brachycome heterodonta var. heterodonta',
+#                                 'Brachycome heterodonta',
+#                          ifelse(genus_species=='BERBERIS_HETEROPHYLlA',
+#                                 'Berberis heterophylla',
+#                          ifelse(genus_species=='BAHO',
+#                                 'Balsamorhiza hookeri',
+#                          ifelse(genus_species=='ARLO',
+#                                 'Aristida longiseta',
+#                          ifelse(genus_species=='ARBI',
+#                                 'Araucaria bidwillii',
+#                          ifelse(genus_species=='Hypnum.cupressiforme.var..lacunosum',
+#                                 'Hypnum cupressiforme',
+#                          ifelse(genus_species=='Sclerocarya birrea supsp. Caffra',
+#                                 'Sclerocarya birrea',
+#                          ifelse(genus_species=='TACA8',
+#                                 'Taeniatherum caput-medusae',
+#                          ifelse(genus_species=='MUSH',
+#                                 'Multiclavula sharpii',
+#                          ifelse(genus_species=='MELA',
+#                                 'Mentzelia laciniata',
+#                          ifelse(genus_species=='MEAL6',
+#                                 'Mentzelia albicaulis',
+#                          ifelse(genus_species=='GACO',
+#                                 'Galium collomiae',
+#                          ifelse(genus_species=='COWR',
+#                                 'Colpodium wrightii',
+#                          ifelse(genus_species=='COPA',
+#                                 'Coldenia palmeri',
+#                                 species_matched)))))))))))))))))))))))))))) %>% 
+#   mutate(drop=ifelse(genus_species_use=="#N/A"|
+#                      genus_species_use=="Dead unidentified"|
+#                      genus_species_use=="Leaf.Litter"|
+#                      genus_species_use=="cactus__dead_", 1, 0)) %>%
+#   filter(drop!=1) %>%
+#   select(-genus_species, -genus_species_clean, -drop) %>%
+#   rename(genus_species=species_matched, cover=relcov) %>%
+#   group_by(site, year, exage, block, trt, genus_species) %>%
+#   summarise(cover=mean(cover)) %>%
+#   ungroup() %>%
+#   mutate(project_name='0', community_type='0') %>% 
+#   mutate(exp_unit=paste(site, project_name, community_type, block, trt, year, sep='::')) %>% 
+#   select(site, year, exage, block, trt, genus_species, cover, project_name, community_type, exp_unit)
+# 
+# 
+# #############################################
+# #####calculate Cmax (codominance metric)#####
+# 
+# #calculate relative abundance
+# relCover <- GEx %>%
+#   group_by(exp_unit) %>%
+#   summarise(totcov=sum(cover)) %>%
+#   ungroup() %>%
+#   right_join(GEx) %>%
+#   mutate(relcov=(cover/totcov)*100) %>%
+#   select(-cover, -totcov)
+# 
+# evenness <- relCover %>%
+#   community_structure(time.var = 'year', abundance.var = 'relcov',
+#                       replicate.var = 'exp_unit', metric = c("Evar", "SimpsonEvenness", "EQ"))
+# 
+# # write.csv(evenness, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\gex_richEven_20240213.csv', row.names=F)
+# 
+# #generate rank of each species in each plot by relative cover, with rank 1 being most abundant
+# rankOrder <- relCover %>%
+#   group_by(exp_unit) %>%
+#   mutate(rank = as.numeric(order(order(relcov, decreasing=TRUE)))) %>%
+#   ungroup()
+# 
+# ###calculating harmonic means for all subsets of rank orders
+# #make a new dataframe with just the label
+# expUnit=GEx %>%
+#   select(exp_unit) %>%
+#   unique()
+# 
+# #makes an empty dataframe
+# harmonicMean=data.frame(row.names=1) 
+# 
+# #calculate harmonic means
+# for(i in 1:length(expUnit$exp_unit)) {
+#   
+#   #creates a dataset for each unique experimental unit
+#   subset <- rankOrder[rankOrder$exp_unit==as.character(expUnit$exp_unit[i]),] %>%
+#     select(exp_unit, genus_species, relcov, rank)
+#   
+#   for(j in 1:length(subset$rank)) {
+#     
+#     #creates a dataset for each series of ranks from 1 through end of the number of ranks
+#     subset2 <- subset[subset$rank<=j,]
+#     
+#     #calculate harmonic mean of values
+#     mean <- harmonic.mean(subset2$relcov)
+#     meanData <- data.frame(exp_unit=unique(subset2$exp_unit),
+#                            num_ranks=j, 
+#                            harmonic_mean=mean)
+#     
+#     harmonicMean=rbind(meanData, harmonicMean)
+#     
+#   }
+#   
+# }
+# 
+# differenceData <- harmonicMean %>%
+#   left_join(rankOrder) %>%
+#   filter(rank==num_ranks+1) %>% #only keep the next most abundant species after the number that went into the calculation of the harmonic mean
+#   mutate(difference=harmonic_mean-relcov) #calculates difference between harmonic mean and the relative cover of the next most abundant species
+#   
+# Cmax <- differenceData %>%
+#   group_by(exp_unit) %>%
+#   summarise(Cmax=max(difference)) %>%
+#   ungroup() %>%
+#   left_join(differenceData) %>%
+#   filter(Cmax==difference) %>%
+#   rename(num_codominants=num_ranks) %>%
+#   select(exp_unit, Cmax, num_codominants) %>%
+#   mutate(exp_unit2=exp_unit) %>%
+#   separate(exp_unit2, into=c('site_code', 'project_name', 'community_type', 'plot_id', 'treatment', 'calendar_year'), sep='::') %>%
+#   mutate(calendar_year=as.integer(calendar_year)) %>%
+#   left_join(evenness) %>% 
+#   mutate(num_codominants_fix = ifelse(Cmax==0, richness, num_codominants)) %>% # for completely even communities (Evar=1 and Cmax=0), then set num_codominants to number of species in plot (richness) [[does not apply for GEx]]
+#   select(-num_codominants, -year) %>% 
+#   rename(num_codominants=num_codominants_fix)
+# 
+# codomSppList <- Cmax%>%
+#   left_join(rankOrder)%>%
+#   group_by(exp_unit)%>%
+#   filter(rank<=num_codominants)%>%
+#   ungroup()
+# 
+# # write.csv(codomSppList, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_codominants_list_20250312.csv', row.names=F)
+# 
 # 
 # ##### Plots -- gut check if number of codominants is correct #####
 # 
 # siteProjComm <- codomSppList %>%
-#   select(site, block) %>%
+#   select(site_code, project_name, community_type, plot_id) %>%
 #   unique()
 # 
 # rankCodominance <- Cmax %>% 
 #   select(exp_unit, num_codominants) %>% 
 #   left_join(rankOrder) %>% 
-#   mutate(site_proj_comm=paste(site, block, sep='_')) %>% 
-#   filter(num_codominants>3)
+#   rename(calendar_year=year,
+#          plot_id=block,
+#          treatment=trt,
+#          site_code=site) %>% 
+#   mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_'))
 # 
+# # write.csv(rankCodominance, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\gex_codominantsRankAll_20250312.csv', row.names=F)
 # 
-# site_proj_comm_vector_4 <- unique(rankCodominance$site_proj_comm)
+# site_proj_comm_vector <- unique(rankCodominance$site_proj_comm)
 # 
-# for(PROJ in 1:length(site_proj_comm_vector_4)){
-#   ggplot(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]),
+# for(PROJ in 1:length(site_proj_comm_vector)){
+#   ggplot(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector[PROJ]),
 #          aes(x=rank, y=relcov)) +
 #     facet_wrap(~exp_unit, scales='free') +
 #     geom_point() +
 #     geom_line() +
-#     geom_vline(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]), 
+#     geom_vline(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector[PROJ]), 
 #                mapping=aes(xintercept=num_codominants+0.5), color="blue") +
-#     ggtitle(site_proj_comm_vector_4[PROJ]) +
+#     ggtitle(site_proj_comm_vector[PROJ]) +
 #     theme_bw()
 #   
-#   ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\rank abundance curves\\4ormore\\",
-#                          site_proj_comm_vector_4[PROJ], "_RAC.png"),
+#   ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\rank abundance curves\\",
+#                          site_proj_comm_vector[PROJ], "_RAC.png"),
 #          width = 35, height = 35, dpi = 300, units = "in", device='png')
 #   
 # }
+# 
+# 
+# 
+# ##### histogram of codom #####
+# ggplot(data=codomSppList, aes(x=num_codominants)) +
+#   geom_histogram(color="black", fill="white", binwidth=1) +
+#   xlab('Number of Codominant Species') + ylab('Count')
+# #export at 1000x800
+# 
+# ggplot(data=codomSppList, aes(x=Cmax, y=num_codominants)) +
+#   geom_point() +
+#   xlab('Cmax') + ylab('Number of Codominants')
+# #export at 800x800
+# 
+# 
+# # ##### what drives codominance? #####
+# # 
+# # #read in site-level data
+# # siteData <- read.csv('GEx-metadata-with-other-env-layers-v2.csv')%>%
+# #   # select(-X)%>%
+# #   rename(plant_gamma=sprich, Ndep=N.deposition1993, latitude=Final.Lat, longitude=Final.Long, MAT=bio1, temp_range=bio7, MAP=bio12, precip_cv=bio15)
+# # 
+# # #get site-level average cmax and number of codominants
+# # CmaxDrivers <- Cmax%>%
+# #   group_by(site, year, trt)%>%
+# #   summarise(num_codominants=mean(num_codominants), Cmax=mean(Cmax))%>%
+# #   ungroup()%>%
+# #   left_join(siteData)
+# # 
+# # # write.csv(CmaxDrivers, 'GEx_codominance_06112020.csv', row.names=F)
+# # 
+# # ggplot(data=CmaxDrivers, aes(x=Cmax, y=num_codominants)) +
+# #   geom_point() +
+# #   xlab('Cmax') + ylab('Number of Codominants')
+# # #export at 800x800
+# # 
+# # 
+# # 
+# # #### 4 or more codom only #####
+# # 
+# # ##### Plots -- gut check if number of codominants is correct #####
+# # 
+# # siteProjComm <- codomSppList %>%
+# #   select(site, block) %>%
+# #   unique()
+# # 
+# # rankCodominance <- Cmax %>% 
+# #   select(exp_unit, num_codominants) %>% 
+# #   left_join(rankOrder) %>% 
+# #   mutate(site_proj_comm=paste(site, block, sep='_')) %>% 
+# #   filter(num_codominants>3)
+# # 
+# # 
+# # site_proj_comm_vector_4 <- unique(rankCodominance$site_proj_comm)
+# # 
+# # for(PROJ in 1:length(site_proj_comm_vector_4)){
+# #   ggplot(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]),
+# #          aes(x=rank, y=relcov)) +
+# #     facet_wrap(~exp_unit, scales='free') +
+# #     geom_point() +
+# #     geom_line() +
+# #     geom_vline(data=filter(rankCodominance, site_proj_comm == site_proj_comm_vector_4[PROJ]), 
+# #                mapping=aes(xintercept=num_codominants+0.5), color="blue") +
+# #     ggtitle(site_proj_comm_vector_4[PROJ]) +
+# #     theme_bw()
+# #   
+# #   ggsave(filename=paste0("C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\first author\\codominance\\data\\rank abundance curves\\4ormore\\",
+# #                          site_proj_comm_vector_4[PROJ], "_RAC.png"),
+# #          width = 35, height = 35, dpi = 300, units = "in", device='png')
+# #   
+# # }
