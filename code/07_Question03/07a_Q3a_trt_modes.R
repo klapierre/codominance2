@@ -140,7 +140,7 @@ modeTrt$trt_type <- factor(modeTrt$trt_type, levels = c('N','P','K','N*P','mult_
                                                           'multiple_trts'))
 modeTrt$trt_category <- factor(modeTrt$trt_category, levels = c("Resource", "Stress", "Mult. Trts", "Other"))
 
-# saveRDS(modeTrt, file = "data/modeTrt.rds")
+saveRDS(modeTrt, file = "data/modeTrt.rds")
 
 
 # trt vs ctl chisquared model --------------------------------------------------------------------------------
@@ -436,3 +436,4 @@ ggplot(subset(modeTrt, !is.na(lump_mode_trt_cat) & !is.na(lump_mode_site_cat)), 
   theme(legend.position=c(0.78,0.85))
 
 # ggsave(file='Fig4a_trtHistograms_overall.png', width=6, height=6, units='in', dpi=300, bg='white')
+

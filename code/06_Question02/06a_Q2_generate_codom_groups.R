@@ -33,16 +33,16 @@ Q2ctlGroupsSite <- codomControl %>%
   ungroup() %>% 
   dplyr::select(-rank) %>% 
   pivot_wider(names_from=alphabetical_rank, values_from=genus_species) %>% # generate a list of codominating species groups
-  group_by(site_code, project_name, community_type, plot_id, alpha1, alpha2, alpha3) %>% 
+  group_by(site_code, project_name, community_type, plot_id, alpha1, alpha2) %>% 
   summarise(codom_freq_plot=length(plot_id), .groups="drop") %>% # frequency of each species group within a plot through time
   group_by(site_code, project_name, community_type, plot_id) %>% 
   filter(codom_freq_plot==max(codom_freq_plot)) %>%  # drop any species group that is not most common in a plot through time
   ungroup() %>% 
-  group_by(site_code, project_name, community_type, alpha1, alpha2, alpha3) %>% 
+  group_by(site_code, project_name, community_type, alpha1, alpha2) %>% 
   summarise(codom_freq_proj=length(community_type), .groups="drop") %>% # frequency of each species group within an experiment across plots
   group_by(site_code, project_name, community_type) %>% 
   filter(codom_freq_proj==max(codom_freq_proj)) %>%  # drop any species group that is not most common within an experiment across plots
   ungroup()
 
-# saveRDS(Q2ctlGroupsSite, file = "data/Q2ctlGroupsSite.rds")
+saveRDS(Q2ctlGroupsSite, file = "data/Q2ctlGroupsSite.rds")
 

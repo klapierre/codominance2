@@ -248,7 +248,7 @@ df_m2  <- df_m %>%
   select(-anpp) %>% 
   dplyr::select(database, 
                 site_proj_comm,
-                map:continent, 
+                map:cv_precip, 
                 pair_id, 
                 sp1, 
                 sp2, 
