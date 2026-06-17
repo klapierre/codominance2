@@ -19,22 +19,22 @@ df_iap <- readRDS("data/modeSite.rds") %>%
          GDiv=gamma_rich,
          NDep=NDeposition)
 
-df_iap10 <- readRDS("data/modeSite_cutoff10.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
-df_iap15 <- readRDS("data/modeSite_cutoff15.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
-df_iap25 <- readRDS("data/modeSite_cutoff25.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
-df_iap30 <- readRDS("data/modeSite_cutoff30.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
+# df_iap10 <- readRDS("data/modeSite_cutoff10.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
+# df_iap15 <- readRDS("data/modeSite_cutoff15.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
+# df_iap25 <- readRDS("data/modeSite_cutoff25.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
+# df_iap30 <- readRDS("data/modeSite_cutoff30.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
 
 
 # Multinomial Analysis ----------------------------------------------------------
@@ -48,30 +48,30 @@ multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
                                  NDep + HumanFootprint,
                                data = df_iap)
 
-#cutoff10 
-multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ 
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap10)
-#cutoff15
-multinom.baseline15 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ 
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap15)
-#cutoff25
-multinom.baseline25 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap25)
-#cutoff30
-multinom.baseline30 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ 
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap30)
+# #cutoff10 
+# multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~ 
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap10)
+# #cutoff15
+# multinom.baseline15 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~ 
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap15)
+# #cutoff25
+# multinom.baseline25 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap25)
+# #cutoff30
+# multinom.baseline30 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~ 
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap30)
 
 #checking p-value manually
 (coef <- summary(multinom.baseline1)$coefficients)
@@ -85,10 +85,10 @@ z <- coef/stderr
 
 #PR2() from 'pscl' package provides many R2 estimates
 pR2(multinom.baseline1) #McFaddenR2 = 0.325; our current cutoff exhibits the most explanatory power
-pR2(multinom.baseline10) #McFaddenR2 = 0.311
-pR2(multinom.baseline15) #McFaddenR2 = 0.293
-pR2(multinom.baseline25) #McFaddenR2 = 0.314
-pR2(multinom.baseline30) #McFaddenR2 = 0.293
+# pR2(multinom.baseline10) #McFaddenR2 = 0.311
+# pR2(multinom.baseline15) #McFaddenR2 = 0.293
+# pR2(multinom.baseline25) #McFaddenR2 = 0.314
+# pR2(multinom.baseline30) #McFaddenR2 = 0.293
 
 #Putting into more convenient table format, P-values and OR's match model output 
 results <- tidy(multinom.baseline1, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
@@ -108,65 +108,65 @@ results_table <- results %>%
 gt(results_table, caption = "") %>% 
   gtsave("multinomial_cutoff20.png")
 
-#Results10#Resultscaption = 10
-results10 <- tidy(multinom.baseline10, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table10 <- results10 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-gt(results_table10, caption = "10% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff10.png")
-
-#Results15
-results15 <- tidy(multinom.baseline15, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table15 <- results15 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-gt(results_table15, caption = "15% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff15.png")
-
-#Results25
-results25 <- tidy(multinom.baseline25, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table25 <- results25 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-gt(results_table25, caption = "25% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff25.png")
-
-#Results30
-results30 <- tidy(multinom.baseline30, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table30 <- results30 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-gt(results_table30, caption = "30% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff30.png")
+# #Results10#Resultscaption = 10
+# results10 <- tidy(multinom.baseline10, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+# 
+# results_table10 <- results10 %>%
+#   mutate(OR_CI = sprintf("%.2f ", estimate),
+#          p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+#   select(y.level, term, OR_CI,p_value) %>%
+#   rename( "Outcome Category" = y.level,
+#           "Predictor" = term,
+#           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+#           "P-value" = p_value)
+# 
+# gt(results_table10, caption = "10% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff10.png")
+# 
+# #Results15
+# results15 <- tidy(multinom.baseline15, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+# 
+# results_table15 <- results15 %>%
+#   mutate(OR_CI = sprintf("%.2f ", estimate),
+#          p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+#   select(y.level, term, OR_CI,p_value) %>%
+#   rename( "Outcome Category" = y.level,
+#           "Predictor" = term,
+#           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+#           "P-value" = p_value)
+# 
+# gt(results_table15, caption = "15% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff15.png")
+# 
+# #Results25
+# results25 <- tidy(multinom.baseline25, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+# 
+# results_table25 <- results25 %>%
+#   mutate(OR_CI = sprintf("%.2f ", estimate),
+#          p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+#   select(y.level, term, OR_CI,p_value) %>%
+#   rename( "Outcome Category" = y.level,
+#           "Predictor" = term,
+#           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+#           "P-value" = p_value)
+# 
+# gt(results_table25, caption = "25% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff25.png")
+# 
+# #Results30
+# results30 <- tidy(multinom.baseline30, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+# 
+# results_table30 <- results30 %>%
+#   mutate(OR_CI = sprintf("%.2f ", estimate),
+#          p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
+#   select(y.level, term, OR_CI,p_value) %>%
+#   rename( "Outcome Category" = y.level,
+#           "Predictor" = term,
+#           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
+#           "P-value" = p_value)
+# 
+# gt(results_table30, caption = "30% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff30.png")
 
 
 # Format: for figure of multinomial model predictions----------------------------------------------------------
@@ -193,7 +193,7 @@ df_seq <- foreach(v = var, .combine = bind_cols) %do% {
   
   out <- as_tibble(seq(from = min(df_v), 
                        to = max(df_v), 
-                       length.out = 100))
+                       length.out = 46))
   
 }
 
@@ -202,13 +202,13 @@ colnames(df_seq) <- var
 
 # Add identifier column to link dataframes 
 df_seq <- df_seq %>% 
-  add_column(seq = seq(from = 1, to = 100, length.out = 100))
+  add_column(seq = seq(from = 1, to = 46, length.out = 46))
 
 # Combine dataframes- variable means and sequence 
 df_r <- df_om %>% 
   dplyr::select(ends_with("_mean")) %>% 
-  slice(1:100) %>% 
-  add_column(seq = seq(from = 1, to = 100, length.out = 100)) %>% 
+  slice(1:46) %>% 
+  add_column(seq = seq(from = 1, to = 46, length.out = 46)) %>% 
   full_join(df_seq, by = "seq") 
 
 # Mean of variables of interest
@@ -270,4 +270,4 @@ df_combined <- df_predicted %>%
          Prob_N = Probability...15,
          Prob_ANPP = Probability...18)
 
-# saveRDS(df_combined, file = "data/multimodalModelPredictions.rds") # saving derived data for analyses
+saveRDS(df_combined, file = "data/multimodalModelPredictions.rds") # saving derived data for analyses

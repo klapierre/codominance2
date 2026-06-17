@@ -98,9 +98,7 @@ siteCount <- modeSite %>%
   select(lat, long) %>% 
   unique()
 
-# saveRDS(modePlot, file = "data/modePlot.rds")
-# saveRDS(modeSite, file = "data/modeSite.rds")
-# write.csv(modeSite, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\modeSite_20251119.csv', row.names=F)
-
+saveRDS(modePlot, file = "data/modePlot.rds")
+saveRDS(modeSite, file = "data/modeSite.rds")
 
 # saveRDS(modeSite, file = "data/modeSite_cutoff30.rds")

@@ -178,7 +178,7 @@ final_plot <- grid.arrange(out_hist[[1]], out_hist[[2]], out_hist[[3]], #nullGro
                            nrow = 4, ncol = 3, 
                            heights = c(2.5, 3, 2.5, 3)) # adjusts height of plots
 
-# ggsave("Fig2_model_3.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
+ggsave("Fig2_model_3.0.png", final_plot, width = 28.5, height = 18, dpi = 400)
 
 
 
