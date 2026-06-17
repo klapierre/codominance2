@@ -1,10 +1,20 @@
 README
 ================
-2025-02-26
+2026-06-17
 
 ## README
 
-README file for codominance project
+README file for codominance test dataset for peer review
+
+## System requirements
+R version 4.5.2 or later
+
+## Installation guide
+(1) Install R version 4.5.2 or later
+(2) Run code in numeric order, pulling from the test data housed within the peer review repository
+
+## Demo
+(1)
 
 ## File description
 
