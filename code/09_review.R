@@ -40,3 +40,7 @@ corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first a
   left_join(sppNames) %>% 
   semi_join(expList)
 
+# GIS layers
+GISlayers <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\Environmental Data\\EnvRasterData_withPrecip.csv')
+
+saveRDS(GISlayers, 'GISlayers.RDS')
