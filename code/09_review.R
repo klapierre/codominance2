@@ -25,9 +25,14 @@ expList <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first
 envData <- readRDS("data/envData.rds") %>% 
   semi_join(expList)
 
+saveRDS(envData, file = "data/envData.rds")
+
+
 # experiment information, including treatments and environmental characteristics
 expInfo <- readRDS("data/expInfo.rds") %>% 
   semi_join(expList)
+
+saveRDS(expInfo, file = "data/expInfo.rds")
 
 #species names
 sppNames <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\corre2trykey_2021.csv') %>%
@@ -40,3 +45,4 @@ corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first a
   left_join(sppNames) %>% 
   semi_join(expList)
 
+saveRDS(corre, file = "data/testRelativeAbundance.rds")
