@@ -11,7 +11,7 @@ R version 4.5.2 or later
 
 ## Installation guide
 1. Install R version 4.5.2 or later
-2. Run code in numeric order, pulling from the test data housed within the peer review repository
+2. Run code found within the 'code' folder of the repository in numeric order, pulling from the 'data' folder throughout the code. All code and data are housed within the 'peer-review' branch of the 'codominance2' repository on GitHub, which can be found at https://github.com/klapierre/codominance2/tree/peer-review.
 
 Install time for the R software is likely 5 minutes or less on a typical computer. Code repository download is less than 1 minute on a typical computer.
 
