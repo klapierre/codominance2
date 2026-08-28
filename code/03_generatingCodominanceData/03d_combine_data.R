@@ -271,7 +271,7 @@ filterComplete <- toFilter %>%
   full_join(allAbund) %>% 
   mutate(site_proj_comm=paste(site_code, project_name, community_type, sep='_')) %>% 
   mutate(num_codominants_fix=ifelse(is.na(category), num_codominants, 4)) %>% #make anything that fits our two filters into an even community (4+ codom), grouped below
-  dplyr::select(-num_codominants) %>% 
+  rename(num_codominants_continuous=num_codominants) %>%
   rename(num_codominants=num_codominants_fix)
 
 filterMeanPlotLevel <- filterComplete %>% 
@@ -285,7 +285,6 @@ filterMeanPlotLevel <- filterComplete %>%
 df_grouped <- filterComplete %>% 
   mutate(group = case_when(num_codominants == 1 ~ "monodominated",
                            num_codominants %in% c(2,3) ~ "codominated",
-                           # num_codominants == 3 ~ "tridominated",
                            num_codominants >= 4 ~ "even"),
          num_group = case_when(num_codominants == 1 ~ 1,
                                num_codominants ==2 ~ 2,
@@ -293,7 +292,7 @@ df_grouped <- filterComplete %>%
                                num_codominants >= 4 ~ 4))
 
 df_plotLevel <- df_grouped %>% 
-  select(exp_unit, num_codominants, num_group, group) %>% 
+  select(exp_unit, num_codominants, num_codominants_continuous, num_group, group) %>% 
   unique()
 
 # saveRDS(df_plotLevel, file = "data/numCodomPlotYear.rds") # saving derived data for analyses
@@ -307,6 +306,11 @@ ggplot(df_plotLevel,
   geom_histogram(stat='count', aes(x = factor(group, level = c('monodominated', 'codominated', 'even')))) +
   theme_minimal()
 
+# visualize continuous
+ggplot(df_plotLevel,
+       aes(x=num_codominants_continuous)) +
+  geom_histogram(stat='count') +
+  theme_minimal()
 
 # Generate species lists -----------------------------------------
 
