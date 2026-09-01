@@ -27,6 +27,7 @@ pacman::p_load(here,
                sf,
                ggalluvial, # Q3 sankey diagram
                glmmTMB, # Q2 trait beta-binomial
+               ggeffects,
                tidyverse,
                pscl, # Q1 McFadden R2libra
                broom, #table cleaning
