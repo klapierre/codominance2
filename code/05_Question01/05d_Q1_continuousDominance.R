@@ -42,12 +42,19 @@ numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>%
 # }
 
 
+
+# Histogram --------------------------------------------------------------
+
+ggplot(data=numCodomPlotYear, aes(x=num_codominants_continuous)) +
+  geom_histogram()
+
+
 # Mixed-Effects Model ----------------------------------------------------
 
 model <- glmmTMB(
   num_codominants_continuous ~ scale(anpp)*(scale(MAP) + scale(MAT) + scale(gamma_rich)) + scale(NDeposition) + scale(HumanFootprint) +
-    (1 | site_code / project_name / community_type / plot_id),
-  family = nbinom2,
+    (1 | site_code / project_name / plot_id),
+  family = truncated_nbinom2,
   data = numCodomPlotYear
 )
 
