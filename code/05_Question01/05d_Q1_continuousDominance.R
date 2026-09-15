@@ -22,30 +22,30 @@ numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>%
   filter(trt_type=='control')
 
 
-# Determine structure of data within each experiment
-projects <- unique(numCodomPlotYear$project_name)
-
-for (project in projects) {
-  project_data <- subset(numCodomPlotYear, project_name == project)
-  
-  p <- ggplot(project_data, aes(x = num_codominants_continuous)) +
-    geom_bar() +
-    facet_wrap(~ calendar_year) +
-    theme_minimal() +
-    labs(title = project)
-  
-  ggsave(filename = paste0("figs/histogram_", project, ".png"),
-         plot = p,
-         width = 10,
-         height = 4,
-         dpi = 300)
-}
+# # Determine structure of data within each experiment
+# projects <- unique(numCodomPlotYear$project_name)
+# 
+# for (project in projects) {
+#   project_data <- subset(numCodomPlotYear, project_name == project)
+#   
+#   p <- ggplot(project_data, aes(x = num_codominants_continuous)) +
+#     geom_bar() +
+#     facet_wrap(~ calendar_year) +
+#     theme_minimal() +
+#     labs(title = project)
+#   
+#   ggsave(filename = paste0("figs/histogram_", project, ".png"),
+#          plot = p,
+#          width = 10,
+#          height = 4,
+#          dpi = 300)
+# }
 
 
 # Mixed-Effects Model ----------------------------------------------------
 
 model <- glmmTMB(
-  num_codominants_continuous ~ scale(MAP) + scale(MAT) + scale(gamma_rich) + scale(anpp) + scale(HumanFootprint) + scale(NDeposition) +
+  num_codominants_continuous ~ scale(anpp)*(scale(MAP) + scale(MAT) + scale(gamma_rich)) + scale(NDeposition) + scale(HumanFootprint) +
     (1 | site_code / project_name / community_type / plot_id),
   family = nbinom2,
   data = numCodomPlotYear
@@ -53,10 +53,10 @@ model <- glmmTMB(
 
 summary(model)
 
-# MAP figure
-pred_MAP <- ggpredict(model, terms = "MAP [all]")
+# ANPP * MAP figure
+pred_MAP <- ggpredict(model, terms = c("MAP [all]", "anpp [quartiles]"))
 
-ggplot(pred_MAP, aes(x = x, y = predicted)) +
+ggplot(pred_MAP, aes(x = x, y = predicted, color=group, fill=group)) +
   geom_line(linewidth = 1) +
   geom_ribbon(
     aes(ymin = conf.low, ymax = conf.high),
@@ -64,7 +64,8 @@ ggplot(pred_MAP, aes(x = x, y = predicted)) +
   ) +
   labs(
     x = "MAP",
-    y = "Predicted number of dominant species"
+    y = "Predicted number of dominant species",
+    color = 'ANPP', fill = 'ANPP'
   ) +
   theme_minimal()
 
