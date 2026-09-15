@@ -1,10 +1,10 @@
 
 ################################################################################
-##  05a_Q1_site_modes.R: Calculate mode of codominance numbers in control plots and 
+##  05d_Q1_continuousDominance.R: Calculate dominance as integers in control plots and 
 ##  compare to environmental data.
 ##
-##  Authors: Kimberly Komatsu, Jordan Winter
-##  Date created: 
+##  Authors: Kimberly Komatsu
+##  Date created: Sept 15, 2026
 ################################################################################
 
 source("code/01_library.R")
