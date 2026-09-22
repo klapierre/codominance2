@@ -146,17 +146,17 @@ model <- glmmTMB(num_codominants_continuous ~ z_anpp*(z_MAP + z_MAT + z_gammaric
 summary(model)
 
 # site modes
-model <- glmmTMB(mode_site ~ z_anpp*(z_MAP + z_MAT + z_gammarich) + z_Ndep + z_humanfootprint +
+model2 <- glmmTMB(mode_site ~ z_anpp*(z_MAP + z_MAT + z_gammarich) + z_Ndep + z_humanfootprint +
                    (1 | site_code),
                  family = truncated_nbinom2,
                  data = modeSite)
-summary(model)
+summary(model2)
 
 
 # Figures -----------------------------------------------------------------
 
 # ANPP * MAP figure
-support_cells <- transformCodom %>% 
+supportCells <- numCodomPlotYear %>% 
   mutate(MAP_bin = ntile(MAP, 15), ANPP_bin = ntile(anpp, 15)) %>% 
   group_by(MAP_bin, ANPP_bin) %>% 
   summarise(MAP = median(MAP), anpp = median(anpp), 
@@ -164,12 +164,13 @@ support_cells <- transformCodom %>%
             z_MAT = median(z_MAT), z_gammarich = median(z_gammarich),
             z_Ndep = median(z_Ndep), z_humanfootprint = median(z_humanfootprint),
             n = n(), .groups = "drop") %>% 
-  filter(n >= 3) %>%      # Optional: omit very sparsely observed cells
-  mutate(pred_dominants=predict(model, newdata = support_cells, type = "response", re.form = NA))
+  filter(n >= 3)     # omit very sparsely observed cells
+
+supportCells$pred_dominants <- predict(model, newdata = supportCells, type = "response", re.form = NA)
 
 ggplot() +
-  geom_point(data = transformCodom, aes(x = MAP, y = anpp), color = "grey60", alpha = 0.15, size = 1) +
-  geom_point(data = support_cells, aes(x = MAP, y = anpp, color = pred_dominants, size = n), shape = 15) +
+  geom_point(data = numCodomPlotYear, aes(x = MAP, y = anpp), color = "grey60", alpha = 0.15, size = 1) +
+  geom_point(data = supportCells, aes(x = MAP, y = anpp, color = pred_dominants, size = n), shape = 15) +
   scale_color_viridis_c(name = "Predicted number\nof dominants") +
   scale_size(name = "Observations\nin cell", range = c(2, 7)) +
   labs(x = "Mean annual precipitation (MAP)", y = "ANPP") 
