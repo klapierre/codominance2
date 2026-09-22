@@ -156,29 +156,7 @@ summary(model2)
 # Figures -----------------------------------------------------------------
 
 # ANPP * MAP figure
-supportCells <- numCodomPlotYear %>% 
-  mutate(MAP_bin = ntile(MAP, 15), ANPP_bin = ntile(anpp, 15)) %>% 
-  group_by(MAP_bin, ANPP_bin) %>% 
-  summarise(MAP = median(MAP), anpp = median(anpp), 
-            z_MAP = median(z_MAP), z_anpp = median(z_anpp),
-            z_MAT = median(z_MAT), z_gammarich = median(z_gammarich),
-            z_Ndep = median(z_Ndep), z_humanfootprint = median(z_humanfootprint),
-            n = n(), .groups = "drop") %>% 
-  filter(n >= 3)     # omit very sparsely observed cells
 
-supportCells$pred_dominants <- predict(model, newdata = supportCells, type = "response", re.form = NA)
-
-ggplot() +
-  geom_point(data = numCodomPlotYear, aes(x = MAP, y = anpp), color = "grey60", alpha = 0.15, size = 1) +
-  geom_point(data = supportCells, aes(x = MAP, y = anpp, color = pred_dominants, size = n), shape = 15) +
-  scale_color_viridis_c(name = "Predicted number\nof dominants") +
-  scale_size(name = "Observations\nin cell", range = c(2, 7)) +
-  labs(x = "Mean annual precipitation (MAP)", y = "ANPP") 
-
-
-
-
-#line graph alternative
 anpp_support <- transformCodom %>%
   filter(!is.na(z_anpp), !is.na(z_MAP)) %>%
   mutate(anpp_band = ggplot2::cut_number(z_anpp, n = 10)) %>%
@@ -217,37 +195,23 @@ ggplot(pred_MAP_raw, aes(x = MAP_raw, y = predicted, color = ANPP_label, fill = 
   labs(x = "MAP", y = "Predicted number of dominant species", color = "ANPP", fill = "ANPP")
 
 
-
-
 # MAT figure
 
-pred_MAT <- ggpredict(model, terms = "MAT [all]")
+pred_MAT <- ggpredict(model, terms = "z_MAT [all]")
 
 ggplot(pred_MAT, aes(x = x, y = predicted)) +
   geom_line(linewidth = 1) +
-  geom_ribbon(
-    aes(ymin = conf.low, ymax = conf.high),
-    alpha = 0.2
-  ) +
-  labs(
-    x = "MAT",
-    y = "Predicted number of dominant species"
-  ) +
-  theme_minimal()
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  labs(x = "MAT",
+       y = "Predicted number of dominant species")
 
 
 # gamma div figure
 
-pred_gammaDiv <- ggpredict(model, terms = "gamma_rich [all]")
+pred_gammaDiv <- ggpredict(model, terms = "z_gammarich [all]")
 
 ggplot(pred_gammaDiv, aes(x = x, y = predicted)) +
   geom_line(linewidth = 1) +
-  geom_ribbon(
-    aes(ymin = conf.low, ymax = conf.high),
-    alpha = 0.2
-  ) +
-  labs(
-    x = "Gamma Diversity",
-    y = "Predicted number of dominant species"
-  ) +
-  theme_minimal()
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  labs(x = "Gamma Diversity",
+       y = "Predicted number of dominant species")
