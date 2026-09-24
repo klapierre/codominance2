@@ -26,7 +26,7 @@ numCodomPlotYear <- readRDS("data/numCodomPlotYear.rds") %>%
            sep='::', remove=F) %>% 
   left_join(readRDS("data/expInfo.rds")) %>% 
   left_join(readRDS("data/envData.rds")) %>% 
-  filter(trt_type=='control') %>% 
+  filter(trt_type=='control') %>% # control plots only
   transform(z_anpp = as.numeric(scale(anpp)),
             z_MAP = as.numeric(scale(MAP)),
             z_MAT = as.numeric(scale(MAT)),
@@ -45,13 +45,13 @@ singletonCodomPlotYear <- numCodomPlotYear %>%
   mutate(length=length(plot_id)) %>% 
   ungroup() %>% 
   filter(length==1) %>% 
-  rename(plot_codom=num_codominants_continuous) %>% 
-  dplyr::select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, plot_codom) 
+  rename(plot_codom=num_group) %>% 
+  dplyr::select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, plot_codom)
 
 # calculate mode across years for all plots
 modePlotTrue <- numCodomPlotYear %>%  
   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-  reframe(plot_codom = DescTools::Mode(num_codominants_continuous)) %>% # mode function must be capital here 
+  reframe(plot_codom = DescTools::Mode(num_group)) %>% # mode function must be capital here 
   ungroup() %>% 
   filter(!is.na(plot_codom)) %>%
   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
@@ -60,12 +60,12 @@ modePlotTrue <- numCodomPlotYear %>%
 
 # for plots with singleton ties for modes, calculate mean and round to nearest integer
 multipleMode <- numCodomPlotYear %>% 
-  select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, num_codominants_continuous, calendar_year) %>% 
+  select(database, site_code, project_name, community_type, plot_id, trt_type, treatment, num_group, calendar_year) %>% 
   unique() %>% 
   full_join(modePlotTrue) %>% 
   filter(is.na(plot_codom)) %>%
   group_by(database, site_code, project_name, community_type, plot_id, trt_type, treatment) %>% 
-  summarise(plot_codom = round(mean(num_codominants_continuous), digits=0), .groups='drop')
+  summarise(plot_codom = round(mean(num_group), digits=0), .groups='drop')
 
 # bind dataframes for averaged ties and true modes at plot level
 modePlot <- rbind(modePlotTrue, multipleMode)
