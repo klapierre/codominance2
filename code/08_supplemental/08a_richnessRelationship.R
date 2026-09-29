@@ -204,7 +204,7 @@ cor.test(df_p_ctl$p, df_p_ctl$site_rich)
 
 ggplot(data=df_p_ctl, aes(x=site_rich, y=p)) +
   geom_jitter(width = 0.2, height = 0, size = 3) +
-  xlab('Richness (site mode)') + ylab('RDFD') +
+  xlab('Richness (study mode)') + ylab('RDFD') +
   annotate("text", 
            x=Inf, y=Inf, 
            label="r = 0.031\nt = 0.350\np = 0.728", 
