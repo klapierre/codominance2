@@ -107,3 +107,71 @@ siteCount <- modeSite %>%
 
 # Variance through time for each control plot ------------------
 
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=20, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=16),
+             axis.title.y=element_text(size=20, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=16),
+             plot.title = element_text(size=24, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_blank(), legend.text=element_text(size=20))
+
+varianceTime <- modePlot %>% 
+  full_join(numCodomPlotYear) %>% 
+  mutate(num_group_bin=ifelse(num_group==3, 2, num_group),
+         plot_codom_bin=ifelse(plot_codom==3, 2, plot_codom)) %>% 
+  group_by(database, site_code, project_name, community_type, treatment, plot_id) %>% 
+  summarise(n=length(plot_codom),
+            rmse_num=sqrt(mean((num_group-plot_codom)^2)), 
+            rmse_bin=sqrt(mean((num_group_bin-plot_codom_bin)^2)), 
+            proportion_num=sum(plot_codom==num_group)/length(plot_codom),
+            proportion_bin=sum(plot_codom==num_group_bin)/length(plot_codom_bin),
+            .groups='drop') %>%
+  left_join(modePlot) %>%
+  filter(trt_type=='control')
+# 5815 of 7078 individual plots have an RMSE of 0 and proportion of 1 when using exact dominance numbers (82.2%)
+# 5848 of 7078 individual plots have an RMSE of 0 and proportion of 1 when using binned categories (82.6%)
+
+rsmeTimeFig <- ggplot(varianceTime, aes(x=rmse_num)) +
+  geom_histogram(color='black', binwidth=0.5) +
+  scale_x_continuous(breaks=seq(0,15,0.5)) +
+  xlab('RMSE of Plot Mode') + ylab('Count')
+
+proportionTimeFig <- ggplot(varianceTime, aes(x=proportion_num)) +
+  geom_histogram(color='black', binwidth=0.1) +
+  scale_x_continuous(breaks=seq(0,15,0.5)) +
+  xlab('Proportion of Years\nMatching Plot Mode') + ylab('Count')
+
+
+# Variance through space for control plots at each site ------------------
+
+varianceSpace <- modeSite %>% 
+  full_join(modePlot) %>% 
+  mutate(mode_site_bin=ifelse(mode_site==3, 2, mode_site),
+         plot_codom_bin=ifelse(plot_codom==3, 2, plot_codom)) %>% 
+  group_by(database, site_code, project_name, community_type, trt_type, treatment) %>% 
+  summarise(n=length(plot_codom),
+            rmse_num=sqrt(mean((mode_site-plot_codom)^2)), 
+            rmse_bin=sqrt(mean((mode_site_bin-plot_codom_bin)^2)), 
+            proportion_num=sum(mode_site==plot_codom)/length(plot_codom),
+            proportion_bin=sum(mode_site_bin==plot_codom_bin)/length(plot_codom_bin),
+            .groups='drop') %>%
+  left_join(modeSite) %>%
+  filter(trt_type=='control')
+# 205 of 526 sites have an RMSE of 0 and proportion of 1 when using exact dominance numbers (39.0%)
+# 209 of 526 sites have an RMSE of 0 and proportion of 1 when using binned categories (39.7%)
+
+rsmeSpaceFig <- ggplot(varianceSpace, aes(x=rmse_num)) +
+  geom_histogram(color='black', binwidth=0.5) +
+  scale_x_continuous(breaks=seq(0,15,0.5)) +
+  xlab('RMSE of Study Mode') + ylab('Count')
+
+proportionSpaceFig <- ggplot(varianceSpace, aes(x=proportion_num)) +
+  geom_histogram(color='black', binwidth=0.1) +
+  scale_x_continuous(breaks=seq(0,15,0.5)) +
+  xlab('Proportion of Plots\nMatching Study Mode') + ylab('Count')
+
+
+# Combined variance figure -----------------------------------------------
+
+varianceFig <- grid.arrange(rsmeTimeFig, rsmeSpaceFig, proportionTimeFig, proportionSpaceFig, ncol = 2)
+
+# ggsave("FigS4_variance.png", varianceFig, width = 10, height = 10, dpi = 400)
