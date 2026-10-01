@@ -14,10 +14,12 @@ source("code/02_functions.R")
 # Read data ---------------------------------------------------------------
 
 modePlot <- readRDS("data/modePlot.rds")
-df_iap <- readRDS("data/modeSite.rds") %>% 
+
+df_iap <- readRDS("data/modeSiteRichness.rds") %>% 
   rename(ANPP=anpp,
          GDiv=gamma_rich,
-         NDep=NDeposition)
+         NDep=NDeposition,
+         PlotRichness=site_rich_mean)
 
 df_iap10 <- readRDS("data/modeSite_cutoff10.rds")%>% 
   rename(ANPP=anpp,
@@ -47,6 +49,9 @@ multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
                                  ANPP*(MAP + MAT + GDiv) +
                                  NDep + HumanFootprint,
                                data = df_iap)
+
+multinom.richness <- update(multinom.baseline1, 
+                            .~. + PlotRichness)
 
 #cutoff10 
 multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
@@ -105,8 +110,8 @@ results_table <- results %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
-gt(results_table, caption = "") %>% 
-  gtsave("multinomial_cutoff20.png")
+# gt(results_table, caption = "") %>% 
+#   gtsave("multinomial_cutoff20.png")
 
 #Results10#Resultscaption = 10
 results10 <- tidy(multinom.baseline10, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
@@ -120,8 +125,8 @@ results_table10 <- results10 %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
-gt(results_table10, caption = "10% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff10.png")
+# gt(results_table10, caption = "10% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff10.png")
 
 #Results15
 results15 <- tidy(multinom.baseline15, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
@@ -135,8 +140,8 @@ results_table15 <- results15 %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
-gt(results_table15, caption = "15% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff15.png")
+# gt(results_table15, caption = "15% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff15.png")
 
 #Results25
 results25 <- tidy(multinom.baseline25, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
@@ -150,8 +155,8 @@ results_table25 <- results25 %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
-gt(results_table25, caption = "25% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff25.png")
+# gt(results_table25, caption = "25% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff25.png")
 
 #Results30
 results30 <- tidy(multinom.baseline30, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
@@ -165,8 +170,8 @@ results_table30 <- results30 %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
-gt(results_table30, caption = "30% Cutoff (Base)") %>% 
-  gtsave("C:/Users/elise/Downloads/Tables/cutoff30.png")
+# gt(results_table30, caption = "30% Cutoff (Base)") %>% 
+#   gtsave("C:/Users/elise/Downloads/Tables/cutoff30.png")
 
 
 # Format: for figure of multinomial model predictions----------------------------------------------------------
@@ -180,10 +185,11 @@ df_om <- df_iap %>%
          GDiv_mean = mean(GDiv),
          HumanFootprint_mean = mean(HumanFootprint),
          NDep_mean = mean(NDep),
+         PlotRichness_mean = mean(PlotRichness),
          ANPP_mean = mean(ANPP))
 
 # Variables of interest
-var <- c("MAP", "MAT", "GDiv", "HumanFootprint", "NDep", "ANPP")
+var <- c("MAP", "MAT", "GDiv", "HumanFootprint", "NDep", "ANPP", "PlotRichness")
 
 # Generate sequence of values looped for each variable 
 df_seq <- foreach(v = var, .combine = bind_cols) %do% {
@@ -212,7 +218,7 @@ df_r <- df_om %>%
   full_join(df_seq, by = "seq") 
 
 # Mean of variables of interest
-var2 <- c("MAP_mean", "MAT_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean") 
+var2 <- c("MAP_mean", "MAT_mean", "GDiv_mean", "HumanFootprint_mean", "NDep_mean", "ANPP_mean", "PlotRichness_mean") 
 
 # Predict data using model, sequence, and mean
 df_predicted <- foreach(v = var, 
@@ -247,14 +253,9 @@ df_predicted <- foreach(v = var,
 
 
 
-# figure out what is going on here and if it can be included in fig 2
-#ci <- as.data.frame(confint(multinom.baseline1, level = 0.95))
-
-
-
 # Clarify column names 
 df_combined <- df_predicted %>% 
-  select(Codom...2, MAP, MAT, GDiv, HumanFootprint, NDep, ANPP, # cv_Precip,
+  select(Codom...2, MAP, MAT, GDiv, HumanFootprint, NDep, ANPP, PlotRichness, # cv_Precip,
          starts_with("Probability")) %>% 
   rename(Codom = Codom...2,
          "MAP" = MAP,
