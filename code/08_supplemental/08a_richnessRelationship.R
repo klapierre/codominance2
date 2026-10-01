@@ -109,9 +109,25 @@ modeSite <- rbind(modeSiteTrue, multipleModeProj) %>%
   left_join(readRDS("data/envData.rds")) %>% 
   left_join(readRDS("data/modeSite.rds")) %>% 
   mutate(group=ifelse(mode_site %in% c(2,3), 'codominated', 
-                      ifelse(mode_site==1, 'monodominated', 'even')))
+                      ifelse(mode_site==1, 'monodominated', 'even'))) %>% 
+  rename(site_rich_mode=site_rich)
 
-# saveRDS(modeSite, file = "data/modeSiteRichness.rds")
+
+# Calculate mean across all control plots for each experiment ------------------
+
+meanSite <- plotRichness %>% 
+  filter(trt_type=='control') %>% 
+  group_by(database, site_code, project_name, community_type, plot_id) %>% 
+  summarise(plot_richness=mean(richness), .groups='drop') %>% 
+  group_by(database, site_code, project_name, community_type) %>% 
+  summarise(site_rich_mean=mean(plot_richness), .groups='drop')
+
+
+# Combine data for mode and mean richness --------------------------------------
+
+allRichness <- full_join(modeSite, meanSite)
+
+# saveRDS(allRichness, file = "data/modeSiteRichness.rds")
 
 
 # ordinal logistic regressions ------------------
