@@ -156,8 +156,8 @@ varianceSpace <- modeSite %>%
             .groups='drop') %>%
   left_join(modeSite) %>%
   filter(trt_type=='control')
-# 205 of 526 sites have an RMSE of 0 and proportion of 1 when using exact dominance numbers (39.0%)
-# 209 of 526 sites have an RMSE of 0 and proportion of 1 when using binned categories (39.7%)
+# 205 of 523 sites have an RMSE of 0 and proportion of 1 when using exact dominance numbers (39.2%)
+# 209 of 523 sites have an RMSE of 0 and proportion of 1 when using binned categories (40.0%)
 
 rsmeSpaceFig <- ggplot(varianceSpace, aes(x=rmse_num)) +
   geom_histogram(color='black', binwidth=0.5) +
