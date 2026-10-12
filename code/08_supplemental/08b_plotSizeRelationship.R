@@ -17,7 +17,7 @@ theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)
 
 
 
-### get plot size data for each database
+### get plot size data for each database ---------------------------------------
 
 corre <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\CoRRE\\corre_plot_size.csv') %>% 
   rename(plot_size=plot_size_m2) %>% 
@@ -74,5 +74,66 @@ ggplot(data=barGraphStats(data=plotSize, variable="plot_size", byFactorNames=c("
 ggplot(data=plotSize, aes(x=group, y=plot_size)) +
   geom_boxplot() +
   xlab('') + ylab(expression("Plot Size (m"^2*")")) +
+  coord_flip()
+#export at 1500x500
+
+
+### get experiment duration data for each database ---------------------------------------
+
+expDuration <- readRDS('data/codomSppList.rds') %>% 
+  group_by(database, site_proj_comm) %>% 
+  filter(treatment_year==max(treatment_year)) %>% 
+  ungroup() %>% 
+  select(-exp_unit, -calendar_year, -plot_id, -group, -num_group, -genus_species, -rank) %>% 
+  unique() %>% 
+  rename(exp_length=treatment_year)
+
+gex <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>% 
+  rename(site_code=site) %>% 
+  select(site_code, exage) %>% 
+  unique()
+
+expDuration2 <- full_join(expDuration, gex) %>% 
+  mutate(exp_length=ifelse(is.na(exp_length), exage, exp_length)) %>% 
+  filter(!is.na(exp_length), exp_length>0) %>% 
+  select(-exage) %>% 
+  full_join(readRDS('data/modeTrt.rds')) %>% 
+  filter(!is.na(lump_mode_trt_cat))
+
+# ordinal logistic regressions ------------------
+
+siteModel <- polr(as.factor(lump_mode_trt_cat) ~ exp_length, data = expDuration2, Hess=T) 
+nullSiteModel <- polr(as.factor(lump_mode_trt_cat) ~ 1, data = expDuration2, Hess=T)
+ctable <- coef(summary(siteModel))
+pvals <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+cbind(ctable, "p value" = pvals)
+exp(coef(siteModel))
+exp(confint(siteModel))
+anova(siteModel, nullSiteModel)
+
+
+# anovas (backwards testing) ------------------
+
+summary(siteBackwardModel <- aov(exp_length ~ as.factor(lump_mode_trt_cat), data = expDuration2))
+TukeyHSD(siteBackwardModel)
+
+
+# figures ------------------
+
+expDuration2$lump_mode_trt_cat <- factor(expDuration2$lump_mode_trt_cat, levels=c('Even', 'Codominated', 'Monodominated'))
+
+ggplot(data=expDuration2, aes(x=lump_mode_trt_cat, y=mean)) +
+  geom_jitter(data=expDuration2, aes(x=lump_mode_trt_cat, y=exp_length), size=4, color='grey',
+              width = 0.3, height = 0 ) +
+  geom_point(size=9) +
+  # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, size=6) +
+  geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2, size=3) +
+  xlab('') + ylab('Experiment Length (years)') +
+  coord_flip()
+#export at 1500x500
+
+ggplot(data=expDuration2, aes(x=lump_mode_trt_cat, y=exp_length)) +
+  geom_boxplot() +
+  xlab('') + ylab(expression("Experiment Length (years)")) +
   coord_flip()
 #export at 1500x500
