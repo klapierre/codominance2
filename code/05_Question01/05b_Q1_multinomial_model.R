@@ -19,24 +19,31 @@ df_iap <- readRDS("data/modeSiteRichness.rds") %>%
   rename(ANPP=anpp,
          GDiv=gamma_rich,
          NDep=NDeposition,
-         PlotRichness=site_rich_mean)
+         PlotRichness=site_rich_mean) %>% 
+  mutate(z_MAP=scale(MAP),
+         z_MAT=scale(MAT),
+         z_GDiv=scale(GDiv),
+         z_ANPP=scale(ANPP),
+         z_HumanFootprint=scale(HumanFootprint),
+         z_NDep=scale(NDep),
+         z_PlotRichness=scale(PlotRichness))
 
-df_iap10 <- readRDS("data/modeSite_cutoff10.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
-df_iap15 <- readRDS("data/modeSite_cutoff15.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
-df_iap25 <- readRDS("data/modeSite_cutoff25.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
-df_iap30 <- readRDS("data/modeSite_cutoff30.rds")%>% 
-  rename(ANPP=anpp,
-         GDiv=gamma_rich,
-         NDep=NDeposition)
+# df_iap10 <- readRDS("data/modeSite_cutoff10.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
+# df_iap15 <- readRDS("data/modeSite_cutoff15.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
+# df_iap25 <- readRDS("data/modeSite_cutoff25.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
+# df_iap30 <- readRDS("data/modeSite_cutoff30.rds")%>% 
+#   rename(ANPP=anpp,
+#          GDiv=gamma_rich,
+#          NDep=NDeposition)
 
 
 # Multinomial Analysis ----------------------------------------------------------
@@ -44,59 +51,55 @@ df_iap30 <- readRDS("data/modeSite_cutoff30.rds")%>%
 #multinom function comes from nnet
 #mutinomial model using monodominance as the reference state
 
-multinom.baseline1 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ 
-                                 ANPP*(MAP + MAT + GDiv) +
-                                 NDep + HumanFootprint,
-                               data = df_iap)
+multinom.baselineScale <- multinom(factor(df_iap$lumpMode,
+                                          levels = c(1,2,4)) ~ 
+                                     z_ANPP*(z_MAP + z_MAT + z_GDiv + z_PlotRichness) +
+                                     z_NDep + z_HumanFootprint,
+                                   data = df_iap)
 
-multinom.richness <- update(multinom.baseline1, 
-                            .~. + PlotRichness)
-
-#cutoff10 
-multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ 
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap10)
-#cutoff15
-multinom.baseline15 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ 
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap15)
-#cutoff25
-multinom.baseline25 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap25)
-#cutoff30
-multinom.baseline30 <- multinom(factor(df_iap$lumpMode,
-                                      levels = c(1,2,4)) ~ 
-                                  ANPP*(MAP + MAT + GDiv) +
-                                  NDep + HumanFootprint,
-                               data = df_iap30)
+# #cutoff10 
+# multinom.baseline10 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~ 
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap10)
+# #cutoff15
+# multinom.baseline15 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~ 
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap15)
+# #cutoff25
+# multinom.baseline25 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap25)
+# #cutoff30
+# multinom.baseline30 <- multinom(factor(df_iap$lumpMode,
+#                                       levels = c(1,2,4)) ~ 
+#                                   ANPP*(MAP + MAT + GDiv) +
+#                                   NDep + HumanFootprint,
+#                                data = df_iap30)
 
 #checking p-value manually
-(coef <- summary(multinom.baseline1)$coefficients)
+(coef <- summary(multinom.baselineScale)$coefficients)
 
-(stderr <- summary(multinom.baseline1)$standard.errors)
+(stderr <- summary(multinom.baselineScale)$standard.errors)
 
 z <- coef/stderr
 (p_values <- 2 * (1 - pnorm(abs(z))))
 
 
-
 #PR2() from 'pscl' package provides many R2 estimates
-pR2(multinom.baseline1) #McFaddenR2 = 0.325; our current cutoff exhibits the most explanatory power
+pR2(multinom.baselineScale) #McFaddenR2 = 0.393; our current cutoff exhibits the most explanatory power
 pR2(multinom.baseline10) #McFaddenR2 = 0.311
 pR2(multinom.baseline15) #McFaddenR2 = 0.293
 pR2(multinom.baseline25) #McFaddenR2 = 0.314
 pR2(multinom.baseline30) #McFaddenR2 = 0.293
 
 #Putting into more convenient table format, P-values and OR's match model output 
-results <- tidy(multinom.baseline1, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
+results <- tidy(multinom.baselineScale, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
 
 results$y.level[results$y.level == 2] <- "Codominated"
 results$y.level[results$y.level == 4] <- "Even"
@@ -110,74 +113,10 @@ results_table <- results %>%
           "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
           "P-value" = p_value)
 
-# gt(results_table, caption = "") %>% 
-#   gtsave("multinomial_cutoff20.png")
-
-#Results10#Resultscaption = 10
-results10 <- tidy(multinom.baseline10, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table10 <- results10 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-# gt(results_table10, caption = "10% Cutoff (Base)") %>% 
-#   gtsave("C:/Users/elise/Downloads/Tables/cutoff10.png")
-
-#Results15
-results15 <- tidy(multinom.baseline15, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table15 <- results15 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-# gt(results_table15, caption = "15% Cutoff (Base)") %>% 
-#   gtsave("C:/Users/elise/Downloads/Tables/cutoff15.png")
-
-#Results25
-results25 <- tidy(multinom.baseline25, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table25 <- results25 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-# gt(results_table25, caption = "25% Cutoff (Base)") %>% 
-#   gtsave("C:/Users/elise/Downloads/Tables/cutoff25.png")
-
-#Results30
-results30 <- tidy(multinom.baseline30, conf.int = TRUE, exponentiate = TRUE) #tidy() is a 'broom' function
-
-results_table30 <- results30 %>%
-  mutate(OR_CI = sprintf("%.2f ", estimate),
-         p_value = ifelse(p.value < 0.001, "<0.001", sprintf("%.3f", p.value))) %>%
-  select(y.level, term, OR_CI,p_value) %>%
-  rename( "Outcome Category" = y.level,
-          "Predictor" = term,
-          "Odds Ratio (95% CI) vs. Monodominated" = OR_CI,
-          "P-value" = p_value)
-
-# gt(results_table30, caption = "30% Cutoff (Base)") %>% 
-#   gtsave("C:/Users/elise/Downloads/Tables/cutoff30.png")
-
 
 # Format: for figure of multinomial model predictions----------------------------------------------------------
 
 # Generate mean (later used in model predicted data)
-# change this data file to represent the cutoff of interest
 df_om <- df_iap %>% 
   na.omit() %>% 
   mutate(MAP_mean = mean(MAP),
@@ -187,6 +126,20 @@ df_om <- df_iap %>%
          NDep_mean = mean(NDep),
          PlotRichness_mean = mean(PlotRichness),
          ANPP_mean = mean(ANPP))
+
+anpp_levels <- quantile(df_iap$z_ANPP, probs = c(0.10, 0.50, 0.90),
+                        na.rm = TRUE, names = FALSE)
+
+# Create a MAP × ANPP prediction grid
+df_interaction <- tidyr::expand_grid(MAP = seq(min(df_om$MAP, na.rm = TRUE),
+                                               max(df_om$MAP, na.rm = TRUE),
+                                               length.out = 100),
+                                     ANPP = anpp_levels) %>%
+  mutate(MAT = mean(df_om$MAT, na.rm = TRUE),
+         GDiv = mean(df_om$GDiv, na.rm = TRUE),
+         PlotRichness = mean(df_om$PlotRichness, na.rm = TRUE),
+         NDep = mean(df_om$NDep, na.rm = TRUE),
+         HumanFootprint = mean(df_om$HumanFootprint, na.rm = TRUE))
 
 # Variables of interest
 var <- c("MAP", "MAT", "GDiv", "HumanFootprint", "NDep", "ANPP", "PlotRichness")
@@ -238,7 +191,7 @@ df_predicted <- foreach(v = var,
                             rename_with(~str_remove(., '_mean'))
                           # Predict data
                           df_p <- cbind(df_s,
-                                        data.frame(predict(multinom.baseline1,
+                                        data.frame(predict(multinom.baselineScale,
                                                            newdata = df_s,
                                                            type = "probs")))
                           
@@ -261,12 +214,14 @@ df_combined <- df_predicted %>%
          "MAP" = MAP,
          "MAT" = MAT,
          "Gamma Diversity" = GDiv,
+         "Alpha Diversity" = PlotRichness,
          "Human Footprint Index" = HumanFootprint, 
          "N Deposition" = NDep,
          ANPP = ANPP,
          Prob_MAP = Probability...3,
          Prob_MAT = Probability...6,
          Prob_gamma = Probability...9,
+         Prob_alpha = Probability...21,
          Prob_Human = Probability...12,
          Prob_N = Probability...15,
          Prob_ANPP = Probability...18)
