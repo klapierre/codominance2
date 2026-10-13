@@ -214,6 +214,10 @@ saveRDS(df_p, file = "data/traitp_ctr.rds")
 # analysis ----------------------------------------------------------------
 
 ## RDFD value and environmental factors
+df_rich <- readRDS('data/modeSiteRichness.rds') %>% 
+  mutate(site_proj_comm=str_to_lower(paste(site_code, project_name, community_type, sep='_'))) %>% 
+  select(database, site_proj_comm, site_rich_mode)
+
 df_m <- readRDS("data/envData.rds") %>% 
   janitor::clean_names() %>% 
   mutate(site_proj_comm = paste0(site_code, "_", 
@@ -224,6 +228,7 @@ df_m <- readRDS("data/envData.rds") %>%
   dplyr::select(-c(site_code,
                    project_name,
                    community_type)) %>% 
+  left_join(df_rich) %>% 
   right_join(df_p,
              by = "site_proj_comm") #%>% 
   # filter(!is.na(anpp))
@@ -234,6 +239,7 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
                    scale(mat) +
                    # scale(anpp) +
                    scale(gamma_rich) +
+                   scale(site_rich_mode) +
                    scale(human_footprint) +
                    scale(n_deposition) +
                    (1 | site_proj_comm),
@@ -245,10 +251,9 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
 # figure ------------------------------------------------------------------
 
 df_m2  <- df_m %>% 
-  select(-anpp) %>% 
   dplyr::select(database, 
                 site_proj_comm,
-                map:continent, 
+                map:site_rich_mode, 
                 pair_id, 
                 sp1, 
                 sp2, 
@@ -262,6 +267,7 @@ df_m2  <- df_m %>%
                         mat, 
                         # anpp, 
                         gamma_rich, 
+                        site_rich_mode,
                         human_footprint, 
                         n_deposition),
                values_to = "x",
@@ -270,10 +276,11 @@ df_m2  <- df_m %>%
                          var == "mat" ~ "MAT",
                          # var == "anpp" ~ "ANPP",
                          var == "gamma_rich" ~ "Gamma Diversity",
+                         var == "site_rich_mode" ~ "Alpha Diversity",
                          var == "human_footprint" ~ "Human Footprint",
                          var == "n_deposition" ~ "N Deposition",
                          .default = var) %>% 
-           factor(levels = c('MAP','MAT','Gamma Diversity','Human Footprint','N Deposition'))
+           factor(levels = c('MAP','MAT','Gamma Diversity','Alpha Diversity','Human Footprint','N Deposition'))
   )
 
 envGradientPlot <- ggplot(data=df_m2, aes(y = p,
@@ -298,4 +305,4 @@ envGradientPlot <- ggplot(data=df_m2, aes(y = p,
         axis.title.x = element_blank(),
         legend.position='bottom')
 
-ggsave("FigF_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
+ggsave("FigS7_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
