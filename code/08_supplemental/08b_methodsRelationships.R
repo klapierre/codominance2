@@ -143,54 +143,30 @@ expDuration <- readRDS('data/codomSppList.rds') %>%
   ungroup() %>% 
   select(-exp_unit, -calendar_year, -plot_id, -group, -num_group, -genus_species, -rank) %>% 
   unique() %>% 
-  rename(exp_length=treatment_year)
-
-gex <- read.csv('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\GEx\\GEx_cleaned_11June2020.csv') %>% 
-  rename(site_code=site) %>% 
-  select(site_code, exage) %>% 
-  unique()
-
-expDuration2 <- full_join(expDuration, gex) %>% 
-  mutate(exp_length=ifelse(is.na(exp_length), exage, exp_length)) %>% 
-  filter(!is.na(exp_length), exp_length>0) %>% 
-  select(-exage) %>% 
+  rename(exp_length=treatment_year) %>% 
   full_join(readRDS('data/modeTrt.rds')) %>% 
-  filter(!is.na(lump_mode_trt_cat))
-
-# ordinal logistic regressions ------------------
-
-siteModel <- polr(as.factor(lump_mode_trt_cat) ~ exp_length, data = expDuration2, Hess=T) 
-nullSiteModel <- polr(as.factor(lump_mode_trt_cat) ~ 1, data = expDuration2, Hess=T)
-ctable <- coef(summary(siteModel))
-pvals <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-cbind(ctable, "p value" = pvals)
-exp(coef(siteModel))
-exp(confint(siteModel))
-anova(siteModel, nullSiteModel)
+  filter(!is.na(lump_mode_trt_cat),
+         exp_length>0) %>%
+  mutate(shifted = lump_mode_trt_cat != lump_mode_site_cat,
+         shifted_label = ifelse(shifted==T, 'Same', 'Altered'))
 
 
-# anovas (backwards testing) ------------------
+# does dominance structure shift based on experiment length?
 
-summary(siteBackwardModel <- aov(exp_length ~ as.factor(lump_mode_trt_cat), data = expDuration2))
-TukeyHSD(siteBackwardModel)
+summary(lengthModel <- glm(shifted ~ log(exp_length), family = binomial, data = expDuration))
+anova(lengthModel) #yes!
 
 
-# figures ------------------
+# figure
 
-expDuration2$lump_mode_trt_cat <- factor(expDuration2$lump_mode_trt_cat, levels=c('Even', 'Codominated', 'Monodominated'))
-
-ggplot(data=expDuration2, aes(x=lump_mode_trt_cat, y=mean)) +
-  geom_jitter(data=expDuration2, aes(x=lump_mode_trt_cat, y=exp_length), size=4, color='grey',
+ggplot(data=barGraphStats(data=expDuration, variable="exp_length", byFactorNames=c("shifted_label")), aes(x=shifted_label, y=mean)) +
+  geom_jitter(data=expDuration, aes(x=shifted_label, y=exp_length), size=4, color='grey',
               width = 0.3, height = 0 ) +
   geom_point(size=9) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, size=6) +
   geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2, size=3) +
-  xlab('') + ylab('Experiment Length (years)') +
-  coord_flip()
-#export at 1500x500
-
-ggplot(data=expDuration2, aes(x=lump_mode_trt_cat, y=exp_length)) +
-  geom_boxplot() +
   xlab('') + ylab(expression("Experiment Length (years)")) +
   coord_flip()
 #export at 1500x500
+  
+
