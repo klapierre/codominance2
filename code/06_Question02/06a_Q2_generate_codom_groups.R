@@ -46,3 +46,22 @@ Q2ctlGroupsSite <- codomControl %>%
 
 # saveRDS(Q2ctlGroupsSite, file = "data/Q2ctlGroupsSite.rds")
 
+
+
+# All possible species combinations (co-occur within at least one plot at one time point) within each site
+
+allSppList <- readRDS("data/allSppList.rds")
+
+allSppPairs <- allSppList %>%
+  distinct(site_proj_comm, plot_id, calendar_year, genus_species) %>% 
+  # Generate all species pairs within each plot-year
+  group_by(site_proj_comm, plot_id, calendar_year) %>%
+  filter(n() >= 2) %>%
+  reframe(
+    species_1 = combn(sort(genus_species), 2)[1, ],
+    species_2 = combn(sort(genus_species), 2)[2, ]
+  ) %>%
+  ungroup() %>%
+  distinct(site_proj_comm, species_1, species_2)
+
+# saveRDS(allSppPairs, file = "data/allSppPairs.rds")
