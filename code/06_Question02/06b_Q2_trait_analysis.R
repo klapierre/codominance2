@@ -12,117 +12,42 @@
 #   - for all species pairs (null distribution)
 # 3. keep how many species/sites are excluded
 
-
 # setup -------------------------------------------------------------------
 
 rm(list = ls())
 source("code/01_library.R")
 source("code/02_functions.R")
 
-theme_set(theme_bw())
-theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
-             axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
-             plot.title = element_text(size=40, vjust=2),
-             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
-             legend.title=element_blank(), legend.text=element_text(size=40))
-
 # read data ---------------------------------------------------------------
 
-## data for codominant species
-df_codom0 <- readRDS("data/Q2ctlGroupsSite.rds") %>% 
-  mutate(trt_type = "control") %>%  
-  mutate(site_proj_comm = paste0(site_code, "_", 
-                                 project_name, "_",
-                                 community_type) %>% 
-           str_to_lower(),
-         .before = site_code) %>% 
-  dplyr::select(-c(site_code,
-                   project_name,
-                   community_type,
-                   codom_freq_proj)) %>% 
-  filter(!is.na(alpha2)) %>% 
-  group_by(site_proj_comm) %>% 
-  mutate(pair_id = row_number()) %>% 
-  ungroup() %>% 
-  pivot_longer(cols = starts_with("alpha"),
-               names_to = "alpha",
-               values_to = "species") %>% 
-  drop_na(species)
-
 ## data for trait data
-## - clonal data are removed because of high uncertainty
-## - photosynthetic pathway needs to be fixed - some "uncertain"
-df_trait <- readRDS("data/allTraits.rds")  %>% 
-  janitor::clean_names() %>%  
-  dplyr::select(species,
-                ldmc, 
-                sla,
-                srl, 
-                leaf_n,
-                plant_height_vegetative,
-                seed_dry_mass,
-                growth_form, 
-                lifespan,
-                photosynthetic_pathway, 
-                n_fixation_type) %>% 
-  mutate(photosynthetic_pathway = case_when(photosynthetic_pathway == "uncertain" ~ "C3",
-                                            photosynthetic_pathway == "possible C4" ~ "C4",
-                                            photosynthetic_pathway == "possible CAM" ~ "CAM",
-                                            photosynthetic_pathway == "C3-C4 Intermediate" ~ "hybrid",
-                                            .default = photosynthetic_pathway))
+df_trait <- readRDS("data/data_trait.rds")
+
+## data for codominant species
+df_codom0 <- readRDS("data/data_codom.rds") %>% 
+  filter(trt_type == "control")
 
 ## data for species pool
-df_pool0 <- readRDS("data/allSppList.rds") %>% 
-  mutate(site_proj_comm = str_to_lower(site_proj_comm)) %>% 
-  distinct(site_proj_comm,
-           genus_species)
-
-# # how many plants are identified to species level
-# completeSpp <- df_pool0 %>%
-#   select(genus_species) %>%
-#   unique() %>% #start with 7725 unique species identifiers
-#   separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2',
-#                                      'other3', 'other4', 'other5', 'other6',
-#                                      'other7', 'other10'), sep=' ', remove=F) %>%
-#   filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.',
-#                           '1', '2', '3', 'seedling')),
-#          !is.na(species),
-#          !(genus %in% c('unknown', 'unk', 'ZZZZ', 'Unknown')),
-#          !(genus_species %in% c('forb, unidentified', 'geranium pot',
-#                                 'rosa spec', 'pycnan vir', 'annual forb',
-#                                 'fleshy forb', 'forb hibiscus',
-#                                 'cottony forb', 'forb six',
-#                                 'grass, unidentified', 'un lily',
-#                                 'unidentified dicot', 'poaceae family',
-#                                 'cyperaceae family', 'ericaceae family',
-#                                 'cryptantha blue', 'Stiff leathery',
-#                                 'Dangle flower', 'Aster opposite',
-#                                 'Long thin', '')),
-#          is.na(other1)) %>%  #6211 species identified to species level
-#   select(genus_species) %>%
-#   rename(species=genus_species) %>%
-#   left_join(df_trait) %>%
-#   na.omit() #3817 species have all traits
-# 
-# write.csv(test, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv')
-
+df_pool0 <- readRDS("data/data_pool.rds")  
 
 # select unique combo of site, project, community-type --------------------
 
 # codominance dataframe ####
 ## flag species row if any traits are missing
 ## use "df_codom_cl" for analysis
-df_flag <- df_codom0 %>% 
+df_codom <- df_codom0 %>% 
   distinct(species) %>% 
   left_join(df_trait) %>% 
-  mutate(flag = if_any(everything(),
-                       .fns = is.na)) %>% 
-  select(species, flag)
-
-df_codom <- df_codom0 %>%
-  left_join(df_flag) %>% 
-  group_by(site_proj_comm,
-           pair_id) %>% 
+  mutate(
+    flag = if_any(everything(), .fns = is.na)
+  ) %>% 
+  select(species, flag, ldmc:n_fixation_type) %>% 
+  right_join(df_codom0) %>% 
+  arrange(site_proj_comm, pair_id) %>% 
+  group_by(
+    site_proj_comm,
+    pair_id
+  ) %>% 
   mutate(flag_pair = any(flag)) %>% 
   ungroup()
 
@@ -143,70 +68,121 @@ if (n_all != sum(c(n_cl, n_omit)))
 # species pool dataframe ####
 ## use "df_pool_cl" for analysis
 df_pool <- df_pool0 %>% 
-  rename(species = genus_species) %>% 
   left_join(df_trait,
             by = "species") %>% 
-  mutate(flag = if_any(everything(),
-                       .fns = is.na))
+  mutate(flag = if_any(everything(), .fns = is.na)) %>% 
+  group_by(
+    site_proj_comm,
+    pair_id
+  ) %>% 
+  mutate(
+    flag_pair = any(flag)
+  ) %>% 
+  group_by(
+    site_proj_comm
+  ) %>% 
+  mutate(
+    n_na = sum(flag_pair) / 2,
+    p_na = n_na / n_distinct(pair_id)
+  ) %>% 
+  ungroup()
 
-## 3816 species have complete trait information
 df_pool_cl <- df_pool %>% 
-  group_by(site_proj_comm) %>% 
-  summarize(n = n_distinct(species),
-            n_na = sum(flag),
-            p_na = n_na / n) %>% 
-  right_join(df_pool,
-             by = "site_proj_comm") %>% 
-  drop_na(ldmc:n_fixation_type) %>% 
-  select(c(site_proj_comm:species, 
-           ldmc:n_fixation_type)) %>% 
-  mutate(across(.cols = where(is.character),
-                .fns = function(x) {
-                  if (n_distinct(x) > 2) {
-                    return(factor(x))
-                  } else {
-                    return(as.numeric(factor(x)))
-                  }
-                }))
+  filter(!flag_pair) %>% 
+  select(
+    site_proj_comm:species, 
+    p_na,
+    ldmc:n_fixation_type
+  )
 
 # trait distance ----------------------------------------------------------
 
 ## pool
-usite <- unique(df_codom_cl$site_proj_comm)
+usite <- sort(unique(df_codom_cl$site_proj_comm))
 
+## internal function for trait distance calculation
+fdfun <- function(data) {
+  data %>% 
+    select(ldmc:n_fixation_type) %>% 
+    mutate(
+      across(
+        .cols = where(is.character),
+        .fns = function(x) {
+          if (n_distinct(x) > 2) {
+            return(factor(x))
+          } else {
+            return(as.numeric(factor(x)))
+          }
+        }
+      )
+    ) %>% 
+    as.data.frame() %>% 
+    FD::gowdis()
+}
+
+## calculate RDFD
 df_p <- foreach(k = usite,
                 .combine = bind_rows) %do% {
                   
+                  print(which(k == usite))
+                  
                   ## define species pool of the site
-                  df_pool_i <- df_pool_cl %>% 
+                  df_pool_k <- df_pool_cl %>% 
                     filter(site_proj_comm == k) %>% 
                     arrange(species)
                   
-                  ## trait distance matrix for the site
-                  md <- df_pool_i %>%
-                    select(ldmc:n_fixation_type) %>% 
-                    as.data.frame() %>% 
-                    FD::gowdis() %>% 
-                    data.matrix()
+                  ## get a vector of trait distance for the pool
+                  idxp <- sort(unique(df_pool_k$pair_id))
                   
-                  ## species pool
-                  pool <- df_pool_i %>% 
-                    pull(species)
+                  d_pool <- 
+                    sapply(
+                      idxp,
+                      FUN = function(x) {
+                        df_pool_k %>% 
+                          filter(pair_id == x) %>% 
+                          fdfun()
+                      }
+                    )
                   
-                  ## select one site
-                  df_codom_i <- df_codom_cl %>% 
-                    filter(site_proj_comm == k) %>% 
-                    mutate(pair_id = as.numeric(factor(pair_id)))
+                  ## select codominants for the site
+                  df_codom_k <- df_codom_cl %>% 
+                    filter(site_proj_comm == k)
                   
-                  ## get trait distance of the co-dominants
-                  ## use `distinct()` to remove duplicates - duplicates appear when tri-dominants and co-dominants share species
-                  df_dist <- get_dist(data = df_codom_i,
-                                      pool = pool,
-                                      md = md) %>% 
-                    mutate(p_na = unique(df_pool_i$p_na)) %>% 
-                    distinct()
+                  ## a vector of trait distance for codominants
+                  idx <- sort(unique(df_codom_k$pair_id))
                   
-                  return(df_dist)
+                  df_d_codom <- 
+                    lapply(
+                      X = idx,
+                      FUN = function(x) {
+                        df_pair <- df_codom_k %>% 
+                          filter(pair_id == x)
+                        
+                        mfd <- fdfun(df_pair) %>% 
+                          as.matrix()
+                        
+                        get_dist(df_pair, mfd) %>% 
+                          mutate(pair_id = x, .before = species1)
+                      }
+                    ) %>% 
+                    bind_rows()
+                  
+                  ## RDFD = n_obs / n_pool
+                  n_obs <- sapply(
+                    X = df_d_codom[["d"]],
+                    FUN = function(y) {
+                      sum(y > d_pool)
+                    }
+                  )
+                  
+                  df_d_codom %>% 
+                    mutate(
+                      site_proj_comm = k,
+                      n_obs = n_obs,
+                      n_pool = length(d_pool),
+                      p_na = unique(df_pool_k$p_na)
+                    ) %>% 
+                    relocate(site_proj_comm)
                 }
 
 saveRDS(df_p, file = "data/traitp_ctr.rds")
@@ -231,7 +207,7 @@ df_m <- readRDS("data/envData.rds") %>%
   left_join(df_rich) %>% 
   right_join(df_p,
              by = "site_proj_comm") #%>% 
-  # filter(!is.na(anpp))
+# filter(!is.na(anpp))
 
 ## model with environmental gradient
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
@@ -249,6 +225,13 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
   summary()
 
 # figure ------------------------------------------------------------------
+
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
+             axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
+             plot.title = element_text(size=40, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_blank(), legend.text=element_text(size=40))
 
 df_m2  <- df_m %>% 
   dplyr::select(database, 
@@ -306,3 +289,38 @@ envGradientPlot <- ggplot(data=df_m2, aes(y = p,
         legend.position='bottom')
 
 ggsave("FigS7_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
+
+
+
+# set aside ---------------------------------------------------------------
+
+# # how many plants are identified to species level
+# completeSpp <- df_pool0 %>%
+#   select(genus_species) %>%
+#   unique() %>% #start with 7725 unique species identifiers
+#   separate(col=genus_species, into=c('genus', 'species', 'other1', 'other2',
+#                                      'other3', 'other4', 'other5', 'other6',
+#                                      'other7', 'other10'), sep=' ', remove=F) %>%
+#   filter(!(species %in% c('spp', 'SP.', 'sp', 'species', '-', '.',
+#                           '1', '2', '3', 'seedling')),
+#          !is.na(species),
+#          !(genus %in% c('unknown', 'unk', 'ZZZZ', 'Unknown')),
+#          !(genus_species %in% c('forb, unidentified', 'geranium pot',
+#                                 'rosa spec', 'pycnan vir', 'annual forb',
+#                                 'fleshy forb', 'forb hibiscus',
+#                                 'cottony forb', 'forb six',
+#                                 'grass, unidentified', 'un lily',
+#                                 'unidentified dicot', 'poaceae family',
+#                                 'cyperaceae family', 'ericaceae family',
+#                                 'cryptantha blue', 'Stiff leathery',
+#                                 'Dangle flower', 'Aster opposite',
+#                                 'Long thin', '')),
+#          is.na(other1)) %>%  #6211 species identified to species level
+#   select(genus_species) %>%
+#   rename(species=genus_species) %>%
+#   left_join(df_trait) %>%
+#   na.omit() #3817 species have all traits
+# 
+# write.csv(test, 'C:\\Users\\kjkomatsu\\OneDrive - UNCG\\manuscripts\\1_first author\\codominance\\data\\species that still need traits_full.csv')
+
+
