@@ -65,3 +65,77 @@ allSppPairs <- allSppList %>%
   distinct(site_proj_comm, species_1, species_2)
 
 # saveRDS(allSppPairs, file = "data/allSppPairs.rds")
+
+
+# Prepare data for trait analysis Q2 & Q3 ---------------------------------
+
+df_codom0_ctr <- readRDS("data/Q2ctlGroupsSite.rds") %>% 
+  mutate(trt_type = "control")
+
+df_codom0_trt <- readRDS("data/Q3trtGroupsSite.rds")
+
+## data for codominant species for treatment plots
+## - trt_type, re-coded to trt_category %in% Resource, Stress, Other, Mult.Trts
+df_codom0 <- bind_rows(df_codom0_ctr,
+                       df_codom0_trt) %>%  
+  mutate(trt_cat = case_when(trt_type == 'control' ~ 'control',
+                             trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K') ~ 'resource',
+                             trt_type %in% c('drought','temp','herb_removal') ~ 'stress',
+                             trt_type == 'multiple_trts' ~ 'mult',
+                             .default = 'other')) %>% 
+  mutate(site_proj_comm = paste0(site_code, "_", 
+                                 project_name, "_",
+                                 community_type) %>% 
+           str_to_lower(),
+         trt_type = str_to_lower(trt_type),
+         .before = site_code) %>% 
+  dplyr::select(-c(site_code,
+                   project_name,
+                   community_type,
+                   codom_freq_proj)) %>% 
+  filter(!is.na(alpha2)) %>%
+  group_by(site_proj_comm) %>% 
+  mutate(pair_id = row_number()) %>% 
+  ungroup() %>% 
+  pivot_longer(cols = starts_with("alpha"),
+               names_to = "alpha",
+               values_to = "species") %>% 
+  drop_na(species)
+
+## data for trait data
+## - clonal data are removed because of high uncertainty
+## - photosynthetic pathway needs to be fixed - some "uncertain"
+df_trait <- readRDS("data/allTraits.rds")  %>% 
+  janitor::clean_names() %>%  
+  dplyr::select(species,
+                ldmc, 
+                sla,
+                srl, 
+                leaf_n,
+                plant_height_vegetative,
+                seed_dry_mass,
+                growth_form, 
+                lifespan,
+                photosynthetic_pathway, 
+                n_fixation_type) %>% 
+  mutate(photosynthetic_pathway = case_when(photosynthetic_pathway == "uncertain" ~ "C3",
+                                            photosynthetic_pathway == "possible C4" ~ "C4",
+                                            photosynthetic_pathway == "possible CAM" ~ "CAM",
+                                            photosynthetic_pathway == "C3-C4 Intermediate" ~ "hybrid",
+                                            .default = photosynthetic_pathway))
+
+## data for species pool
+df_pool0 <- readRDS("data/allSppPairs.rds") %>% 
+  mutate(site_proj_comm = str_to_lower(site_proj_comm)) %>% 
+  group_by(site_proj_comm) %>% 
+  mutate(pair_id = row_number()) %>%
+  ungroup() %>% 
+  pivot_longer(
+    cols = starts_with("species_"),
+    values_to = "species"
+  ) %>% 
+  select(-name)
+
+saveRDS(df_trait, "data/data_trait.rds")
+saveRDS(df_codom0, "data/data_codom.rds")
+saveRDS(df_pool0, "data/data_pool.rds")
