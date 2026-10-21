@@ -162,14 +162,14 @@ df_p <- foreach(k = usite,
                           as.matrix()
                         
                         get_dist(df_pair, mfd) %>% 
-                          mutate(pair_id = x, .before = species1)
+                          mutate(pair_id = x, .before = sp1)
                       }
                     ) %>% 
                     bind_rows()
                   
                   ## RDFD = n_obs / n_pool
                   n_obs <- sapply(
-                    X = df_d_codom[["d"]],
+                    X = df_d_codom[["dist"]],
                     FUN = function(y) {
                       sum(y > d_pool)
                     }
@@ -191,23 +191,36 @@ saveRDS(df_p, file = "data/traitp_ctr.rds")
 
 ## RDFD value and environmental factors
 df_rich <- readRDS('data/modeSiteRichness.rds') %>% 
-  mutate(site_proj_comm=str_to_lower(paste(site_code, project_name, community_type, sep='_'))) %>% 
-  select(database, site_proj_comm, site_rich_mode)
+  mutate(
+    site_proj_comm = paste(site_code, 
+                           project_name, 
+                           community_type, 
+                           sep='_') %>% 
+      str_to_lower()
+  ) %>% 
+  select(
+    database, 
+    site_proj_comm, 
+    site_rich_mode
+  )
 
 df_m <- readRDS("data/envData.rds") %>% 
   janitor::clean_names() %>% 
-  mutate(site_proj_comm = paste0(site_code, "_", 
-                                 project_name, "_",
-                                 community_type) %>% 
-           str_to_lower(),
-         .before = site_code) %>% 
+  mutate(
+    site_proj_comm = paste0(site_code, "_", 
+                            project_name, "_",
+                            community_type) %>% 
+      str_to_lower(),
+    .before = site_code
+  ) %>% 
   dplyr::select(-c(site_code,
                    project_name,
                    community_type)) %>% 
   left_join(df_rich) %>% 
-  right_join(df_p,
-             by = "site_proj_comm") #%>% 
-# filter(!is.na(anpp))
+  right_join(
+    df_p,
+    by = "site_proj_comm"
+  )
 
 ## model with environmental gradient
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
@@ -227,43 +240,75 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
 # figure ------------------------------------------------------------------
 
 theme_set(theme_bw())
-theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
-             axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
-             plot.title = element_text(size=40, vjust=2),
-             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
-             legend.title=element_blank(), legend.text=element_text(size=40))
+theme_update(
+  axis.title.x = 
+    element_text(
+      size = 40, 
+      vjust = -0.35, 
+      margin = margin(t = 15)),
+  axis.text.x = 
+    element_text(
+      size = 34, 
+      color = 'black'
+    ),
+  axis.title.y = 
+    element_text(
+      size = 40, 
+      angle = 90, 
+      vjust = 0.5, 
+      margin = margin(r = 15)), 
+  axis.text.y = 
+    element_text(
+      size = 34, 
+      color='black'
+    ),
+  plot.title = 
+    element_text(
+      size = 40, 
+      vjust=2
+    ),
+  panel.grid.major = element_blank(), 
+  panel.grid.minor = element_blank(),
+  legend.title = element_blank(), 
+  legend.text = element_text(size = 40)
+)
 
 df_m2  <- df_m %>% 
-  dplyr::select(database, 
-                site_proj_comm,
-                map:site_rich_mode, 
-                pair_id, 
-                sp1, 
-                sp2, 
-                dist, 
-                ses, 
-                p,
-                n_pool,
-                n_obs,
-                p_na) %>% 
-  pivot_longer(cols = c(map,
-                        mat, 
-                        # anpp, 
-                        gamma_rich, 
-                        site_rich_mode,
-                        human_footprint, 
-                        n_deposition),
-               values_to = "x",
-               names_to = "var") %>% 
-  mutate(var = case_when(var == "map" ~ "MAP",
-                         var == "mat" ~ "MAT",
-                         # var == "anpp" ~ "ANPP",
-                         var == "gamma_rich" ~ "Gamma Diversity",
-                         var == "site_rich_mode" ~ "Alpha Diversity",
-                         var == "human_footprint" ~ "Human Footprint",
-                         var == "n_deposition" ~ "N Deposition",
-                         .default = var) %>% 
-           factor(levels = c('MAP','MAT','Gamma Diversity','Alpha Diversity','Human Footprint','N Deposition'))
+  dplyr::select(
+    database, 
+    site_proj_comm,
+    map:site_rich_mode, 
+    pair_id, 
+    sp1, 
+    sp2, 
+    dist, 
+    ses, 
+    p,
+    n_pool,
+    n_obs,
+    p_na
+  ) %>% 
+  pivot_longer(
+    cols = c(map,
+             mat, 
+             # anpp, 
+             gamma_rich, 
+             site_rich_mode,
+             human_footprint, 
+             n_deposition),
+    values_to = "x",
+    names_to = "var"
+  ) %>% 
+  mutate(
+    var = case_when(var == "map" ~ "MAP",
+                    var == "mat" ~ "MAT",
+                    # var == "anpp" ~ "ANPP",
+                    var == "gamma_rich" ~ "Gamma Diversity",
+                    var == "site_rich_mode" ~ "Alpha Diversity",
+                    var == "human_footprint" ~ "Human Footprint",
+                    var == "n_deposition" ~ "N Deposition",
+                    .default = var) %>% 
+      factor(levels = c('MAP','MAT','Gamma Diversity','Alpha Diversity','Human Footprint','N Deposition'))
   )
 
 envGradientPlot <- ggplot(data=df_m2, aes(y = p,

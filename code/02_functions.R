@@ -90,9 +90,9 @@ get_dist <- function(df_pair, mfd) {
   lapply(1:ncol(ij), function(j) {
     d <- mfd[ij[1, j], ij[2, j]]
     dplyr::tibble(
-      species1 = dplyr::pull(df_pair[ij[1, j],], species),
-      species2 = dplyr::pull(df_pair[ij[2, j],], species),
-      d = d
+      sp1 = dplyr::pull(df_pair[ij[1, j],], species),
+      sp2 = dplyr::pull(df_pair[ij[2, j],], species),
+      dist = d
     )
   }) %>% 
     dplyr::bind_rows()
