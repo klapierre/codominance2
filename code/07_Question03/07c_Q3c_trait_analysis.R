@@ -20,83 +20,33 @@ source("code/02_functions.R")
 
 # read data ---------------------------------------------------------------
 
-df_codom0_ctr <- readRDS("data/Q2ctlGroupsSite.rds") %>% 
-  mutate(trt_type = "control")
-
-df_codom0_trt <- readRDS("data/Q3trtGroupsSite.rds")
-
-## data for codominant species for treatment plots
-## - trt_type, re-coded to trt_category %in% Resource, Stress, Other, Mult.Trts
-df_codom0 <- bind_rows(df_codom0_ctr,
-                       df_codom0_trt) %>%  
-  mutate(trt_cat = case_when(trt_type == 'control' ~ 'control',
-                             trt_type %in% c('CO2','N','P','N*P','mult_nutrient','irr','K') ~ 'resource',
-                             trt_type %in% c('drought','temp','herb_removal') ~ 'stress',
-                             trt_type == 'multiple_trts' ~ 'mult',
-                             .default = 'other')) %>% 
-  mutate(site_proj_comm = paste0(site_code, "_", 
-                                 project_name, "_",
-                                 community_type) %>% 
-           str_to_lower(),
-         trt_type = str_to_lower(trt_type),
-         .before = site_code) %>% 
-  dplyr::select(-c(site_code,
-                   project_name,
-                   community_type,
-                   codom_freq_proj)) %>% 
-  filter(!is.na(alpha2)) %>%
-  group_by(site_proj_comm) %>% 
-  mutate(pair_id = row_number()) %>% 
-  ungroup() %>% 
-  pivot_longer(cols = starts_with("alpha"),
-               names_to = "alpha",
-               values_to = "species") %>% 
-  drop_na(species)
-
 ## data for trait data
-## - clonal data are removed because of high uncertainty
-## - photosynthetic pathway needs to be fixed - some "uncertain"
-df_trait <- readRDS("data/allTraits.rds")  %>% 
-  janitor::clean_names() %>%  
-  dplyr::select(species,
-                ldmc, 
-                sla,
-                srl, 
-                leaf_n,
-                plant_height_vegetative,
-                seed_dry_mass,
-                growth_form, 
-                lifespan,
-                photosynthetic_pathway, 
-                n_fixation_type) %>% 
-  mutate(photosynthetic_pathway = case_when(photosynthetic_pathway == "uncertain" ~ "C3",
-                                            photosynthetic_pathway == "possible C4" ~ "C4",
-                                            photosynthetic_pathway == "possible CAM" ~ "CAM",
-                                            photosynthetic_pathway == "C3-C4 Intermediate" ~ "hybrid",
-                                            .default = photosynthetic_pathway))
+df_trait <- readRDS("data/data_trait.rds")
+
+## data for codominant species
+df_codom0 <- readRDS("data/data_codom.rds")
 
 ## data for species pool
-df_pool0 <- readRDS("data/allSppList.rds") %>% 
-  mutate(site_proj_comm = str_to_lower(site_proj_comm)) %>% 
-  distinct(site_proj_comm,
-           genus_species)
+df_pool0 <- readRDS("data/data_pool.rds")  
 
 # select unique combo of site, project, community-type --------------------
 
 # codominance dataframe ####
 ## flag species row if any traits are missing
 ## use "df_codom_cl" for analysis
-df_flag <- df_codom0 %>% 
+df_codom <- df_codom0 %>% 
   distinct(species) %>% 
   left_join(df_trait) %>% 
-  mutate(flag = if_any(everything(),
-                       .fns = is.na)) %>% 
-  select(species, flag)
-
-df_codom <- df_codom0 %>%
-  left_join(df_flag) %>% 
-  group_by(site_proj_comm,
-           pair_id) %>% 
+  mutate(
+    flag = if_any(everything(), .fns = is.na)
+  ) %>% 
+  select(species, flag, ldmc:n_fixation_type) %>% 
+  right_join(df_codom0) %>% 
+  arrange(site_proj_comm, pair_id) %>% 
+  group_by(
+    site_proj_comm,
+    pair_id
+  ) %>% 
   mutate(flag_pair = any(flag)) %>% 
   ungroup()
 
@@ -117,92 +67,146 @@ if (n_all != sum(c(n_cl, n_omit)))
 # species pool dataframe ####
 ## use "df_pool_cl" for analysis
 df_pool <- df_pool0 %>% 
-  rename(species = genus_species) %>% 
   left_join(df_trait,
             by = "species") %>% 
-  mutate(flag = if_any(everything(),
-                       .fns = is.na))
+  mutate(flag = if_any(everything(), .fns = is.na)) %>% 
+  group_by(
+    site_proj_comm,
+    pair_id
+  ) %>% 
+  mutate(
+    flag_pair = any(flag)
+  ) %>% 
+  group_by(
+    site_proj_comm
+  ) %>% 
+  mutate(
+    n_na = sum(flag_pair) / 2,
+    p_na = n_na / n_distinct(pair_id)
+  ) %>% 
+  ungroup()
 
 df_pool_cl <- df_pool %>% 
-  group_by(site_proj_comm) %>% 
-  summarize(n = n_distinct(species),
-            n_na = sum(flag),
-            p_na = n_na / n) %>% 
-  right_join(df_pool,
-             by = "site_proj_comm") %>% 
-  drop_na(ldmc:n_fixation_type) %>% 
-  select(c(site_proj_comm:species, 
-           ldmc:n_fixation_type)) %>% 
-  mutate(across(.cols = where(is.character),
-                .fns = function(x) {
-                  if (n_distinct(x) > 2) {
-                    return(factor(x))
-                  } else {
-                    return(as.numeric(factor(x)))
-                  }
-                }))
+  filter(!flag_pair) %>% 
+  select(
+    site_proj_comm:species, 
+    p_na,
+    ldmc:n_fixation_type
+  )
 
 # trait distance ----------------------------------------------------------
 
 ## pool
-usite <- unique(df_codom_cl$site_proj_comm)
+usite <- sort(unique(df_codom_cl$site_proj_comm))
 
-df_ses <- foreach(k = usite,
-                  .combine = bind_rows) %do% {
-                    
-                    ## define species pool of the site
-                    df_pool_i <- df_pool_cl %>% 
-                      filter(site_proj_comm == k) %>% 
-                      arrange(species)
-                    
-                    ## trait distance matrix for the site
-                    md <- df_pool_i %>%
-                      select(ldmc:n_fixation_type) %>% 
-                      as.data.frame() %>% 
-                      FD::gowdis() %>% 
-                      data.matrix()
-                    
-                    ## species pool
-                    pool <- df_pool_i %>% 
-                      pull(species)
-                    
-                    ## select one site
-                    df_codom_i <- df_codom_cl %>% 
-                      filter(site_proj_comm == k) %>% 
-                      mutate(pair_id = as.numeric(factor(pair_id)))
-                    
-                    df_dist <- get_dist(data = df_codom_i,
-                                        pool = pool,
-                                        md = md) %>% 
-                      left_join(distinct(df_codom_i,
-                                         pair_id,
-                                         trt_type,
-                                         trt_cat),
-                                by = "pair_id") %>% 
-                      mutate(p_na = unique(df_pool_i$p_na))
-                    
-                    return(df_dist)
-                  } %>% 
+## internal function for trait distance calculation
+fdfun <- function(data) {
+  data %>% 
+    select(ldmc:n_fixation_type) %>% 
+    mutate(
+      across(
+        .cols = where(is.character),
+        .fns = function(x) {
+          if (n_distinct(x) > 2) {
+            return(factor(x))
+          } else {
+            return(as.numeric(factor(x)))
+          }
+        }
+      )
+    ) %>% 
+    as.data.frame() %>% 
+    FD::gowdis()
+}
+
+df_p <- foreach(k = usite,
+                .combine = bind_rows) %do% {
+                  
+                  print(which(k == usite))
+                  
+                  ## define species pool of the site
+                  df_pool_k <- df_pool_cl %>% 
+                    filter(site_proj_comm == k) %>% 
+                    arrange(pair_id)
+                  
+                  ## get a vector of trait distance for the pool
+                  idxp <- sort(unique(df_pool_k$pair_id))
+                  
+                  d_pool <- 
+                    sapply(
+                      idxp,
+                      FUN = function(x) {
+                        df_pool_k %>% 
+                          filter(pair_id == x) %>% 
+                          fdfun()
+                      }
+                    )
+                  
+                  ## select codominants for the site
+                  df_codom_k <- df_codom_cl %>% 
+                    filter(site_proj_comm == k)
+                  
+                  ## a vector of trait distance for codominants
+                  idx <- sort(unique(df_codom_k$pair_id))
+                  
+                  df_d_codom <- 
+                    lapply(
+                      X = idx,
+                      FUN = function(x) {
+                        df_pair <- df_codom_k %>% 
+                          filter(pair_id == x)
+                        
+                        df_trt <- df_pair %>% 
+                          group_by(pair_id) %>% 
+                          summarize(
+                            trt_cat = unique(trt_cat), 
+                            .groups = "drop"
+                          )
+                        
+                        mfd <- fdfun(df_pair) %>% 
+                          as.matrix()
+                        
+                        get_dist(df_pair, mfd) %>% 
+                          mutate(
+                            pair_id = x, 
+                            .before = sp1
+                          ) %>% 
+                          left_join(df_trt)
+                      }
+                    ) %>% 
+                    bind_rows()
+                  
+                  ## RDFD = n_obs / n_pool
+                  n_obs <- sapply(
+                    X = df_d_codom[["dist"]],
+                    FUN = function(y) {
+                      sum(y > d_pool)
+                    }
+                  )
+                  
+                  df_d_codom %>% 
+                    mutate(
+                      site_proj_comm = k,
+                      n_obs = n_obs,
+                      n_pool = length(d_pool),
+                      p_na = unique(df_pool_k$p_na)
+                    ) %>% 
+                    relocate(site_proj_comm)
+                } %>% 
   filter(trt_cat != "other") # NOTE: category "other" has only 5 data points
 
-saveRDS(df_ses, file = "data/traitp_trt.rds")
-
-# ## ses-based analysis
-# m <- lm(ses ~ trt_cat,
-#         data = df_ses, 
-#         weights = 1 - p_na)
-# summary(m)
+saveRDS(df_p, file = "data/traitp_trt.rds")
 
 ## RDFD-based analysis, beta-binomial by treatment category
 glmmTMB(cbind(n_obs, n_pool - n_obs) ~ trt_cat,
-        data = df_ses,
+        data = df_p,
         family = betabinomial(),
         weights = 1 - p_na) %>% 
   summary()
 
 ## RDFD-based analysis, beta-binomial by treatment type
 glmmTMB(cbind(n_obs, n_pool - n_obs) ~ trt_type,
-        data = filter(df_ses, trt_type!='co2'),
+        data = filter(df_p, trt_type !='co2'),
         family = betabinomial(),
         weights = 1 - p_na) %>% 
   summary()
@@ -227,7 +231,8 @@ theme_update(plot.title = element_text(size = 20,
              legend.text = element_text(size = 9))
 
 ## set new column for visual
-df_ses <- df_ses %>% 
+df_p <- df_p %>% 
+  mutate(p = n_obs / n_pool) %>% 
   mutate(trt_label = case_when(trt_cat == "control" ~ "Control",
                                trt_cat == "mult" ~ "Mult. Trt",
                                trt_cat == "resource" ~ "Resource",
@@ -238,7 +243,7 @@ df_ses <- df_ses %>%
                              "Mult. Trt")))
 
 ## density gradient
-df_dens <- df_ses %>%
+df_dens <- df_p %>%
   group_by(trt_label) %>% 
   reframe(x = density(p,
                       n = 1000,
@@ -263,7 +268,7 @@ df_dens <- df_ses %>%
   ungroup()
 
 ## draw figure
-g_p_main <- df_ses %>% 
+g_p_main <- df_p %>% 
   ggplot() +
   geom_tile(data = df_dens %>% 
               filter(trt_label == "Control") %>% 
@@ -347,7 +352,7 @@ ggsave("Fig3_all.png", g_p, width = 9, height = 5, dpi = 400)
 
 ### by treatment type ---------------------------------------------------------
 
-df_ses <- df_ses %>% 
+df_p <- df_p %>% 
   mutate(trt_label = case_when(trt_type == "control" ~ "(A) Unmanipulated",
                                trt_type == "n" ~ "(B) N",
                                trt_type == "p" ~ "(C) P",
@@ -364,7 +369,7 @@ df_ses <- df_ses %>%
                              "CO2","(G) Irrigation","(H) Drought","(I) Warming",
                              "(J) Herb. Removal","(K) Mult. Treatments")))
 ## density gradient
-df_dens <- df_ses %>%
+df_dens <- df_p %>%
   filter(trt_label!='CO2') %>% 
   group_by(trt_label) %>% 
   reframe(x = density(p,
@@ -390,7 +395,7 @@ df_dens <- df_ses %>%
   ungroup()
 
 ## draw figure
-g_p_main <- df_ses %>% 
+g_p_main <- df_p %>% 
   ggplot() +
   geom_tile(data = df_dens %>% 
               filter(trt_label == "(A) Unmanipulated") %>% 
