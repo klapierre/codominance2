@@ -180,6 +180,7 @@ df_p <- foreach(k = usite,
                       site_proj_comm = k,
                       n_obs = n_obs,
                       n_pool = length(d_pool),
+                      rdfd = n_obs / n_pool,
                       p_na = unique(df_pool_k$p_na)
                     ) %>% 
                     relocate(site_proj_comm)
@@ -283,7 +284,7 @@ df_m2  <- df_m %>%
     sp2, 
     dist, 
     ses, 
-    p,
+    rdfd,
     n_pool,
     n_obs,
     p_na
@@ -311,12 +312,12 @@ df_m2  <- df_m %>%
       factor(levels = c('MAP','MAT','Gamma Diversity','Alpha Diversity','Human Footprint','N Deposition'))
   )
 
-envGradientPlot <- ggplot(data=df_m2, aes(y = p,
+envGradientPlot <- ggplot(data=df_m2, aes(y = rdfd,
                                           x = x)) +
   geom_point(alpha = 0.7, size=5) +
   # geom_smooth(
   #   data = subset(df_m2, var == "MAP"),
-  #   aes(x = x, y = p, group = 1),
+  #   aes(x = x, y = rdfd, group = 1),
   #   method = "lm",
   #   se = F,
   #   color = "black",

@@ -160,6 +160,7 @@ df_p <- foreach(k = usite,
                           group_by(pair_id) %>% 
                           summarize(
                             trt_cat = unique(trt_cat), 
+                            trt_type = unique(trt_type), 
                             .groups = "drop"
                           )
                         
@@ -189,6 +190,7 @@ df_p <- foreach(k = usite,
                       site_proj_comm = k,
                       n_obs = n_obs,
                       n_pool = length(d_pool),
+                      rdfd = n_obs / n_pool,
                       p_na = unique(df_pool_k$p_na)
                     ) %>% 
                     relocate(site_proj_comm)
