@@ -18,6 +18,13 @@ rm(list = ls())
 source("code/01_library.R")
 source("code/02_functions.R")
 
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=40, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=34, color='black'),
+             axis.title.y=element_text(size=40, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=34, color='black'),
+             plot.title = element_text(size=40, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_blank(), legend.text=element_text(size=40))
+
 # read data ---------------------------------------------------------------
 
 ## data for trait data
@@ -30,24 +37,23 @@ df_codom0 <- readRDS("data/data_codom.rds") %>%
 ## data for species pool
 df_pool0 <- readRDS("data/data_pool.rds")  
 
+
 # select unique combo of site, project, community-type --------------------
 
 # codominance dataframe ####
 ## flag species row if any traits are missing
 ## use "df_codom_cl" for analysis
-df_codom <- df_codom0 %>% 
+df_flag <- df_codom0 %>% 
   distinct(species) %>% 
   left_join(df_trait) %>% 
-  mutate(
-    flag = if_any(everything(), .fns = is.na)
-  ) %>% 
-  select(species, flag, ldmc:n_fixation_type) %>% 
-  right_join(df_codom0) %>% 
-  arrange(site_proj_comm, pair_id) %>% 
-  group_by(
-    site_proj_comm,
-    pair_id
-  ) %>% 
+  mutate(flag = if_any(everything(),
+                       .fns = is.na)) %>% 
+  select(species, flag)
+
+df_codom <- df_codom0 %>%
+  left_join(df_flag) %>% 
+  group_by(site_proj_comm,
+           pair_id) %>% 
   mutate(flag_pair = any(flag)) %>% 
   ungroup()
 
@@ -68,160 +74,95 @@ if (n_all != sum(c(n_cl, n_omit)))
 # species pool dataframe ####
 ## use "df_pool_cl" for analysis
 df_pool <- df_pool0 %>% 
+  rename(species = genus_species) %>% 
   left_join(df_trait,
             by = "species") %>% 
-  mutate(flag = if_any(everything(), .fns = is.na)) %>% 
-  group_by(
-    site_proj_comm,
-    pair_id
-  ) %>% 
-  mutate(
-    flag_pair = any(flag)
-  ) %>% 
-  group_by(
-    site_proj_comm
-  ) %>% 
-  mutate(
-    n_na = sum(flag_pair) / 2,
-    p_na = n_na / n_distinct(pair_id)
-  ) %>% 
-  ungroup()
+  mutate(flag = if_any(everything(),
+                       .fns = is.na))
 
+## 3816 species have complete trait information
 df_pool_cl <- df_pool %>% 
-  filter(!flag_pair) %>% 
-  select(
-    site_proj_comm:species, 
-    p_na,
-    ldmc:n_fixation_type
-  )
+  group_by(site_proj_comm) %>% 
+  summarize(n = n_distinct(species),
+            n_na = sum(flag),
+            p_na = n_na / n) %>% 
+  right_join(df_pool,
+             by = "site_proj_comm") %>% 
+  drop_na(ldmc:n_fixation_type) %>% 
+  select(c(site_proj_comm:species, 
+           ldmc:n_fixation_type)) %>% 
+  mutate(across(.cols = where(is.character),
+                .fns = function(x) {
+                  if (n_distinct(x) > 2) {
+                    return(factor(x))
+                  } else {
+                    return(as.numeric(factor(x)))
+                  }
+                }))
 
 # trait distance ----------------------------------------------------------
 
 ## pool
-usite <- sort(unique(df_codom_cl$site_proj_comm))
+usite <- unique(df_codom_cl$site_proj_comm)
 
-## internal function for trait distance calculation
-fdfun <- function(data) {
-  data %>% 
-    select(ldmc:n_fixation_type) %>% 
-    mutate(
-      across(
-        .cols = where(is.character),
-        .fns = function(x) {
-          if (n_distinct(x) > 2) {
-            return(factor(x))
-          } else {
-            return(as.numeric(factor(x)))
-          }
-        }
-      )
-    ) %>% 
-    as.data.frame() %>% 
-    FD::gowdis()
-}
-
-## calculate RDFD
 df_p <- foreach(k = usite,
                 .combine = bind_rows) %do% {
                   
-                  print(which(k == usite))
-                  
                   ## define species pool of the site
-                  df_pool_k <- df_pool_cl %>% 
+                  df_pool_i <- df_pool_cl %>% 
                     filter(site_proj_comm == k) %>% 
                     arrange(species)
                   
-                  ## get a vector of trait distance for the pool
-                  idxp <- sort(unique(df_pool_k$pair_id))
+                  ## trait distance matrix for the site
+                  md <- df_pool_i %>%
+                    select(ldmc:n_fixation_type) %>% 
+                    as.data.frame() %>% 
+                    FD::gowdis() %>% 
+                    data.matrix()
                   
-                  d_pool <- 
-                    sapply(
-                      idxp,
-                      FUN = function(x) {
-                        df_pool_k %>% 
-                          filter(pair_id == x) %>% 
-                          fdfun()
-                      }
-                    )
+                  ## species pool
+                  pool <- df_pool_i %>% 
+                    pull(species)
                   
-                  ## select codominants for the site
-                  df_codom_k <- df_codom_cl %>% 
-                    filter(site_proj_comm == k)
+                  ## select one site
+                  df_codom_i <- df_codom_cl %>% 
+                    filter(site_proj_comm == k) %>% 
+                    mutate(pair_id = as.numeric(factor(pair_id)))
                   
-                  ## a vector of trait distance for codominants
-                  idx <- sort(unique(df_codom_k$pair_id))
+                  ## get trait distance of the co-dominants
+                  ## use `distinct()` to remove duplicates - duplicates appear when tri-dominants and co-dominants share species
+                  df_dist <- get_dist(data = df_codom_i,
+                                      pool = pool,
+                                      md = md) %>% 
+                    mutate(p_na = unique(df_pool_i$p_na)) %>% 
+                    distinct()
                   
-                  df_d_codom <- 
-                    lapply(
-                      X = idx,
-                      FUN = function(x) {
-                        df_pair <- df_codom_k %>% 
-                          filter(pair_id == x)
-                        
-                        mfd <- fdfun(df_pair) %>% 
-                          as.matrix()
-                        
-                        get_dist(df_pair, mfd) %>% 
-                          mutate(pair_id = x, .before = sp1)
-                      }
-                    ) %>% 
-                    bind_rows()
-                  
-                  ## RDFD = n_obs / n_pool
-                  n_obs <- sapply(
-                    X = df_d_codom[["dist"]],
-                    FUN = function(y) {
-                      sum(y > d_pool)
-                    }
-                  )
-                  
-                  df_d_codom %>% 
-                    mutate(
-                      site_proj_comm = k,
-                      n_obs = n_obs,
-                      n_pool = length(d_pool),
-                      rdfd = n_obs / n_pool,
-                      p_na = unique(df_pool_k$p_na)
-                    ) %>% 
-                    relocate(site_proj_comm)
+                  return(df_dist)
                 }
 
-saveRDS(df_p, file = "data/traitp_ctr.rds")
+# saveRDS(df_p, file = "data/traitp_ctr.rds")
 
 # analysis ----------------------------------------------------------------
 
 ## RDFD value and environmental factors
 df_rich <- readRDS('data/modeSiteRichness.rds') %>% 
-  mutate(
-    site_proj_comm = paste(site_code, 
-                           project_name, 
-                           community_type, 
-                           sep='_') %>% 
-      str_to_lower()
-  ) %>% 
-  select(
-    database, 
-    site_proj_comm, 
-    site_rich_mode
-  )
+  mutate(site_proj_comm=str_to_lower(paste(site_code, project_name, community_type, sep='_'))) %>% 
+  select(database, site_proj_comm, site_rich_mode)
 
 df_m <- readRDS("data/envData.rds") %>% 
   janitor::clean_names() %>% 
-  mutate(
-    site_proj_comm = paste0(site_code, "_", 
-                            project_name, "_",
-                            community_type) %>% 
-      str_to_lower(),
-    .before = site_code
-  ) %>% 
+  mutate(site_proj_comm = paste0(site_code, "_", 
+                                 project_name, "_",
+                                 community_type) %>% 
+           str_to_lower(),
+         .before = site_code) %>% 
   dplyr::select(-c(site_code,
                    project_name,
                    community_type)) %>% 
   left_join(df_rich) %>% 
-  right_join(
-    df_p,
-    by = "site_proj_comm"
-  )
+  right_join(df_p,
+             by = "site_proj_comm") #%>% 
+# filter(!is.na(anpp))
 
 ## model with environmental gradient
 glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
@@ -240,84 +181,45 @@ glmmTMB::glmmTMB(cbind(n_obs, n_pool - n_obs) ~
 
 # figure ------------------------------------------------------------------
 
-theme_set(theme_bw())
-theme_update(
-  axis.title.x = 
-    element_text(
-      size = 40, 
-      vjust = -0.35, 
-      margin = margin(t = 15)),
-  axis.text.x = 
-    element_text(
-      size = 34, 
-      color = 'black'
-    ),
-  axis.title.y = 
-    element_text(
-      size = 40, 
-      angle = 90, 
-      vjust = 0.5, 
-      margin = margin(r = 15)), 
-  axis.text.y = 
-    element_text(
-      size = 34, 
-      color='black'
-    ),
-  plot.title = 
-    element_text(
-      size = 40, 
-      vjust=2
-    ),
-  panel.grid.major = element_blank(), 
-  panel.grid.minor = element_blank(),
-  legend.title = element_blank(), 
-  legend.text = element_text(size = 40)
-)
-
 df_m2  <- df_m %>% 
-  dplyr::select(
-    database, 
-    site_proj_comm,
-    map:site_rich_mode, 
-    pair_id, 
-    sp1, 
-    sp2, 
-    dist, 
-    # ses, 
-    rdfd,
-    n_pool,
-    n_obs,
-    p_na
-  ) %>% 
-  pivot_longer(
-    cols = c(map,
-             mat, 
-             # anpp, 
-             gamma_rich, 
-             site_rich_mode,
-             human_footprint, 
-             n_deposition),
-    values_to = "x",
-    names_to = "var"
-  ) %>% 
-  mutate(
-    var = case_when(var == "map" ~ "MAP",
-                    var == "mat" ~ "MAT",
-                    # var == "anpp" ~ "ANPP",
-                    var == "gamma_rich" ~ "Gamma Diversity",
-                    var == "site_rich_mode" ~ "Alpha Diversity",
-                    var == "human_footprint" ~ "Human Footprint",
-                    var == "n_deposition" ~ "N Deposition",
-                    .default = var) %>% 
-      factor(levels = c('MAP','MAT','Gamma Diversity','Alpha Diversity','Human Footprint','N Deposition'))
+  dplyr::select(database, 
+                site_proj_comm,
+                map:site_rich_mode, 
+                pair_id, 
+                sp1, 
+                sp2, 
+                dist, 
+                ses, 
+                p,
+                n_pool,
+                n_obs,
+                p_na) %>% 
+  pivot_longer(cols = c(map,
+                        mat, 
+                        # anpp, 
+                        gamma_rich, 
+                        site_rich_mode,
+                        human_footprint, 
+                        n_deposition),
+               values_to = "x",
+               names_to = "var") %>% 
+  mutate(var = case_when(var == "map" ~ "MAP",
+                         var == "mat" ~ "MAT",
+                         # var == "anpp" ~ "ANPP",
+                         var == "gamma_rich" ~ "Gamma Diversity",
+                         var == "site_rich_mode" ~ "Alpha Diversity",
+                         var == "human_footprint" ~ "Human Footprint",
+                         var == "n_deposition" ~ "N Deposition",
+                         .default = var) %>% 
+           factor(levels = c('MAP','MAT','Gamma Diversity','Alpha Diversity','Human Footprint','N Deposition'))
   )
 
-envGradientPlot <- ggplot(data=df_m2, aes(y = rdfd,
+envGradientPlot <- ggplot(data=df_m2, aes(y = p,
                                           x = x)) +
   geom_point(alpha = 0.7, size=5) +
   # geom_smooth(
   #   data = subset(df_m2, var == "MAP"),
-  #   aes(x = x, y = rdfd, group = 1),
+  #   aes(x = x, y = p, group = 1),
   #   method = "lm",
   #   se = F,
   #   color = "black",

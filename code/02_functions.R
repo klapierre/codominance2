@@ -36,65 +36,65 @@ barGraphStats <- function(data, variable, byFactorNames) {
 #   return(ux[which.max(tabulate(match(x, ux)))])
 # }
 
-# get_dist <- function(data, pool, md) {
-#   
-#   n_pair <- n_distinct(data$pair_id)
-#   df_dist <- foreach(i = 1:n_pair,
-#                      .combine = bind_rows) %do% {
-#                        
-#                        ## select a given set of co-dominants
-#                        df_pair <- data %>% 
-#                          filter(pair_id == i)
-#                        
-#                        ## pairwise co-dominants
-#                        codom <- pull(df_pair, species)
-#                        m_combo <- combn(codom, 2)
-#                        
-#                        ## calculate trait distance for each pair
-#                        d <- NULL
-#                        for (j in seq_len(ncol(m_combo))) {
-#                          v_codom <- m_combo[, j]
-#                          key <- sapply(v_codom,
-#                                        function(x) which(x == pool))
-#                          d[j] <- md[key[1], key[2]]
-#                        }
-#                        
-#                        ## distance distribution for the pool
-#                        vd <- md[lower.tri(md)]
-#                        mu_d <- mean(vd)
-#                        sd_d <- sd(vd)
-#                        ses <- (d - mu_d) / sd_d
-#                        
-#                        ## return pairwise distance and proportion > observed
-#                        distinct(df_pair, 
-#                                 site_proj_comm) %>% 
-#                          bind_cols(tibble(pair_id = i,
-#                                           sp1 = m_combo[1, ],
-#                                           sp2 = m_combo[2, ],
-#                                           dist = d,
-#                                           ses = ses,
-#                                           p = sapply(d, function(x) mean(x > vd)),
-#                                           n_pool = length(vd),
-#                                           n_obs = sapply(d, function(x) sum(x > vd)))
-#                          ) %>% 
-#                          return()
-#                      }
-#   
-#   return(df_dist)
-# }
+get_dist <- function(data, pool, md) {
 
-get_dist <- function(df_pair, mfd) {
-  
-  ij <- combn(nrow(df_pair), 2)
-  
-  lapply(1:ncol(ij), function(j) {
-    d <- mfd[ij[1, j], ij[2, j]]
-    dplyr::tibble(
-      sp1 = dplyr::pull(df_pair[ij[1, j],], species),
-      sp2 = dplyr::pull(df_pair[ij[2, j],], species),
-      dist = d
-    )
-  }) %>% 
-    dplyr::bind_rows()
-  
+  n_pair <- n_distinct(data$pair_id)
+  df_dist <- foreach(i = 1:n_pair,
+                     .combine = bind_rows) %do% {
+
+                       ## select a given set of co-dominants
+                       df_pair <- data %>%
+                         filter(pair_id == i)
+
+                       ## pairwise co-dominants
+                       codom <- pull(df_pair, species)
+                       m_combo <- combn(codom, 2)
+
+                       ## calculate trait distance for each pair
+                       d <- NULL
+                       for (j in seq_len(ncol(m_combo))) {
+                         v_codom <- m_combo[, j]
+                         key <- sapply(v_codom,
+                                       function(x) which(x == pool))
+                         d[j] <- md[key[1], key[2]]
+                       }
+
+                       ## distance distribution for the pool
+                       vd <- md[lower.tri(md)]
+                       mu_d <- mean(vd)
+                       sd_d <- sd(vd)
+                       ses <- (d - mu_d) / sd_d
+
+                       ## return pairwise distance and proportion > observed
+                       distinct(df_pair,
+                                site_proj_comm) %>%
+                         bind_cols(tibble(pair_id = i,
+                                          sp1 = m_combo[1, ],
+                                          sp2 = m_combo[2, ],
+                                          dist = d,
+                                          ses = ses,
+                                          p = sapply(d, function(x) mean(x > vd)),
+                                          n_pool = length(vd),
+                                          n_obs = sapply(d, function(x) sum(x > vd)))
+                         ) %>%
+                         return()
+                     }
+
+  return(df_dist)
 }
+
+# get_dist <- function(df_pair, mfd) {
+# 
+#   ij <- combn(nrow(df_pair), 2)
+# 
+#   lapply(1:ncol(ij), function(j) {
+#     d <- mfd[ij[1, j], ij[2, j]]
+#     dplyr::tibble(
+#       sp1 = dplyr::pull(df_pair[ij[1, j],], species),
+#       sp2 = dplyr::pull(df_pair[ij[2, j],], species),
+#       dist = d
+#     )
+#   }) %>%
+#     dplyr::bind_rows()
+# 
+# }

@@ -177,16 +177,10 @@ df_trait <- readRDS("data/allTraits.rds")  %>%
                                             .default = photosynthetic_pathway))
 
 ## data for species pool
-df_pool0 <- readRDS("data/allSppPairs.rds") %>% 
+df_pool0 <- readRDS("data/allSppList.rds") %>% 
   mutate(site_proj_comm = str_to_lower(site_proj_comm)) %>% 
-  group_by(site_proj_comm) %>% 
-  mutate(pair_id = row_number()) %>%
-  ungroup() %>% 
-  pivot_longer(
-    cols = starts_with("species_"),
-    values_to = "species"
-  ) %>% 
-  select(-name)
+  distinct(site_proj_comm,
+           genus_species)
 
 # saveRDS(df_trait, "data/data_trait.rds")
 # saveRDS(df_codom0, "data/data_codom.rds")
