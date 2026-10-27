@@ -283,7 +283,7 @@ df_m2  <- df_m %>%
     sp1, 
     sp2, 
     dist, 
-    ses, 
+    # ses, 
     rdfd,
     n_pool,
     n_obs,
@@ -334,7 +334,7 @@ envGradientPlot <- ggplot(data=df_m2, aes(y = rdfd,
         axis.title.x = element_blank(),
         legend.position='bottom')
 
-ggsave("FigS7_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
+# ggsave("FigS7_RDFD_envGradient.png", envGradientPlot, width = 30, height = 15, dpi = 400)
 
 
 
