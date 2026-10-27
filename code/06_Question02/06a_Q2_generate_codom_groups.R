@@ -67,6 +67,46 @@ allSppPairs <- allSppList %>%
 # saveRDS(allSppPairs, file = "data/allSppPairs.rds")
 
 
+
+# # Testing which species pairs are missing from the overall dataset ----------
+# 
+# # Konza subset
+# knz <- allSppList %>% 
+#   filter(str_detect(site_proj_comm, "KNZ"))
+# 
+# knzPairs <- allSppPairs %>% 
+#   filter(str_detect(site_proj_comm, "KNZ"))
+# 
+# knzPossible <- allSppList %>% 
+#   filter(str_detect(site_proj_comm, "KNZ")) %>% 
+#   select(genus_species) %>% 
+#   unique() %>% 
+#   arrange(genus_species) %>% 
+#   pull(genus_species) %>% 
+#   combn(2) %>% 
+#   t() %>% 
+#   as.data.frame() %>% 
+#   rename(species_1=V1, species_2=V2)
+# 
+# knzMissingPairs <- anti_join(knzPossible, knzPairs)
+# 
+# 
+# # All projects
+# 
+# possible <- allSppList %>% 
+#   distinct(site_proj_comm, genus_species) %>% 
+#   group_by(site_proj_comm) %>% 
+#   filter(n() >= 2) %>% 
+#   reframe(species_1 = combn(sort(genus_species), 2)[1, ],
+#           species_2 = combn(sort(genus_species), 2)[2, ])
+# 
+# missingPairs <- anti_join(possible, allSppPairs)
+# 
+# # possible pairs within sites = 892,678
+# # existing pairs in dataset = 530,453 (59.4%)
+# # missing pairs from possible = 362,225 (40.6%)
+
+
 # Prepare data for trait analysis Q2 & Q3 ---------------------------------
 
 df_codom0_ctr <- readRDS("data/Q2ctlGroupsSite.rds") %>% 
@@ -136,6 +176,6 @@ df_pool0 <- readRDS("data/allSppPairs.rds") %>%
   ) %>% 
   select(-name)
 
-saveRDS(df_trait, "data/data_trait.rds")
-saveRDS(df_codom0, "data/data_codom.rds")
-saveRDS(df_pool0, "data/data_pool.rds")
+# saveRDS(df_trait, "data/data_trait.rds")
+# saveRDS(df_codom0, "data/data_codom.rds")
+# saveRDS(df_pool0, "data/data_pool.rds")
