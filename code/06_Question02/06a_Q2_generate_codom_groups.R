@@ -48,11 +48,22 @@ Q2ctlGroupsSite <- codomControl %>%
 
 
 
-# All possible species combinations (co-occur within at least one plot at one time point) within each site
+# All possible species combinations for each site__proj_comm ----------------
 
 allSppList <- readRDS("data/allSppList.rds")
 
 allSppPairs <- allSppList %>%
+  distinct(site_proj_comm, genus_species) %>%
+  group_by(site_proj_comm) %>%
+  filter(n() >= 2) %>%
+  reframe(species_1 = combn(sort(genus_species), 2)[1, ],
+          species_2 = combn(sort(genus_species), 2)[2, ])
+
+# saveRDS(allSppPairs, file = "data/allSppPairs.rds")
+
+
+# Only pairs that co-occur within at least one plot at one time point within each site
+existingSppPairs <- allSppList %>%
   distinct(site_proj_comm, plot_id, calendar_year, genus_species) %>% 
   # Generate all species pairs within each plot-year
   group_by(site_proj_comm, plot_id, calendar_year) %>%
@@ -64,55 +75,48 @@ allSppPairs <- allSppList %>%
   ungroup() %>%
   distinct(site_proj_comm, species_1, species_2)
 
-# saveRDS(allSppPairs, file = "data/allSppPairs.rds")
-
-
 
 # Testing which species pairs are missing from the overall dataset ----------
 
-# Konza subset
-knz <- allSppList %>%
-  filter(str_detect(site_proj_comm, "KNZ"))
-
-knzPairs <- allSppPairs %>%
-  filter(str_detect(site_proj_comm, "KNZ"))
-
-knzPossible <- allSppList %>%
-  filter(str_detect(site_proj_comm, "KNZ")) %>%
-  select(genus_species) %>%
-  unique() %>%
-  arrange(genus_species) %>%
-  pull(genus_species) %>%
-  combn(2) %>%
-  t() %>%
-  as.data.frame() %>%
-  rename(species_1=V1, species_2=V2)
-
-knzMissingPairs <- anti_join(knzPossible, knzPairs)
+# # Konza subset
+# knz <- allSppList %>%
+#   filter(str_detect(site_proj_comm, "KNZ"))
+# 
+# knzPairs <- existingSppPairs %>%
+#   filter(str_detect(site_proj_comm, "KNZ"))
+# 
+# knzPossible <- allSppList %>%
+#   filter(str_detect(site_proj_comm, "KNZ")) %>%
+#   select(genus_species) %>%
+#   unique() %>%
+#   arrange(genus_species) %>%
+#   pull(genus_species) %>%
+#   combn(2) %>%
+#   t() %>%
+#   as.data.frame() %>%
+#   rename(species_1=V1, species_2=V2)
+# 
+# knzMissingPairs <- anti_join(knzPossible, knzPairs)
 
 
 # All projects
 
-possible <- allSppList %>%
-  distinct(site_proj_comm, genus_species) %>%
-  group_by(site_proj_comm) %>%
-  filter(n() >= 2) %>%
-  reframe(species_1 = combn(sort(genus_species), 2)[1, ],
-          species_2 = combn(sort(genus_species), 2)[2, ])
-
-missingPairs <- anti_join(possible, allSppPairs)
+missingPairs <- anti_join(allSppPairs, existingSppPairs)
 
 foundElsewhere <- missingPairs %>%
-  inner_join(allSppPairs %>% rename(other_site = site_proj_comm),
+  inner_join(existingSppPairs %>% rename(other_site = site_proj_comm),
              by = c("species_1", "species_2")) %>%
-  filter(site_proj_comm != other_site)
+  filter(site_proj_comm != other_site) %>% 
+  select(-other_site) %>% 
+  unique()
 
 # possible pairs within sites = 892,678
 # existing pairs in dataset = 530,453 (59.4%)
 # missing pairs from possible at project level = 362,225 (40.6%)
-# missing pairs from possible that are found within another project = 261,341
-# real missing pairs (missingPairs - foundElsewhere) = 100,884 (11.3%)
-# species pairs of all possible tested that exist somewhere = 791,794 (88.7%)
+# missing pairs from possible that are found within another project = 97,096 (10.9%)
+# real missing pairs (missingPairs - foundElsewhere) = 265,129 (29.7%)
+# species pairs of all possible tested that exist somewhere = 627,549 (70.3%)
+
 
 
 # Prepare data for trait analysis Q2 & Q3 ---------------------------------
