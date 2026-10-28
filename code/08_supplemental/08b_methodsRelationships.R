@@ -148,7 +148,7 @@ expDuration <- readRDS('data/codomSppList.rds') %>%
   filter(!is.na(lump_mode_trt_cat),
          exp_length>0) %>%
   mutate(shifted = lump_mode_trt_cat != lump_mode_site_cat,
-         shifted_label = ifelse(shifted==T, 'Same', 'Altered'))
+         shifted_label = ifelse(shifted==T, 'Altered', 'Same'))
 
 
 # does dominance structure shift based on experiment length?
